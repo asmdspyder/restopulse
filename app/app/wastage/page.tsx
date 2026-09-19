@@ -10,7 +10,6 @@ import {
   Loader2,
   ChevronDown,
   History,
-  Sparkles,
   ArrowLeft,
   UtensilsCrossed,
 } from "lucide-react";
@@ -52,7 +51,7 @@ export default function RecordWastagePage() {
       const [itemsRes, reasonsRes, historyRes] = await Promise.all([
         fetch("/api/items?activeOnly=true"),
         fetch("/api/reasons"),
-        fetch("/api/wastage?limit=5"),
+        fetch("/api/wastage?limit=6"),
       ]);
 
       const itemsData = await itemsRes.json();
@@ -83,7 +82,6 @@ export default function RecordWastagePage() {
     const trimmed = name.trim();
     if (!trimmed) return;
 
-    // Check if an item with this exact name already exists
     const existing = items.find((i) => i.name.toLowerCase() === trimmed.toLowerCase());
     if (existing) {
       handleSelectItem(existing);
@@ -159,9 +157,7 @@ export default function RecordWastagePage() {
       }
 
       setSuccessBanner(
-        `Wastage recorded: ${selectedItem.name} — ${numQty} ${unit} (${formatCurrency(computedValue)})${
-          selectedItem.isNew ? " (Item automatically added to catalog!)" : ""
-        }`
+        `${selectedItem.name} (${numQty} ${unit} • ${formatCurrency(computedValue)}) saved!`
       );
 
       // Reset form fields
@@ -172,7 +168,6 @@ export default function RecordWastagePage() {
       setShowDetails(false);
       setNotes("");
 
-      // Refresh recent records & items list so new items appear in search
       loadData();
     } catch (err: any) {
       setError(err.message || "Failed to save record");
@@ -191,85 +186,90 @@ export default function RecordWastagePage() {
   );
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <div>
-        <div className="flex items-center gap-2.5 mb-2">
+    <div className="max-w-5xl mx-auto space-y-4">
+      {/* 1. COMPACT TOP HEADER */}
+      <div className="flex items-center justify-between pb-1">
+        <div className="flex items-center gap-3">
           <Link
             href="/app"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#bed6c2] text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 font-bold text-xs shadow-xs transition group"
-            title="Return to Operations Hub"
+            className="p-2 rounded-xl bg-white border border-[#bed6c2] hover:bg-emerald-50 text-slate-700 shadow-xs transition group"
+            title="Back to Operations Hub"
           >
-            <ArrowLeft className="w-3.5 h-3.5 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
-            <span>← Operations Hub</span>
+            <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
           </Link>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-tight">
+              Record Wastage
+            </h1>
+            <p className="text-xs text-slate-500">
+              Quick 10-second kitchen logging & price tracking
+            </p>
+          </div>
         </div>
-        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Record Wastage</h1>
-        <p className="text-xs sm:text-sm text-slate-500 mt-1">
-          Fast 10-second logging. Type any item directly to log & create it instantly.
-        </p>
+
+        <Link
+          href="/app/items"
+          className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs flex items-center gap-1.5 shadow-xs transition"
+        >
+          <UtensilsCrossed className="w-3.5 h-3.5 text-emerald-700" />
+          <span className="hidden sm:inline">Items Catalog</span>
+        </Link>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6 items-start">
-        {/* Main Recording Form (2 Columns) */}
-        <div className="lg:col-span-2 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs">
+      {/* 2. MAIN COMPACT GRID */}
+      <div className="grid lg:grid-cols-3 gap-4 items-start">
+        {/* Left Form: Compact & Clean (2 Columns) */}
+        <div className="lg:col-span-2 bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs">
           {successBanner && (
-            <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-semibold flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>{successBanner}</span>
             </div>
           )}
 
           {error && (
-            <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+            <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* STEP 1: SELECT OR CREATE ITEM */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* STEP 1: ITEM SELECTION / INLINE CREATION */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                  1. What was wasted? *
-                </label>
-                <Link
-                  href="/app/items"
-                  className="text-xs font-semibold text-emerald-700 hover:text-emerald-900 flex items-center gap-1"
-                >
-                  <UtensilsCrossed className="w-3 h-3" />
-                  <span>Items Catalog</span>
-                </Link>
-              </div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                1. Item Name *
+              </label>
 
               {selectedItem ? (
-                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
-                  <div>
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+                  <div className="min-w-0 flex-1 mr-2">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-900 text-base block">{selectedItem.name}</span>
+                      <span className="font-bold text-slate-900 text-sm truncate block">
+                        {selectedItem.name}
+                      </span>
                       {selectedItem.isNew && (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 text-[10px] font-extrabold uppercase tracking-wide">
-                          ✨ New Item
+                        <span className="px-1.5 py-0.5 rounded-md bg-emerald-200 text-emerald-900 text-[9px] font-extrabold uppercase shrink-0">
+                          New
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-emerald-800 font-semibold">
-                      Unit: {unit}
-                      {selectedItem.categoryName && ` • ${selectedItem.categoryName}`}
+                    <span className="text-[11px] text-emerald-800">
+                      Unit: {unit} {selectedItem.categoryName ? `• ${selectedItem.categoryName}` : ""}
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setSelectedItem(null)}
-                    className="text-xs font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-100 hover:bg-emerald-200 px-3.5 py-1.5 rounded-xl transition cursor-pointer"
+                    className="text-xs font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-100 hover:bg-emerald-200 px-2.5 py-1 rounded-lg transition cursor-pointer shrink-0"
                   >
-                    Change Item
+                    Change
                   </button>
                 </div>
               ) : (
-                <div>
-                  <div className="relative mb-2">
-                    <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
+                <div className="relative">
+                  <div className="relative">
+                    <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                     <input
                       type="text"
                       value={searchItem}
@@ -284,36 +284,33 @@ export default function RecordWastagePage() {
                           }
                         }
                       }}
-                      placeholder="Type or search item name (e.g. Cooked Rice, Paneer, Milk, Croissant)..."
-                      className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-300 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-hidden"
+                      placeholder="Type or search item name..."
+                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 focus:outline-hidden"
                     />
                   </div>
 
-                  <div className="max-h-56 overflow-y-auto rounded-2xl border border-slate-200 divide-y divide-slate-100 bg-slate-50/50 p-1">
-                    {/* Prompt to create new item if user typed something */}
+                  {/* Dropdown suggestions */}
+                  <div className="mt-1.5 max-h-40 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100 bg-slate-50/70 p-1">
                     {cleanSearch && !exactMatchExists && (
                       <button
                         type="button"
                         onClick={() => handleCreateNewItem(cleanSearch)}
-                        className="w-full text-left p-3 bg-emerald-50 hover:bg-emerald-100/90 border border-emerald-200 rounded-xl transition flex items-center justify-between text-xs font-bold text-emerald-900 cursor-pointer mb-1 shadow-xs"
+                        className="w-full text-left p-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition flex items-center justify-between text-xs font-bold text-emerald-900 cursor-pointer mb-1 shadow-2xs"
                       >
-                        <div className="flex items-center gap-2">
-                          <Plus className="w-4 h-4 text-emerald-700 shrink-0" />
-                          <span>Create new item &quot;{cleanSearch}&quot;</span>
+                        <div className="flex items-center gap-1.5 truncate">
+                          <Plus className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                          <span className="truncate">Create &quot;{cleanSearch}&quot;</span>
                         </div>
-                        <span className="text-[11px] font-extrabold text-emerald-800 px-2.5 py-1 rounded-lg bg-emerald-200/80">
+                        <span className="text-[10px] font-extrabold text-emerald-800 px-2 py-0.5 rounded bg-emerald-200 shrink-0">
                           + Add & Set Price
                         </span>
                       </button>
                     )}
 
                     {filteredItems.length === 0 && !cleanSearch && (
-                      <div className="p-6 text-center text-xs text-slate-500 space-y-2">
-                        <UtensilsCrossed className="w-6 h-6 mx-auto text-slate-400 opacity-60" />
+                      <div className="p-4 text-center text-xs text-slate-500">
                         <p className="font-semibold text-slate-700">No items configured yet.</p>
-                        <p className="text-slate-400">
-                          Type any item name in the box above to create and record it instantly!
-                        </p>
+                        <p className="text-[11px] text-slate-400">Type any item name above to log it on the fly!</p>
                       </div>
                     )}
 
@@ -322,17 +319,10 @@ export default function RecordWastagePage() {
                         key={item.id}
                         type="button"
                         onClick={() => handleSelectItem(item)}
-                        className="w-full text-left p-3 hover:bg-emerald-50/80 transition flex items-center justify-between group rounded-xl cursor-pointer"
+                        className="w-full text-left p-2 hover:bg-emerald-50/80 transition flex items-center justify-between rounded-lg cursor-pointer text-xs"
                       >
-                        <div>
-                          <span className="font-semibold text-slate-900 text-sm group-hover:text-emerald-800">
-                            {item.name}
-                          </span>
-                          {item.categoryName && (
-                            <span className="text-[11px] text-slate-500 ml-2">({item.categoryName})</span>
-                          )}
-                        </div>
-                        <span className="text-xs font-extrabold text-slate-700 group-hover:text-emerald-700">
+                        <span className="font-semibold text-slate-900 truncate mr-2">{item.name}</span>
+                        <span className="font-extrabold text-slate-700 shrink-0 text-[11px]">
                           {formatCurrency(item.costPerUnit)} / {item.defaultUnit}
                         </span>
                       </button>
@@ -342,42 +332,47 @@ export default function RecordWastagePage() {
               )}
             </div>
 
-            {/* STEP 2: QUANTITY & EDITABLE UNIT PRICE */}
+            {/* STEP 2: QUANTITY, UNIT & RATE IN 1 COMPACT ROW */}
             {selectedItem && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Quantity & Unit */}
+              <div className="space-y-2.5 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {/* Quantity */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                      Quantity & Unit *
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      Quantity *
                     </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        step="any"
-                        required
-                        value={quantity}
-                        onChange={(e) => setQuantity(e.target.value)}
-                        placeholder="e.g. 1.5"
-                        className="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-lg font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
-                      />
-                      <select
-                        value={unit}
-                        onChange={(e) => setUnit(e.target.value)}
-                        className="px-3 py-3 rounded-2xl bg-slate-100 border border-slate-300 font-extrabold text-xs text-slate-800 focus:border-emerald-500 focus:outline-hidden cursor-pointer"
-                      >
-                        {STANDARD_UNITS.map((u) => (
-                          <option key={u} value={u}>
-                            {u}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <input
+                      type="number"
+                      step="any"
+                      required
+                      value={quantity}
+                      onChange={(e) => setQuantity(e.target.value)}
+                      placeholder="1"
+                      className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
+                    />
                   </div>
 
-                  {/* Rate / Price */}
+                  {/* Unit Selector */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                      Unit *
+                    </label>
+                    <select
+                      value={unit}
+                      onChange={(e) => setUnit(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-100 border border-slate-300 font-bold text-xs text-slate-800 focus:border-emerald-500 focus:outline-hidden cursor-pointer"
+                    >
+                      {STANDARD_UNITS.map((u) => (
+                        <option key={u} value={u}>
+                          {u}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Rate / Unit */}
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
                       Rate / {unit} (₹) *
                     </label>
                     <input
@@ -386,56 +381,52 @@ export default function RecordWastagePage() {
                       required
                       value={unitCost}
                       onChange={(e) => setUnitCost(e.target.value)}
-                      placeholder={`Cost per ${unit} (e.g. 120)`}
-                      className="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-lg font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
+                      placeholder="Price"
+                      className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
                     />
                   </div>
                 </div>
 
-                {/* Catalog save note / checkbox */}
-                <div className="flex items-center gap-2 text-xs text-slate-600 pt-0.5">
-                  <input
-                    type="checkbox"
-                    id="updateCatalogCostWastage"
-                    checked={updateCatalogPrice}
-                    onChange={(e) => setUpdateCatalogPrice(e.target.checked)}
-                    className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                  />
-                  <label htmlFor="updateCatalogCostWastage" className="cursor-pointer font-medium">
-                    {selectedItem.isNew
-                      ? `Save "${selectedItem.name}" at ₹${activeRate.toFixed(2)}/${unit} to Items Catalog for future logs`
-                      : `Update default rate (₹${activeRate.toFixed(2)}) in Item Catalog`}
-                  </label>
-                </div>
-
-                {numQty > 0 && (
-                  <div className="p-3.5 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-between text-xs">
-                    <span className="text-slate-600 font-semibold">
-                      {numQty} {unit} × {formatCurrency(activeRate)} =
-                    </span>
-                    <span className="font-extrabold text-slate-900 text-base">
-                      {formatCurrency(computedValue)} Total Wastage
-                    </span>
+                {/* Instant Calculated Badge & Catalog checkbox */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-100/90 border border-slate-200 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="checkbox"
+                      id="saveCatalogCost"
+                      checked={updateCatalogPrice}
+                      onChange={(e) => setUpdateCatalogPrice(e.target.checked)}
+                      className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                    />
+                    <label htmlFor="saveCatalogCost" className="cursor-pointer text-[11px] text-slate-600 font-medium">
+                      Save ₹{activeRate.toFixed(2)}/{unit} in Item Catalog
+                    </label>
                   </div>
-                )}
+
+                  {numQty > 0 && (
+                    <div className="font-extrabold text-slate-900 text-xs sm:text-right">
+                      <span className="text-slate-500 font-medium mr-1">{numQty} {unit} =</span>
+                      <span className="text-emerald-800 text-sm">{formatCurrency(computedValue)}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
-            {/* STEP 3: REASON BUTTONS */}
+            {/* STEP 3: REASON BUTTONS (COMPACT) */}
             {selectedItem && (
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                  3. Why was it wasted? *
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  2. Wastage Reason *
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                   {reasons.map((r) => (
                     <button
                       key={r.id}
                       type="button"
                       onClick={() => setSelectedReasonId(r.id)}
-                      className={`p-3 rounded-2xl text-xs font-bold transition text-center border cursor-pointer ${
+                      className={`py-2 px-2.5 rounded-xl text-xs font-bold transition text-center border cursor-pointer ${
                         selectedReasonId === r.id
-                          ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                          ? "bg-emerald-700 text-white border-emerald-700 shadow-2xs"
                           : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
                       }`}
                     >
@@ -448,51 +439,51 @@ export default function RecordWastagePage() {
 
             {/* OPTIONAL MORE DETAILS */}
             {selectedItem && (
-              <div className="pt-2 border-t border-slate-100">
+              <div className="pt-1 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowDetails(!showDetails)}
-                  className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1.5 cursor-pointer"
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer"
                 >
-                  <span>More details (Shift, Area, Notes)</span>
+                  <span>+ Shift, Area, Notes</span>
                   <ChevronDown
-                    className={`w-3.5 h-3.5 transition-transform ${showDetails ? "rotate-180" : ""}`}
+                    className={`w-3 h-3 transition-transform ${showDetails ? "rotate-180" : ""}`}
                   />
                 </button>
 
                 {showDetails && (
-                  <div className="mt-3 space-y-3 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
-                    <div className="grid grid-cols-2 gap-3">
+                  <div className="mt-2 space-y-2 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                    <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="block font-semibold text-slate-600 mb-1">Shift (Optional)</label>
+                        <label className="block font-semibold text-slate-600 text-[10px] mb-0.5">Shift</label>
                         <input
                           type="text"
                           value={shift}
                           onChange={(e) => setShift(e.target.value)}
                           placeholder="Morning / Lunch / Evening"
-                          className="w-full p-2.5 rounded-xl border border-slate-300 text-slate-900 bg-white"
+                          className="w-full p-2 rounded-lg border border-slate-300 text-slate-900 bg-white text-xs"
                         />
                       </div>
                       <div>
-                        <label className="block font-semibold text-slate-600 mb-1">Responsible Area</label>
+                        <label className="block font-semibold text-slate-600 text-[10px] mb-0.5">Area</label>
                         <input
                           type="text"
                           value={responsibleArea}
                           onChange={(e) => setResponsibleArea(e.target.value)}
                           placeholder="Kitchen / Bar / Bakery"
-                          className="w-full p-2.5 rounded-xl border border-slate-300 text-slate-900 bg-white"
+                          className="w-full p-2 rounded-lg border border-slate-300 text-slate-900 bg-white text-xs"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-slate-600 mb-1">Notes</label>
+                      <label className="block font-semibold text-slate-600 text-[10px] mb-0.5">Notes</label>
                       <input
                         type="text"
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Context or observation..."
-                        className="w-full p-2.5 rounded-xl border border-slate-300 text-slate-900 bg-white"
+                        placeholder="Observation context..."
+                        className="w-full p-2 rounded-lg border border-slate-300 text-slate-900 bg-white text-xs"
                       />
                     </div>
                   </div>
@@ -504,18 +495,18 @@ export default function RecordWastagePage() {
             <button
               type="submit"
               disabled={saving || !selectedItem || !selectedReasonId || !quantity}
-              className="w-full py-4 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+              className="w-full py-3 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-700/20 transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               {saving ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Saving Record...</span>
+                  <span>Saving...</span>
                 </>
               ) : (
                 <>
                   <Plus className="w-4 h-4" />
                   <span>
-                    Save Wastage Event {computedValue > 0 ? `(${formatCurrency(computedValue)})` : ""}
+                    Save Wastage {computedValue > 0 ? `(${formatCurrency(computedValue)})` : ""}
                   </span>
                 </>
               )}
@@ -523,28 +514,28 @@ export default function RecordWastagePage() {
           </form>
         </div>
 
-        {/* Recent Feed (1 Column) */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs">
-          <div className="flex items-center gap-2 mb-4">
-            <History className="w-4 h-4 text-emerald-600" />
-            <h3 className="font-bold text-slate-900 text-sm">Recent Wastage Logs</h3>
+        {/* Right Feed: Recent Wastage Logs (1 Column) */}
+        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs">
+          <div className="flex items-center gap-2 mb-3">
+            <History className="w-4 h-4 text-emerald-700" />
+            <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">Recent Logs</h3>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
             {recentRecords.length === 0 ? (
-              <p className="text-xs text-slate-400 py-4 text-center">No logs recorded yet today.</p>
+              <p className="text-xs text-slate-400 py-6 text-center">No logs recorded yet today.</p>
             ) : (
               recentRecords.map((rec) => (
-                <div key={rec.id} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-xs">
+                <div key={rec.id} className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
                   <div className="flex items-center justify-between font-bold text-slate-900">
-                    <span>{rec.itemName}</span>
-                    <span className="text-emerald-700">{formatCurrency(rec.wastageValue)}</span>
+                    <span className="truncate mr-2">{rec.itemName}</span>
+                    <span className="text-emerald-800 shrink-0">{formatCurrency(rec.wastageValue)}</span>
                   </div>
-                  <div className="flex items-center justify-between text-slate-500 mt-1">
+                  <div className="flex items-center justify-between text-slate-500 mt-1 text-[11px]">
                     <span>
                       {rec.quantity} {rec.unit} • {rec.reasonName}
                     </span>
-                    <span className="text-[10px]">{formatDateTime(rec.recordedAt)}</span>
+                    <span className="text-[10px] text-slate-400">{formatDateTime(rec.recordedAt)}</span>
                   </div>
                 </div>
               ))
