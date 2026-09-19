@@ -15,7 +15,7 @@ import {
   ShieldCheck,
   Zap,
 } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatLocalDateToYMD } from "@/lib/utils";
 
 export default function RestaurantOperationsHub() {
   const [loading, setLoading] = useState(true);
@@ -31,7 +31,7 @@ export default function RestaurantOperationsHub() {
   const fetchHubData = async () => {
     setLoading(true);
     try {
-      const todayStr = new Date().toISOString().slice(0, 10);
+      const todayStr = formatLocalDateToYMD();
       const [authRes, checklistRes, analyticsRes, usersRes] = await Promise.all([
         fetch("/api/auth/me"),
         fetch(`/api/checklists/daily?date=${todayStr}`),

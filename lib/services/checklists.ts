@@ -339,6 +339,12 @@ export async function getOrCreateDailyChecklist(
     structure = await getChecklistTemplateWithStructure(template.id, restaurantId);
   }
 
+  // Recalculate metrics to ensure live record is always synced with values
+  const recalculated = await recalculateDailyRecordMetrics(dailyRecord.id);
+  if (recalculated?.dailyRecord) {
+    dailyRecord = recalculated.dailyRecord;
+  }
+
   return {
     dailyRecord,
     template,
@@ -346,6 +352,88 @@ export async function getOrCreateDailyChecklist(
     values,
     repeatableRows,
     auditLogs,
+  };
+}
+
+// 4.5 RECALCULATE DAILY RECORD METRICS HELPER
+export async function recalculateDailyRecordMetrics(dailyRecordId: string) {
+  const [dailyRecord] = await db
+    .select()
+    .from(dailyChecklistRecords)
+    .where(eq(dailyChecklistRecords.id, dailyRecordId))
+    .limit(1);
+
+  if (!dailyRecord) return null;
+
+  const allValues = await db
+    .select()
+    .from(dailyChecklistValues)
+    .where(eq(dailyChecklistValues.dailyRecordId, dailyRecordId));
+
+  let structure = dailyRecord.structureSnapshot;
+  if (!structure || !structure.sections) {
+    structure = await getChecklistTemplateWithStructure(dailyRecord.templateId, dailyRecord.restaurantId);
+  }
+
+  let totalRequired = 0;
+  let completedRequired = 0;
+
+  structure?.sections?.forEach((sec: any) => {
+    sec.items?.forEach((item: any) => {
+      const val = allValues.find(
+        (v) => v.itemId === item.id || v.itemKey === item.id || v.itemKey === item.label
+      );
+
+      let isCompleted = false;
+      if (item.fieldType === "checkbox" || item.field_type === "checkbox") {
+        isCompleted = val?.valueBoolean === true;
+      } else if (item.fieldType === "currency" || item.field_type === "currency" || item.fieldType === "number" || item.field_type === "number") {
+        isCompleted = val !== undefined && val.valueNumber !== null && String(val.valueNumber).trim() !== "";
+      } else if (item.fieldType === "signature" || item.field_type === "signature") {
+        isCompleted = (val !== undefined && !!val.valueText?.trim()) || Boolean(dailyRecord.managerSignature?.trim());
+      } else if (item.label === "Opening Manager Name") {
+        isCompleted = (val !== undefined && !!val.valueText?.trim()) || Boolean(dailyRecord.openingManagerName?.trim());
+      } else {
+        isCompleted = val !== undefined && (
+          val.valueBoolean === true ||
+          (typeof val.valueText === "string" && val.valueText.trim() !== "") ||
+          (val.valueNumber !== null && String(val.valueNumber).trim() !== "")
+        );
+      }
+
+      if (item.isRequired || item.is_required) {
+        totalRequired++;
+        if (isCompleted) completedRequired++;
+      }
+    });
+  });
+
+  const percent = totalRequired > 0 ? (completedRequired / totalRequired) * 100 : 100;
+  const status =
+    completedRequired === 0
+      ? "not_started"
+      : completedRequired >= totalRequired
+      ? "completed"
+      : "in_progress";
+
+  const [updated] = await db
+    .update(dailyChecklistRecords)
+    .set({
+      completionPercent: String(percent.toFixed(2)),
+      completedItemsCount: String(completedRequired),
+      totalRequiredItemsCount: String(totalRequired),
+      status,
+      updatedAt: new Date(),
+    })
+    .where(eq(dailyChecklistRecords.id, dailyRecordId))
+    .returning();
+
+  return {
+    dailyRecord: updated,
+    completionPercent: percent,
+    completedItemsCount: completedRequired,
+    totalRequiredItemsCount: totalRequired,
+    status,
   };
 }
 
@@ -428,48 +516,8 @@ export async function updateDailyItemValue(
     });
   }
 
-  // Recalculate completion metrics for the daily record
-  const allValues = await db
-    .select()
-    .from(dailyChecklistValues)
-    .where(eq(dailyChecklistValues.dailyRecordId, dailyRecordId));
-
-  const structure = dailyRecord.structureSnapshot || {};
-  let totalRequired = 0;
-  let completedRequired = 0;
-
-  structure.sections?.forEach((sec: any) => {
-    sec.items?.forEach((item: any) => {
-      const val = allValues.find((v) => v.itemId === item.id || v.itemKey === item.id || v.itemKey === item.label);
-      const isCompleted =
-        (item.fieldType === "checkbox" && val?.valueBoolean === true) ||
-        (item.fieldType !== "checkbox" && (val?.valueText?.trim() || val?.valueNumber !== null));
-
-      if (item.isRequired) {
-        totalRequired++;
-        if (isCompleted) completedRequired++;
-      }
-    });
-  });
-
-  const percent = totalRequired > 0 ? (completedRequired / totalRequired) * 100 : 100;
-  const status =
-    completedRequired === 0
-      ? "not_started"
-      : completedRequired >= totalRequired
-      ? "completed"
-      : "in_progress";
-
-  await db
-    .update(dailyChecklistRecords)
-    .set({
-      completionPercent: String(percent.toFixed(2)),
-      completedItemsCount: String(completedRequired),
-      totalRequiredItemsCount: String(totalRequired),
-      status,
-      updatedAt: new Date(),
-    })
-    .where(eq(dailyChecklistRecords.id, dailyRecordId));
+  // Recalculate completion metrics for the daily record using robust helper
+  const metrics = await recalculateDailyRecordMetrics(dailyRecordId);
 
   // Determine audit action
   let action = "edit_value";
@@ -493,10 +541,10 @@ export async function updateDailyItemValue(
 
   return {
     success: true,
-    completionPercent: percent,
-    completedItemsCount: completedRequired,
-    totalRequiredItemsCount: totalRequired,
-    status,
+    completionPercent: metrics?.completionPercent ?? 0,
+    completedItemsCount: metrics?.completedItemsCount ?? 0,
+    totalRequiredItemsCount: metrics?.totalRequiredItemsCount ?? 0,
+    status: metrics?.status ?? "not_started",
   };
 }
 
@@ -602,7 +650,8 @@ export async function updateDailyVerification(
     operationalDate: dailyRecord.date,
   });
 
-  return updated;
+  const recalc = await recalculateDailyRecordMetrics(dailyRecordId);
+  return recalc?.dailyRecord || updated;
 }
 
 // 8. GET CHECKLIST HISTORY LIST

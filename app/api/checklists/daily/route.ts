@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth/session";
 import { getOrCreateDailyChecklist, updateDailyItemValue } from "@/lib/services/checklists";
+import { formatLocalDateToYMD } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
   try {
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const templateId = searchParams.get("templateId") || searchParams.get("code") || null;
-    const dateStr = searchParams.get("date") || new Date().toISOString().slice(0, 10);
+    const dateStr = searchParams.get("date") || formatLocalDateToYMD();
 
     const data = await getOrCreateDailyChecklist(auth.restaurant.id, templateId, dateStr, auth.user);
     return NextResponse.json(data);

@@ -29,11 +29,11 @@ import {
   ArrowLeft,
   User,
 } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatLocalDateToYMD } from "@/lib/utils";
 
 export default function DailyChecklistPage() {
   const [selectedDate, setSelectedDate] = useState(() => {
-    return new Date().toISOString().slice(0, 10);
+    return formatLocalDateToYMD();
   });
 
   const [loading, setLoading] = useState(true);
@@ -152,8 +152,8 @@ export default function DailyChecklistPage() {
     }
   };
 
-  const isToday = selectedDate === new Date().toISOString().slice(0, 10);
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = formatLocalDateToYMD();
+  const isToday = selectedDate === todayStr;
 
   // Toggle Checkbox Item
   const handleToggleItem = async (item: any, section: any) => {
@@ -177,20 +177,43 @@ export default function DailyChecklistPage() {
       updatedByName: currentUserName,
     });
 
-    const completed = updatedValues.filter((v: any) => v.valueBoolean === true).length;
-    const totalReq = Number(checklistData?.dailyRecord?.totalRequiredItemsCount || 1);
-    const newPercent = Math.round((completed / totalReq) * 100);
+    let totalReq = 0;
+    let completed = 0;
+    (checklistData.structure?.sections || []).forEach((sec: any) => {
+      (sec.items || []).forEach((it: any) => {
+        const v = updatedValues.find((val: any) => val.itemId === it.id || val.itemKey === it.id || val.itemKey === it.label);
+        let isDone = false;
+        if (it.fieldType === "checkbox" || it.field_type === "checkbox") {
+          isDone = v?.valueBoolean === true;
+        } else if (it.fieldType === "currency" || it.field_type === "currency" || it.fieldType === "number" || it.field_type === "number") {
+          isDone = v !== undefined && v.valueNumber !== null && String(v.valueNumber).trim() !== "";
+        } else if (it.fieldType === "signature" || it.field_type === "signature") {
+          isDone = (v !== undefined && !!v.valueText?.trim()) || Boolean(checklistData.dailyRecord?.managerSignature?.trim());
+        } else if (it.label === "Opening Manager Name") {
+          isDone = (v !== undefined && !!v.valueText?.trim()) || Boolean(checklistData.dailyRecord?.openingManagerName?.trim());
+        } else {
+          isDone = v !== undefined && (v.valueBoolean === true || (typeof v.valueText === "string" && v.valueText.trim() !== ""));
+        }
+        if (it.isRequired || it.is_required) {
+          totalReq++;
+          if (isDone) completed++;
+        }
+      });
+    });
 
-    setChecklistData({
-      ...checklistData,
+    const newPercent = totalReq > 0 ? Math.round((completed / totalReq) * 100) : 100;
+
+    setChecklistData((prev: any) => ({
+      ...prev,
       values: updatedValues,
       dailyRecord: {
-        ...checklistData.dailyRecord,
+        ...prev.dailyRecord,
         completedItemsCount: completed,
+        totalRequiredItemsCount: totalReq,
         completionPercent: newPercent,
-        status: completed >= totalReq ? "completed" : "in_progress",
+        status: completed === 0 ? "not_started" : completed >= totalReq ? "completed" : "in_progress",
       },
-    });
+    }));
 
     try {
       const res = await fetch("/api/checklists/daily", {
@@ -211,7 +234,18 @@ export default function DailyChecklistPage() {
       });
 
       if (res.ok) {
+        const resData = await res.json();
         setSavingStatus("saved");
+        setChecklistData((prev: any) => ({
+          ...prev,
+          dailyRecord: {
+            ...prev.dailyRecord,
+            completedItemsCount: resData.completedItemsCount,
+            totalRequiredItemsCount: resData.totalRequiredItemsCount,
+            completionPercent: Math.round(Number(resData.completionPercent || 0)),
+            status: resData.status,
+          },
+        }));
       } else {
         setSavingStatus("error");
       }
@@ -271,7 +305,7 @@ export default function DailyChecklistPage() {
 
     setSavingStatus("saving");
     try {
-      await Promise.all([
+      const [, res2] = await Promise.all([
         fetch("/api/checklists/daily", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -299,6 +333,21 @@ export default function DailyChecklistPage() {
           }),
         }),
       ]);
+      if (res2.ok) {
+        const lastRes = await res2.json();
+        if (lastRes?.completedItemsCount !== undefined) {
+          setChecklistData((prev: any) => ({
+            ...prev,
+            dailyRecord: {
+              ...prev.dailyRecord,
+              completedItemsCount: lastRes.completedItemsCount,
+              totalRequiredItemsCount: lastRes.totalRequiredItemsCount,
+              completionPercent: Math.round(Number(lastRes.completionPercent || 0)),
+              status: lastRes.status,
+            },
+          }));
+        }
+      }
       setSavingStatus("saved");
       showToast("Cash drawer float saved");
     } catch (e) {
