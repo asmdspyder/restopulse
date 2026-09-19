@@ -233,6 +233,36 @@ export async function saveChecklistTemplate(
     createdBy: user.id,
   });
 
+  // Automatically update any open / in-progress daily checklist records for this template
+  try {
+    const activeRecords = await db
+      .select()
+      .from(dailyChecklistRecords)
+      .where(
+        and(
+          eq(dailyChecklistRecords.restaurantId, restaurantId),
+          eq(dailyChecklistRecords.templateId, templateId!)
+        )
+      );
+
+    for (const rec of activeRecords) {
+      if (rec.status !== "completed") {
+        await db
+          .update(dailyChecklistRecords)
+          .set({
+            structureSnapshot: fullSnapshot,
+            versionNumber: String(newVersion),
+            updatedAt: new Date(),
+          })
+          .where(eq(dailyChecklistRecords.id, rec.id));
+
+        await recalculateDailyRecordMetrics(rec.id);
+      }
+    }
+  } catch (err) {
+    console.error("Error auto-updating active daily records on template save:", err);
+  }
+
   return { id: templateId, version: newVersion };
 }
 
@@ -289,7 +319,7 @@ export async function getOrCreateDailyChecklist(
     let totalReq = 0;
     templateWithStructure?.sections?.forEach((sec: any) => {
       sec.items?.forEach((item: any) => {
-        if (item.isRequired) totalReq++;
+        if (item.isRequired || item.is_required) totalReq++;
       });
     });
 
@@ -333,10 +363,21 @@ export async function getOrCreateDailyChecklist(
     .orderBy(desc(checklistAuditLogs.createdAt))
     .limit(30);
 
-  // Return full structure snapshot (or live structure if snapshot not yet populated)
+  // Return full structure snapshot (or live structure if snapshot not yet populated or template updated)
   let structure = dailyRecord.structureSnapshot;
-  if (!structure) {
-    structure = await getChecklistTemplateWithStructure(template.id, restaurantId);
+  if (!structure || dailyRecord.status !== "completed" || Number(dailyRecord.versionNumber || 1) < Number(template.currentVersion || 1)) {
+    const liveStructure = await getChecklistTemplateWithStructure(template.id, restaurantId);
+    if (liveStructure) {
+      structure = liveStructure;
+      await db
+        .update(dailyChecklistRecords)
+        .set({
+          structureSnapshot: liveStructure,
+          versionNumber: template.currentVersion || "1",
+          updatedAt: new Date(),
+        })
+        .where(eq(dailyChecklistRecords.id, dailyRecord.id));
+    }
   }
 
   // Recalculate metrics to ensure live record is always synced with values
@@ -371,8 +412,11 @@ export async function recalculateDailyRecordMetrics(dailyRecordId: string) {
     .where(eq(dailyChecklistValues.dailyRecordId, dailyRecordId));
 
   let structure = dailyRecord.structureSnapshot;
-  if (!structure || !structure.sections) {
-    structure = await getChecklistTemplateWithStructure(dailyRecord.templateId, dailyRecord.restaurantId);
+  if (!structure || !structure.sections || dailyRecord.status !== "completed") {
+    const liveStructure = await getChecklistTemplateWithStructure(dailyRecord.templateId, dailyRecord.restaurantId);
+    if (liveStructure?.sections?.length) {
+      structure = liveStructure;
+    }
   }
 
   let totalRequired = 0;
