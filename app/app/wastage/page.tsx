@@ -12,8 +12,11 @@ import {
   History,
   Sparkles,
   ArrowLeft,
+  UtensilsCrossed,
 } from "lucide-react";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
+
+const STANDARD_UNITS = ["kg", "g", "L", "ml", "pcs", "portion", "pack", "bottle", "tray"];
 
 export default function RecordWastagePage() {
   const [items, setItems] = useState<any[]>([]);
@@ -68,16 +71,39 @@ export default function RecordWastagePage() {
 
   const handleSelectItem = (item: any) => {
     setSelectedItem(item);
-    setUnit(item.defaultUnit);
-    setUnitCost(item.costPerUnit);
+    setUnit(item.defaultUnit || "kg");
+    setUnitCost(item.costPerUnit || "0");
     if (item.defaultResponsibleArea) {
       setResponsibleArea(item.defaultResponsibleArea);
     }
     setSearchItem("");
   };
 
+  const handleCreateNewItem = (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+
+    // Check if an item with this exact name already exists
+    const existing = items.find((i) => i.name.toLowerCase() === trimmed.toLowerCase());
+    if (existing) {
+      handleSelectItem(existing);
+      return;
+    }
+
+    setSelectedItem({
+      id: "new",
+      name: trimmed,
+      isNew: true,
+      defaultUnit: "kg",
+      costPerUnit: "",
+    });
+    setUnit("kg");
+    setUnitCost("");
+    setSearchItem("");
+  };
+
   const numQty = parseFloat(quantity) || 0;
-  const activeRate = parseFloat(unitCost) || (selectedItem ? parseFloat(selectedItem.costPerUnit) : 0);
+  const activeRate = parseFloat(unitCost) || (selectedItem?.costPerUnit ? parseFloat(selectedItem.costPerUnit) : 0);
   const computedValue = numQty * activeRate;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,7 +112,7 @@ export default function RecordWastagePage() {
     setSuccessBanner(null);
 
     if (!selectedItem) {
-      setError("Please select an item");
+      setError("Please select or enter an item");
       return;
     }
     if (!quantity || isNaN(Number(quantity)) || Number(quantity) <= 0) {
@@ -104,20 +130,27 @@ export default function RecordWastagePage() {
 
     setSaving(true);
     try {
+      const payload: any = {
+        reasonId: selectedReasonId,
+        quantity: numQty,
+        unit,
+        ratePerUnit: activeRate,
+        updateItemCost: updateCatalogPrice,
+        shift: shift || undefined,
+        responsibleArea: responsibleArea || undefined,
+        notes: notes || undefined,
+      };
+
+      if (selectedItem.isNew) {
+        payload.newItemName = selectedItem.name;
+      } else {
+        payload.itemId = selectedItem.id;
+      }
+
       const res = await fetch("/api/wastage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          itemId: selectedItem.id,
-          reasonId: selectedReasonId,
-          quantity: numQty,
-          unit,
-          ratePerUnit: activeRate,
-          updateItemCost: updateCatalogPrice,
-          shift: shift || undefined,
-          responsibleArea: responsibleArea || undefined,
-          notes: notes || undefined,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -126,7 +159,9 @@ export default function RecordWastagePage() {
       }
 
       setSuccessBanner(
-        `Wastage recorded: ${selectedItem.name} — ${numQty} ${unit} (${formatCurrency(computedValue)})`
+        `Wastage recorded: ${selectedItem.name} — ${numQty} ${unit} (${formatCurrency(computedValue)})${
+          selectedItem.isNew ? " (Item automatically added to catalog!)" : ""
+        }`
       );
 
       // Reset form fields
@@ -137,7 +172,7 @@ export default function RecordWastagePage() {
       setShowDetails(false);
       setNotes("");
 
-      // Refresh recent records list
+      // Refresh recent records & items list so new items appear in search
       loadData();
     } catch (err: any) {
       setError(err.message || "Failed to save record");
@@ -148,6 +183,11 @@ export default function RecordWastagePage() {
 
   const filteredItems = items.filter((i) =>
     i.name.toLowerCase().includes(searchItem.toLowerCase())
+  );
+
+  const cleanSearch = searchItem.trim();
+  const exactMatchExists = items.some(
+    (i) => i.name.toLowerCase() === cleanSearch.toLowerCase()
   );
 
   return (
@@ -165,7 +205,7 @@ export default function RecordWastagePage() {
         </div>
         <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Record Wastage</h1>
         <p className="text-xs sm:text-sm text-slate-500 mt-1">
-          Fast 10-second logging. The system automatically retrieves and snapshot-preserves unit costs and timestamps.
+          Fast 10-second logging. Type any item directly to log & create it instantly.
         </p>
       </div>
 
@@ -187,25 +227,41 @@ export default function RecordWastagePage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* STEP 1: SELECT ITEM */}
+            {/* STEP 1: SELECT OR CREATE ITEM */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                1. What was wasted? *
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                  1. What was wasted? *
+                </label>
+                <Link
+                  href="/app/items"
+                  className="text-xs font-semibold text-emerald-700 hover:text-emerald-900 flex items-center gap-1"
+                >
+                  <UtensilsCrossed className="w-3 h-3" />
+                  <span>Items Catalog</span>
+                </Link>
+              </div>
 
               {selectedItem ? (
                 <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
                   <div>
-                    <span className="font-bold text-slate-900 text-base block">{selectedItem.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-900 text-base block">{selectedItem.name}</span>
+                      {selectedItem.isNew && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 text-[10px] font-extrabold uppercase tracking-wide">
+                          ✨ New Item
+                        </span>
+                      )}
+                    </div>
                     <span className="text-xs text-emerald-800 font-semibold">
-                      Unit: {selectedItem.defaultUnit}
+                      Unit: {unit}
                       {selectedItem.categoryName && ` • ${selectedItem.categoryName}`}
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setSelectedItem(null)}
-                    className="text-xs font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-100 hover:bg-emerald-200 px-3.5 py-1.5 rounded-xl transition"
+                    className="text-xs font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-100 hover:bg-emerald-200 px-3.5 py-1.5 rounded-xl transition cursor-pointer"
                   >
                     Change Item
                   </button>
@@ -218,40 +274,69 @@ export default function RecordWastagePage() {
                       type="text"
                       value={searchItem}
                       onChange={(e) => setSearchItem(e.target.value)}
-                      placeholder="Search items (e.g. Cooked Rice, Milk, Chicken, Croissant)..."
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && cleanSearch) {
+                          e.preventDefault();
+                          if (filteredItems.length === 1 && filteredItems[0].name.toLowerCase() === cleanSearch.toLowerCase()) {
+                            handleSelectItem(filteredItems[0]);
+                          } else {
+                            handleCreateNewItem(cleanSearch);
+                          }
+                        }
+                      }}
+                      placeholder="Type or search item name (e.g. Cooked Rice, Paneer, Milk, Croissant)..."
                       className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-300 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-hidden"
                     />
                   </div>
 
-                  <div className="max-h-48 overflow-y-auto rounded-2xl border border-slate-200 divide-y divide-slate-100 bg-slate-50/50">
-                    {filteredItems.length === 0 ? (
-                      <div className="p-4 text-center text-xs text-slate-500">
-                        {items.length === 0
-                          ? "No items configured yet. Please configure items in Items tab."
-                          : "No matching items found."}
-                      </div>
-                    ) : (
-                      filteredItems.map((item) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => handleSelectItem(item)}
-                          className="w-full text-left p-3 hover:bg-emerald-50/80 transition flex items-center justify-between group"
-                        >
-                          <div>
-                            <span className="font-semibold text-slate-900 text-sm group-hover:text-emerald-800">
-                              {item.name}
-                            </span>
-                            {item.categoryName && (
-                              <span className="text-[11px] text-slate-500 ml-2">({item.categoryName})</span>
-                            )}
-                          </div>
-                          <span className="text-xs font-extrabold text-slate-700 group-hover:text-emerald-700">
-                            {formatCurrency(item.costPerUnit)} / {item.defaultUnit}
-                          </span>
-                        </button>
-                      ))
+                  <div className="max-h-56 overflow-y-auto rounded-2xl border border-slate-200 divide-y divide-slate-100 bg-slate-50/50 p-1">
+                    {/* Prompt to create new item if user typed something */}
+                    {cleanSearch && !exactMatchExists && (
+                      <button
+                        type="button"
+                        onClick={() => handleCreateNewItem(cleanSearch)}
+                        className="w-full text-left p-3 bg-emerald-50 hover:bg-emerald-100/90 border border-emerald-200 rounded-xl transition flex items-center justify-between text-xs font-bold text-emerald-900 cursor-pointer mb-1 shadow-xs"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Plus className="w-4 h-4 text-emerald-700 shrink-0" />
+                          <span>Create new item &quot;{cleanSearch}&quot;</span>
+                        </div>
+                        <span className="text-[11px] font-extrabold text-emerald-800 px-2.5 py-1 rounded-lg bg-emerald-200/80">
+                          + Add & Set Price
+                        </span>
+                      </button>
                     )}
+
+                    {filteredItems.length === 0 && !cleanSearch && (
+                      <div className="p-6 text-center text-xs text-slate-500 space-y-2">
+                        <UtensilsCrossed className="w-6 h-6 mx-auto text-slate-400 opacity-60" />
+                        <p className="font-semibold text-slate-700">No items configured yet.</p>
+                        <p className="text-slate-400">
+                          Type any item name in the box above to create and record it instantly!
+                        </p>
+                      </div>
+                    )}
+
+                    {filteredItems.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => handleSelectItem(item)}
+                        className="w-full text-left p-3 hover:bg-emerald-50/80 transition flex items-center justify-between group rounded-xl cursor-pointer"
+                      >
+                        <div>
+                          <span className="font-semibold text-slate-900 text-sm group-hover:text-emerald-800">
+                            {item.name}
+                          </span>
+                          {item.categoryName && (
+                            <span className="text-[11px] text-slate-500 ml-2">({item.categoryName})</span>
+                          )}
+                        </div>
+                        <span className="text-xs font-extrabold text-slate-700 group-hover:text-emerald-700">
+                          {formatCurrency(item.costPerUnit)} / {item.defaultUnit}
+                        </span>
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
@@ -259,13 +344,14 @@ export default function RecordWastagePage() {
 
             {/* STEP 2: QUANTITY & EDITABLE UNIT PRICE */}
             {selectedItem && (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Quantity & Unit */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                      Quantity *
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                      Quantity & Unit *
                     </label>
-                    <div className="flex gap-1.5">
+                    <div className="flex gap-2">
                       <input
                         type="number"
                         step="any"
@@ -275,15 +361,24 @@ export default function RecordWastagePage() {
                         placeholder="e.g. 1.5"
                         className="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-lg font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
                       />
-                      <div className="px-4 py-3 rounded-2xl bg-slate-100 border border-slate-200 font-extrabold text-xs text-slate-700 flex items-center justify-center min-w-[55px]">
-                        {unit}
-                      </div>
+                      <select
+                        value={unit}
+                        onChange={(e) => setUnit(e.target.value)}
+                        className="px-3 py-3 rounded-2xl bg-slate-100 border border-slate-300 font-extrabold text-xs text-slate-800 focus:border-emerald-500 focus:outline-hidden cursor-pointer"
+                      >
+                        {STANDARD_UNITS.map((u) => (
+                          <option key={u} value={u}>
+                            {u}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
 
+                  {/* Rate / Price */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                      Rate / {unit} (₹)
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                      Rate / {unit} (₹) *
                     </label>
                     <input
                       type="number"
@@ -291,33 +386,35 @@ export default function RecordWastagePage() {
                       required
                       value={unitCost}
                       onChange={(e) => setUnitCost(e.target.value)}
-                      placeholder="Cost per unit"
+                      placeholder={`Cost per ${unit} (e.g. 120)`}
                       className="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-lg font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
                     />
                   </div>
                 </div>
 
-                {/* Auto-update catalog price toggle */}
-                <div className="flex items-center gap-2 text-xs text-slate-600 pt-1">
+                {/* Catalog save note / checkbox */}
+                <div className="flex items-center gap-2 text-xs text-slate-600 pt-0.5">
                   <input
                     type="checkbox"
                     id="updateCatalogCostWastage"
                     checked={updateCatalogPrice}
                     onChange={(e) => setUpdateCatalogPrice(e.target.checked)}
-                    className="rounded text-emerald-600 focus:ring-emerald-500"
+                    className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                   />
-                  <label htmlFor="updateCatalogCostWastage" className="cursor-pointer">
-                    Save new rate (₹{activeRate.toFixed(2)}) as default in item catalog for future logs
+                  <label htmlFor="updateCatalogCostWastage" className="cursor-pointer font-medium">
+                    {selectedItem.isNew
+                      ? `Save "${selectedItem.name}" at ₹${activeRate.toFixed(2)}/${unit} to Items Catalog for future logs`
+                      : `Update default rate (₹${activeRate.toFixed(2)}) in Item Catalog`}
                   </label>
                 </div>
 
                 {numQty > 0 && (
-                  <div className="p-3 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-between text-xs">
-                    <span className="text-slate-600 font-medium">
+                  <div className="p-3.5 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-between text-xs">
+                    <span className="text-slate-600 font-semibold">
                       {numQty} {unit} × {formatCurrency(activeRate)} =
                     </span>
                     <span className="font-extrabold text-slate-900 text-base">
-                      {formatCurrency(computedValue)} Wastage
+                      {formatCurrency(computedValue)} Total Wastage
                     </span>
                   </div>
                 )}
@@ -336,7 +433,7 @@ export default function RecordWastagePage() {
                       key={r.id}
                       type="button"
                       onClick={() => setSelectedReasonId(r.id)}
-                      className={`p-3 rounded-2xl text-xs font-bold transition text-center border ${
+                      className={`p-3 rounded-2xl text-xs font-bold transition text-center border cursor-pointer ${
                         selectedReasonId === r.id
                           ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
                           : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
@@ -355,7 +452,7 @@ export default function RecordWastagePage() {
                 <button
                   type="button"
                   onClick={() => setShowDetails(!showDetails)}
-                  className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1.5"
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1.5 cursor-pointer"
                 >
                   <span>More details (Shift, Area, Notes)</span>
                   <ChevronDown
@@ -372,7 +469,7 @@ export default function RecordWastagePage() {
                           type="text"
                           value={shift}
                           onChange={(e) => setShift(e.target.value)}
-                          placeholder="Morning / Evening"
+                          placeholder="Morning / Lunch / Evening"
                           className="w-full p-2.5 rounded-xl border border-slate-300 text-slate-900 bg-white"
                         />
                       </div>

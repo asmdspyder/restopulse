@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   X,
   Search,
@@ -10,9 +11,11 @@ import {
   Loader2,
   ChevronDown,
   Sparkles,
-  IndianRupee,
+  UtensilsCrossed,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+
+const STANDARD_UNITS = ["kg", "g", "L", "ml", "pcs", "portion", "pack", "bottle", "tray"];
 
 interface ItemOption {
   id: string;
@@ -21,6 +24,7 @@ interface ItemOption {
   defaultUnit: string;
   costPerUnit: string;
   defaultResponsibleArea?: string;
+  isNew?: boolean;
 }
 
 interface ReasonOption {
@@ -48,7 +52,7 @@ export default function QuickRecordModal({
   // Form State
   const [searchItem, setSearchItem] = useState("");
   const [selectedItem, setSelectedItem] = useState<ItemOption | null>(null);
-  const [quantity, setQuantity] = useState<string>("");
+  const [quantity, setQuantity] = useState<string>("1");
   const [unit, setUnit] = useState<string>("kg");
   const [unitCost, setUnitCost] = useState<string>("");
   const [updateCatalogPrice, setUpdateCatalogPrice] = useState<boolean>(true);
@@ -101,19 +105,42 @@ export default function QuickRecordModal({
 
   const handleSelectItem = (item: ItemOption) => {
     setSelectedItem(item);
-    setUnit(item.defaultUnit);
-    setUnitCost(item.costPerUnit);
+    setUnit(item.defaultUnit || "kg");
+    setUnitCost(item.costPerUnit || "0");
     if (item.defaultResponsibleArea) {
       setResponsibleArea(item.defaultResponsibleArea);
     }
     setSearchItem("");
   };
 
+  const handleCreateNewItem = (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+
+    const existing = items.find((i) => i.name.toLowerCase() === trimmed.toLowerCase());
+    if (existing) {
+      handleSelectItem(existing);
+      return;
+    }
+
+    setSelectedItem({
+      id: "new",
+      name: trimmed,
+      isNew: true,
+      defaultUnit: "kg",
+      costPerUnit: "",
+    });
+    setUnit("kg");
+    setUnitCost("");
+    setSearchItem("");
+  };
+
   const resetForm = () => {
     setSelectedItem(null);
     setSearchItem("");
-    setQuantity("");
+    setQuantity("1");
     setUnitCost("");
+    setUnit("kg");
     setUpdateCatalogPrice(true);
     setSelectedReasonId("");
     setShowDetails(false);
@@ -128,9 +155,14 @@ export default function QuickRecordModal({
     i.name.toLowerCase().includes(searchItem.toLowerCase())
   );
 
+  const cleanSearch = searchItem.trim();
+  const exactMatchExists = items.some(
+    (i) => i.name.toLowerCase() === cleanSearch.toLowerCase()
+  );
+
   // Auto-calculated Wastage Value Preview
   const numQty = parseFloat(quantity) || 0;
-  const activeRate = parseFloat(unitCost) || (selectedItem ? parseFloat(selectedItem.costPerUnit) : 0);
+  const activeRate = parseFloat(unitCost) || (selectedItem?.costPerUnit ? parseFloat(selectedItem.costPerUnit) : 0);
   const computedValue = numQty * activeRate;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -138,7 +170,7 @@ export default function QuickRecordModal({
     setError(null);
 
     if (!selectedItem) {
-      setError("Please select an item");
+      setError("Please select or enter an item");
       return;
     }
     if (!quantity || isNaN(Number(quantity)) || Number(quantity) <= 0) {
@@ -156,20 +188,27 @@ export default function QuickRecordModal({
 
     setSaving(true);
     try {
+      const payload: any = {
+        reasonId: selectedReasonId,
+        quantity: numQty,
+        unit,
+        ratePerUnit: activeRate,
+        updateItemCost: updateCatalogPrice,
+        shift: shift || undefined,
+        responsibleArea: responsibleArea || undefined,
+        notes: notes || undefined,
+      };
+
+      if (selectedItem.isNew) {
+        payload.newItemName = selectedItem.name;
+      } else {
+        payload.itemId = selectedItem.id;
+      }
+
       const res = await fetch("/api/wastage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          itemId: selectedItem.id,
-          reasonId: selectedReasonId,
-          quantity: numQty,
-          unit,
-          ratePerUnit: activeRate,
-          updateItemCost: updateCatalogPrice,
-          shift: shift || undefined,
-          responsibleArea: responsibleArea || undefined,
-          notes: notes || undefined,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -209,7 +248,7 @@ export default function QuickRecordModal({
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-700 transition"
+            className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-700 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -234,7 +273,7 @@ export default function QuickRecordModal({
                 </div>
               )}
 
-              {/* STEP 1: SELECT ITEM */}
+              {/* STEP 1: SELECT OR CREATE ITEM */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                   1. What was wasted? *
@@ -243,16 +282,23 @@ export default function QuickRecordModal({
                 {selectedItem ? (
                   <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
                     <div>
-                      <span className="font-bold text-slate-900 text-base block">{selectedItem.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900 text-base block">{selectedItem.name}</span>
+                        {selectedItem.isNew && (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 text-[10px] font-extrabold uppercase">
+                            ✨ New Item
+                          </span>
+                        )}
+                      </div>
                       <span className="text-xs text-emerald-800 font-medium">
-                        Unit: {selectedItem.defaultUnit}
+                        Unit: {unit}
                         {selectedItem.categoryName && ` • ${selectedItem.categoryName}`}
                       </span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setSelectedItem(null)}
-                      className="text-xs font-semibold text-emerald-700 hover:text-emerald-900 bg-emerald-100 hover:bg-emerald-200 px-3 py-1.5 rounded-lg transition"
+                      className="text-xs font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-100 hover:bg-emerald-200 px-3 py-1.5 rounded-xl transition cursor-pointer"
                     >
                       Change Item
                     </button>
@@ -265,40 +311,66 @@ export default function QuickRecordModal({
                         type="text"
                         value={searchItem}
                         onChange={(e) => setSearchItem(e.target.value)}
-                        placeholder="Search items (e.g. Cooked Rice, Milk, Chicken)..."
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && cleanSearch) {
+                            e.preventDefault();
+                            if (filteredItems.length === 1 && filteredItems[0].name.toLowerCase() === cleanSearch.toLowerCase()) {
+                              handleSelectItem(filteredItems[0]);
+                            } else {
+                              handleCreateNewItem(cleanSearch);
+                            }
+                          }
+                        }}
+                        placeholder="Type or search item name (e.g. Cooked Rice, Paneer, Milk)..."
                         className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-hidden"
                       />
                     </div>
 
-                    <div className="max-h-36 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100 bg-slate-50/50">
-                      {filteredItems.length === 0 ? (
-                        <div className="p-4 text-center text-xs text-slate-500">
-                          {items.length === 0
-                            ? "No items configured yet. Please add items in the Items tab."
-                            : "No matching items found."}
-                        </div>
-                      ) : (
-                        filteredItems.map((item) => (
-                          <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => handleSelectItem(item)}
-                            className="w-full text-left p-2.5 hover:bg-emerald-50/70 transition flex items-center justify-between group"
-                          >
-                            <div>
-                              <span className="font-semibold text-slate-900 text-sm group-hover:text-emerald-800">
-                                {item.name}
-                              </span>
-                              {item.categoryName && (
-                                <span className="text-[11px] text-slate-500 ml-2">({item.categoryName})</span>
-                              )}
-                            </div>
-                            <span className="text-xs font-bold text-slate-700 group-hover:text-emerald-700">
-                              {formatCurrency(item.costPerUnit)} / {item.defaultUnit}
-                            </span>
-                          </button>
-                        ))
+                    <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100 bg-slate-50/50 p-1">
+                      {/* Create New Item prompt */}
+                      {cleanSearch && !exactMatchExists && (
+                        <button
+                          type="button"
+                          onClick={() => handleCreateNewItem(cleanSearch)}
+                          className="w-full text-left p-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition flex items-center justify-between text-xs font-bold text-emerald-900 cursor-pointer mb-1"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Plus className="w-4 h-4 text-emerald-700 shrink-0" />
+                            <span>Create new item &quot;{cleanSearch}&quot;</span>
+                          </div>
+                          <span className="text-[10px] font-extrabold text-emerald-800 px-2 py-0.5 rounded bg-emerald-200">
+                            + Add & Log
+                          </span>
+                        </button>
                       )}
+
+                      {filteredItems.length === 0 && !cleanSearch && (
+                        <div className="p-4 text-center text-xs text-slate-500 space-y-1">
+                          <p className="font-semibold text-slate-700">No items configured yet.</p>
+                          <p className="text-slate-400">Type any item name above to create it on the spot!</p>
+                        </div>
+                      )}
+
+                      {filteredItems.map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => handleSelectItem(item)}
+                          className="w-full text-left p-2.5 hover:bg-emerald-50/70 transition flex items-center justify-between group rounded-lg cursor-pointer"
+                        >
+                          <div>
+                            <span className="font-semibold text-slate-900 text-sm group-hover:text-emerald-800">
+                              {item.name}
+                            </span>
+                            {item.categoryName && (
+                              <span className="text-[11px] text-slate-500 ml-2">({item.categoryName})</span>
+                            )}
+                          </div>
+                          <span className="text-xs font-bold text-slate-700 group-hover:text-emerald-700">
+                            {formatCurrency(item.costPerUnit)} / {item.defaultUnit}
+                          </span>
+                        </button>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -310,7 +382,7 @@ export default function QuickRecordModal({
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                        Quantity *
+                        Quantity & Unit *
                       </label>
                       <div className="flex gap-1.5">
                         <input
@@ -322,15 +394,23 @@ export default function QuickRecordModal({
                           placeholder="e.g. 1.5"
                           className="block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-base font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
                         />
-                        <div className="px-3 py-2.5 rounded-xl bg-slate-100 border border-slate-200 font-bold text-xs text-slate-700 flex items-center justify-center min-w-[50px]">
-                          {unit}
-                        </div>
+                        <select
+                          value={unit}
+                          onChange={(e) => setUnit(e.target.value)}
+                          className="px-2.5 py-2.5 rounded-xl bg-slate-100 border border-slate-300 font-bold text-xs text-slate-800 focus:border-emerald-500 focus:outline-hidden cursor-pointer"
+                        >
+                          {STANDARD_UNITS.map((u) => (
+                            <option key={u} value={u}>
+                              {u}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
 
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                        Rate / {unit} (₹)
+                        Rate / {unit} (₹) *
                       </label>
                       <input
                         type="number"
@@ -351,10 +431,12 @@ export default function QuickRecordModal({
                       id="updateCatalogCost"
                       checked={updateCatalogPrice}
                       onChange={(e) => setUpdateCatalogPrice(e.target.checked)}
-                      className="rounded text-emerald-600 focus:ring-emerald-500"
+                      className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                     />
-                    <label htmlFor="updateCatalogCost" className="cursor-pointer">
-                      Save new rate (₹{activeRate.toFixed(2)}) as default in item catalog
+                    <label htmlFor="updateCatalogCost" className="cursor-pointer font-medium">
+                      {selectedItem.isNew
+                        ? `Save "${selectedItem.name}" to Item Catalog for future logs`
+                        : `Update default rate (₹${activeRate.toFixed(2)}) in Item Catalog`}
                     </label>
                   </div>
 
@@ -384,7 +466,7 @@ export default function QuickRecordModal({
                         key={r.id}
                         type="button"
                         onClick={() => setSelectedReasonId(r.id)}
-                        className={`p-2.5 rounded-xl text-xs font-bold transition text-center border ${
+                        className={`p-2.5 rounded-xl text-xs font-bold transition text-center border cursor-pointer ${
                           selectedReasonId === r.id
                             ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
                             : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
@@ -403,7 +485,7 @@ export default function QuickRecordModal({
                   <button
                     type="button"
                     onClick={() => setShowDetails(!showDetails)}
-                    className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1.5"
+                    className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1.5 cursor-pointer"
                   >
                     <span>More details (Shift, Area, Notes)</span>
                     <ChevronDown

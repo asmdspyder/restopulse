@@ -52,18 +52,19 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { itemId, reasonId, quantity, unit, ratePerUnit, updateItemCost = true, shift, responsibleArea, notes, recordedAt } = body;
+    const { itemId, newItemName, reasonId, quantity, unit, ratePerUnit, updateItemCost = true, shift, responsibleArea, notes, recordedAt } = body;
 
-    if (!itemId || !reasonId || quantity === undefined || isNaN(Number(quantity)) || Number(quantity) <= 0) {
+    if ((!itemId && !newItemName) || !reasonId || quantity === undefined || isNaN(Number(quantity)) || Number(quantity) <= 0) {
       return NextResponse.json(
-        { error: "Please provide valid item, wastage reason, and quantity greater than 0" },
+        { error: "Please provide a valid item name, wastage reason, and quantity greater than 0" },
         { status: 400 }
       );
     }
 
     const record = await recordWastage({
       restaurantId: auth.restaurant.id,
-      itemId,
+      itemId: itemId || undefined,
+      newItemName: newItemName ? newItemName.trim() : undefined,
       reasonId,
       quantity: parseFloat(quantity),
       unit,

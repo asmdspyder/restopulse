@@ -4,7 +4,9 @@ import { eq, and, desc, gte, lte, sql, ilike } from "drizzle-orm";
 
 export interface RecordWastageInput {
   restaurantId: string;
-  itemId: string;
+  itemId?: string;
+  newItemName?: string;
+  categoryId?: string;
   reasonId: string;
   quantity: number;
   unit?: string;
@@ -21,6 +23,7 @@ export async function recordWastage(input: RecordWastageInput) {
   const {
     restaurantId,
     itemId,
+    newItemName,
     reasonId,
     quantity,
     updateItemCost = true,
@@ -31,25 +34,125 @@ export async function recordWastage(input: RecordWastageInput) {
     createdBy,
   } = input;
 
-  // 1. Fetch item with category
-  const [item] = await db
-    .select({
-      id: items.id,
-      name: items.name,
-      costPerUnit: items.costPerUnit,
-      defaultUnit: items.defaultUnit,
-      categoryId: items.categoryId,
-      defaultResponsibleArea: items.defaultResponsibleArea,
-      categoryName: categories.name,
-    })
-    .from(items)
-    .leftJoin(categories, eq(items.categoryId, categories.id))
-    .where(and(eq(items.id, itemId), eq(items.restaurantId, restaurantId)))
-    .limit(1);
+  let targetItem: {
+    id: string;
+    name: string;
+    costPerUnit: string;
+    defaultUnit: string;
+    categoryId: string | null;
+    defaultResponsibleArea: string | null;
+    categoryName: string | null;
+  } | null = null;
 
-  if (!item) {
-    throw new Error("Item not found or does not belong to this restaurant");
+  // 1. If itemId is provided and not 'new', fetch item
+  if (itemId && itemId !== "new") {
+    const [existingItem] = await db
+      .select({
+        id: items.id,
+        name: items.name,
+        costPerUnit: items.costPerUnit,
+        defaultUnit: items.defaultUnit,
+        categoryId: items.categoryId,
+        defaultResponsibleArea: items.defaultResponsibleArea,
+        categoryName: categories.name,
+      })
+      .from(items)
+      .leftJoin(categories, eq(items.categoryId, categories.id))
+      .where(and(eq(items.id, itemId), eq(items.restaurantId, restaurantId)))
+      .limit(1);
+
+    if (existingItem) {
+      targetItem = existingItem;
+    }
   }
+
+  // 1b. If no item found but newItemName is provided, find or create the item
+  if (!targetItem && newItemName && newItemName.trim()) {
+    const cleanName = newItemName.trim();
+    
+    // Check if item with this name already exists
+    const [existingByName] = await db
+      .select({
+        id: items.id,
+        name: items.name,
+        costPerUnit: items.costPerUnit,
+        defaultUnit: items.defaultUnit,
+        categoryId: items.categoryId,
+        defaultResponsibleArea: items.defaultResponsibleArea,
+        categoryName: categories.name,
+      })
+      .from(items)
+      .leftJoin(categories, eq(items.categoryId, categories.id))
+      .where(and(ilike(items.name, cleanName), eq(items.restaurantId, restaurantId)))
+      .limit(1);
+
+    if (existingByName) {
+      targetItem = existingByName;
+    } else {
+      // Find or create default category
+      let categoryId = input.categoryId;
+      let categoryName = "Food";
+
+      if (!categoryId) {
+        const [firstCat] = await db
+          .select({ id: categories.id, name: categories.name })
+          .from(categories)
+          .where(eq(categories.restaurantId, restaurantId))
+          .limit(1);
+
+        if (firstCat) {
+          categoryId = firstCat.id;
+          categoryName = firstCat.name;
+        } else {
+          const [newCat] = await db
+            .insert(categories)
+            .values({
+              restaurantId,
+              name: "Food",
+              isDefault: true,
+              isActive: true,
+            })
+            .returning();
+          categoryId = newCat.id;
+          categoryName = newCat.name;
+        }
+      }
+
+      const initialRate = (input.ratePerUnit !== undefined && input.ratePerUnit >= 0)
+        ? input.ratePerUnit.toFixed(2)
+        : "0.00";
+      const initialUnit = input.unit || "kg";
+
+      const [createdItem] = await db
+        .insert(items)
+        .values({
+          restaurantId,
+          name: cleanName,
+          categoryId,
+          defaultUnit: initialUnit,
+          costPerUnit: initialRate,
+          defaultResponsibleArea: responsibleArea || "Kitchen",
+          isActive: true,
+        })
+        .returning();
+
+      targetItem = {
+        id: createdItem.id,
+        name: createdItem.name,
+        costPerUnit: createdItem.costPerUnit,
+        defaultUnit: createdItem.defaultUnit,
+        categoryId: createdItem.categoryId,
+        defaultResponsibleArea: createdItem.defaultResponsibleArea,
+        categoryName,
+      };
+    }
+  }
+
+  if (!targetItem) {
+    throw new Error("Please specify a valid item name or select an existing item");
+  }
+
+  const item = targetItem;
 
   // 2. Fetch reason
   const [reason] = await db
