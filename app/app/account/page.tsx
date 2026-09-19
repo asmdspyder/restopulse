@@ -311,11 +311,10 @@ function AccountManagementContent() {
           <div className="flex items-center gap-2.5">
             <Link
               href="/app"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#bed6c2] text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 font-bold text-xs shadow-xs transition group"
-              title="Return to Operations Hub"
+              className="p-2 rounded-xl bg-white border border-[#bed6c2] hover:bg-emerald-50 text-slate-700 shadow-xs transition group flex items-center justify-center shrink-0"
+              title="Back to Operations Hub"
             >
-              <ArrowLeft className="w-3.5 h-3.5 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
-              <span>← Operations Hub</span>
+              <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
             </Link>
 
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">

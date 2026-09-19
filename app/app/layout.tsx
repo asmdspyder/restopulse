@@ -213,10 +213,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Link
               href="/app"
               className="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 font-bold text-xs flex items-center gap-2 border border-slate-200/80 transition group"
-              title="Return to Operations Hub"
+              title="Back to Operations Hub"
             >
               <ArrowLeft className="w-4 h-4 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
-              <span>← Operations Hub</span>
+              <span>Operations Hub</span>
             </Link>
           </div>
 
@@ -386,10 +386,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-2.5">
           <Link
             href="/app"
-            className="p-1 rounded-lg bg-slate-100 text-slate-700 font-bold text-xs flex items-center gap-1"
+            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition"
+            title="Back to Operations Hub"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Hub</span>
+            <ArrowLeft className="w-4 h-4" />
           </Link>
           <div className="min-w-0">
             <span className="font-bold text-xs text-slate-900 truncate block max-w-[130px]">

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import {
   History,
@@ -131,7 +132,16 @@ export default function WastageHistoryPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Wastage History</h1>
+          <div className="flex items-center gap-2.5">
+            <Link
+              href="/app"
+              className="p-2 rounded-xl bg-white border border-[#bed6c2] hover:bg-emerald-50 text-slate-700 shadow-xs transition group flex items-center justify-center shrink-0"
+              title="Back to Operations Hub"
+            >
+              <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
+            </Link>
+            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Wastage History</h1>
+          </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Complete historical record of every logged wastage event with preserved pricing snapshots.
           </p>

@@ -361,11 +361,10 @@ export default function ChecklistBuilderPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/app"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 font-bold text-xs transition group"
-            title="Return to Operations Hub"
+            className="p-2 rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 transition group flex items-center justify-center shrink-0"
+            title="Back to Operations Hub"
           >
-            <ArrowLeft className="w-3.5 h-3.5 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
-            <span>← Operations Hub</span>
+            <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
           </Link>
 
           <div>

@@ -54,18 +54,15 @@ export default function ChecklistHistoryPage() {
       {/* 1. HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2.5 mb-2">
+          <div className="flex items-center gap-2.5">
             <Link
               href="/app"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#bed6c2] text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 font-bold text-xs shadow-xs transition group"
-              title="Return to Operations Hub"
+              className="p-2 rounded-xl bg-white border border-[#bed6c2] hover:bg-emerald-50 text-slate-700 shadow-xs transition group flex items-center justify-center shrink-0"
+              title="Back to Operations Hub"
             >
-              <ArrowLeft className="w-3.5 h-3.5 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
-              <span>← Operations Hub</span>
+              <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
             </Link>
-          </div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Checklist History & Logs</h1>
+            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Checklist History & Logs</h1>
             <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
               {historyList.length} Records
             </span>
