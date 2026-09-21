@@ -4,7 +4,7 @@ import { users, restaurants } from "@/lib/db/schema";
 import { getSession, createSessionToken, setSessionCookie } from "@/lib/auth/session";
 import { eq, asc, sql } from "drizzle-orm";
 
-export async function POST(req: NextRequest) {
+async function handleImpersonateRequest(req: NextRequest) {
   try {
     const currentSession = await getSession();
     
@@ -17,8 +17,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
-    const { restaurantId, userId } = body;
+    let body: any = {};
+    if (req.method === "POST") {
+      try {
+        body = await req.json();
+      } catch {
+        body = {};
+      }
+    }
+
+    const { searchParams } = new URL(req.url);
+    const restaurantId = body?.restaurantId || body?.accountId || body?.id || searchParams.get("restaurantId") || searchParams.get("accountId") || searchParams.get("id");
+    const userId = body?.userId || searchParams.get("userId");
 
     if (!restaurantId && !userId) {
       return NextResponse.json(
@@ -111,6 +121,10 @@ export async function POST(req: NextRequest) {
 
     await setSessionCookie(token);
 
+    if (req.method === "GET") {
+      return NextResponse.redirect(new URL("/app", req.url));
+    }
+
     return NextResponse.json({
       success: true,
       user: {
@@ -126,10 +140,18 @@ export async function POST(req: NextRequest) {
       redirect: "/app",
     });
   } catch (error: any) {
-    console.error("POST /api/admin/impersonate error:", error);
+    console.error("impersonate error:", error);
     return NextResponse.json(
       { error: error.message || "Failed to impersonate account" },
       { status: 500 }
     );
   }
+}
+
+export async function POST(req: NextRequest) {
+  return handleImpersonateRequest(req);
+}
+
+export async function GET(req: NextRequest) {
+  return handleImpersonateRequest(req);
 }
