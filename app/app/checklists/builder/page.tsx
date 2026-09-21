@@ -16,6 +16,17 @@ import {
   ArrowLeft,
   CheckSquare,
   Sparkles,
+  ChevronDown,
+  ChevronUp,
+  Search,
+  Sliders,
+  HelpCircle,
+  Copy,
+  Clock,
+  FileText,
+  X,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 
 export default function ChecklistBuilderPage() {
@@ -26,18 +37,15 @@ export default function ChecklistBuilderPage() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
 
   // Current editing template structure
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState("Daily Opening Checklist");
   const [description, setDescription] = useState("");
   const [frequency, setFrequency] = useState("daily");
   const [targetTime, setTargetTime] = useState("10:00 AM");
   const [sections, setSections] = useState<any[]>([]);
-  const [activeSectionIndex, setActiveSectionIndex] = useState<number>(0);
 
-  // Highlighting & animation state
-  const [highlightedSecIdx, setHighlightedSecIdx] = useState<number | null>(null);
-  const [highlightedItemIdx, setHighlightedItemIdx] = useState<number | null>(null);
-
-  // Custom modal / alerts state (Zero window.alert)
+  // UI state
+  const [collapsedSections, setCollapsedSections] = useState<{ [secIdx: number]: boolean }>({});
+  const [searchQuery, setSearchQuery] = useState("");
   const [toastMsg, setToastMsg] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -47,8 +55,8 @@ export default function ChecklistBuilderPage() {
     onConfirm: () => void;
   }>({ isOpen: false, title: "", message: "", onConfirm: () => {} });
 
-  const sectionsContainerRef = useRef<HTMLDivElement>(null);
-  const itemsContainerRef = useRef<HTMLDivElement>(null);
+  // Focus helper for newly added items
+  const lastAddedInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchTemplates();
@@ -94,33 +102,29 @@ export default function ChecklistBuilderPage() {
       if (res.ok) {
         const data = await res.json();
         const t = data.template;
-        setTitle(t.title || "");
+        setTitle(t.title || "Daily Opening Checklist");
         setDescription(t.description || "");
         setFrequency(t.frequency || "daily");
         setTargetTime(t.targetTime || "10:00 AM");
 
-        // Keep checklist task sections
         const loadedSections = (t.sections || []).filter(
-          (s: any) => s.sectionType === "checklist" || !s.sectionType || s.items?.length > 0
+          (s: any) => s.sectionType === "checklist" || !s.sectionType || (s.items && s.items.length > 0)
         );
         setSections(loadedSections);
-        if (loadedSections.length > 0) {
-          setActiveSectionIndex(0);
-        }
       }
     } catch (e) {
       console.error(e);
     }
   };
 
-  // Section Management with Smooth Scroll & Pulse Animation
+  // Section Management
   const handleAddSection = () => {
     const nextCode = String.fromCharCode(65 + sections.length);
     const newSecNumber = sections.length + 1;
     const newSec = {
       sectionCode: nextCode,
-      title: `New Section ${newSecNumber}`,
-      description: "Standard checklist tasks",
+      title: `New Category ${newSecNumber}`,
+      description: "",
       sectionType: "checklist",
       displayOrder: newSecNumber,
       items: [
@@ -135,58 +139,40 @@ export default function ChecklistBuilderPage() {
       ],
     };
 
-    const updatedSections = [...sections, newSec];
-    const newIndex = updatedSections.length - 1;
-    setSections(updatedSections);
-    setActiveSectionIndex(newIndex);
-    setHighlightedSecIdx(newIndex);
-    showToast(`Added Section ${nextCode}`);
+    const updated = [...sections, newSec];
+    setSections(updated);
+    showToast(`Added new category "${newSec.title}"`);
 
-    // Auto-scroll to bottom of sections panel
-    setTimeout(() => {
-      if (sectionsContainerRef.current) {
-        sectionsContainerRef.current.scrollTo({
-          top: sectionsContainerRef.current.scrollHeight,
-          behavior: "smooth",
-        });
-      }
-    }, 50);
+    // Ensure it is expanded
+    setCollapsedSections((prev) => ({ ...prev, [updated.length - 1]: false }));
 
-    // Remove highlight pulse after 1.8s
+    // Scroll to bottom
     setTimeout(() => {
-      setHighlightedSecIdx(null);
-    }, 1800);
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    }, 100);
   };
 
-  const handleDeleteSection = (secIdx: number, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
+  const handleDeleteSection = (secIdx: number) => {
     if (sections.length <= 1) {
-      setErrorMessage("At least one section is required in the SOP template.");
+      setErrorMessage("At least one category is required in the SOP template.");
       return;
     }
-    const secTitle = sections[secIdx]?.title || "Section";
+    const secTitle = sections[secIdx]?.title || "Category";
 
     setConfirmDialog({
       isOpen: true,
-      title: "Delete Section",
-      message: `Are you sure you want to delete "${secTitle}" and its checklist items?`,
+      title: `Delete "${secTitle}"?`,
+      message: `This will remove the category and all ${(sections[secIdx]?.items || []).length} check items inside it.`,
       onConfirm: () => {
         const updated = sections.filter((_, i) => i !== secIdx);
         setSections(updated);
-
-        if (activeSectionIndex >= updated.length) {
-          setActiveSectionIndex(Math.max(0, updated.length - 1));
-        } else if (activeSectionIndex === secIdx) {
-          setActiveSectionIndex(Math.max(0, secIdx - 1));
-        }
-        showToast(`Deleted section "${secTitle}"`);
+        showToast(`Deleted category "${secTitle}"`);
         setConfirmDialog({ isOpen: false, title: "", message: "", onConfirm: () => {} });
       },
     });
   };
 
-  const handleMoveSection = (secIdx: number, direction: "up" | "down", e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
+  const handleMoveSection = (secIdx: number, direction: "up" | "down") => {
     const targetIdx = direction === "up" ? secIdx - 1 : secIdx + 1;
     if (targetIdx < 0 || targetIdx >= sections.length) return;
 
@@ -195,10 +181,24 @@ export default function ChecklistBuilderPage() {
     copy[secIdx] = copy[targetIdx];
     copy[targetIdx] = temp;
     setSections(copy);
-    setActiveSectionIndex(targetIdx);
   };
 
-  // Item Management inside Active Section with Smooth Scroll & Pulse Animation
+  const toggleCollapseSection = (secIdx: number) => {
+    setCollapsedSections((prev) => ({
+      ...prev,
+      [secIdx]: !prev[secIdx],
+    }));
+  };
+
+  const toggleAllSections = (collapse: boolean) => {
+    const map: { [secIdx: number]: boolean } = {};
+    sections.forEach((_, i) => {
+      map[i] = collapse;
+    });
+    setCollapsedSections(map);
+  };
+
+  // Item Management inside a Section
   const handleAddItem = (secIdx: number) => {
     const copy = [...sections];
     const sec = copy[secIdx];
@@ -206,7 +206,7 @@ export default function ChecklistBuilderPage() {
     sec.items = sec.items || [];
     const newItemIdx = sec.items.length;
     sec.items.push({
-      label: `Check item ${newItemIdx + 1}`,
+      label: "",
       fieldType: "checkbox",
       isRequired: true,
       allowsRemarks: true,
@@ -214,22 +214,15 @@ export default function ChecklistBuilderPage() {
       displayOrder: newItemIdx + 1,
     });
     setSections(copy);
-    setHighlightedItemIdx(newItemIdx);
 
-    // Auto-scroll to bottom of items panel
+    // Expand section if collapsed
+    setCollapsedSections((prev) => ({ ...prev, [secIdx]: false }));
+
     setTimeout(() => {
-      if (itemsContainerRef.current) {
-        itemsContainerRef.current.scrollTo({
-          top: itemsContainerRef.current.scrollHeight,
-          behavior: "smooth",
-        });
+      if (lastAddedInputRef.current) {
+        lastAddedInputRef.current.focus();
       }
     }, 50);
-
-    // Remove highlight pulse after 1.8s
-    setTimeout(() => {
-      setHighlightedItemIdx(null);
-    }, 1800);
   };
 
   const handleDeleteItem = (secIdx: number, itemIdx: number) => {
@@ -253,8 +246,56 @@ export default function ChecklistBuilderPage() {
     setSections(copy);
   };
 
-  const handleSaveTemplate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleDuplicateItem = (secIdx: number, itemIdx: number) => {
+    const copy = [...sections];
+    const sec = copy[secIdx];
+    if (!sec || !sec.items) return;
+    const original = sec.items[itemIdx];
+    const duplicated = {
+      ...original,
+      id: undefined, // New ID will be generated
+      label: `${original.label} (Copy)`,
+      displayOrder: sec.items.length + 1,
+    };
+    sec.items.splice(itemIdx + 1, 0, duplicated);
+    setSections(copy);
+    showToast(`Duplicated task`);
+  };
+
+  // Save Template with Full Screen Modal Spinner
+  const handleSaveTemplate = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+
+    // Validation
+    if (!title.trim()) {
+      setErrorMessage("Please enter a template title");
+      return;
+    }
+
+    if (sections.length === 0) {
+      setErrorMessage("Please create at least one category/section");
+      return;
+    }
+
+    for (let sIdx = 0; sIdx < sections.length; sIdx++) {
+      const s = sections[sIdx];
+      if (!s.title.trim()) {
+        setErrorMessage(`Category ${sIdx + 1} is missing a title`);
+        return;
+      }
+      if (!s.items || s.items.length === 0) {
+        setErrorMessage(`Category "${s.title}" has no check items. Please add at least 1 item or delete the category.`);
+        return;
+      }
+      for (let itIdx = 0; itIdx < s.items.length; itIdx++) {
+        const it = s.items[itIdx];
+        if (!it.label.trim()) {
+          setErrorMessage(`Category "${s.title}", Task #${itIdx + 1} cannot have an empty name.`);
+          return;
+        }
+      }
+    }
+
     setSaving(true);
     setErrorMessage("");
 
@@ -264,7 +305,7 @@ export default function ChecklistBuilderPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: selectedTemplateId || undefined,
-          title: title.trim() || "Opening Checklist",
+          title: title.trim(),
           description: description.trim(),
           frequency,
           targetTime,
@@ -289,9 +330,11 @@ export default function ChecklistBuilderPage() {
 
   if (loading) {
     return (
-      <div className="py-24 flex flex-col items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-700 mb-2" />
-        <span className="text-xs font-semibold text-slate-600">Loading SOP Template Builder...</span>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center">
+        <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-800 mb-3 shadow-xs">
+          <Loader2 className="w-6 h-6 animate-spin text-emerald-700" />
+        </div>
+        <span className="text-xs font-bold text-slate-700">Loading SOP Template Customizer...</span>
       </div>
     );
   }
@@ -304,9 +347,9 @@ export default function ChecklistBuilderPage() {
         <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto mb-3 font-bold">
           <Lock className="w-6 h-6" />
         </div>
-        <h3 className="font-bold text-slate-900 text-base">SOP Builder Restricted</h3>
+        <h3 className="font-bold text-slate-900 text-base">SOP Customizer Restricted</h3>
         <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-          Template customization is restricted to Restaurant Admins and authorized SOP managers.
+          Template customization is restricted to Restaurant Admins and authorized managers.
         </p>
         <Link
           href="/app/checklists"
@@ -318,10 +361,30 @@ export default function ChecklistBuilderPage() {
     );
   }
 
-  const activeSection = sections[activeSectionIndex] || sections[0];
+  const totalItemsCount = sections.reduce((sum, s) => sum + (s.items?.length || 0), 0);
 
   return (
-    <form onSubmit={handleSaveTemplate} className="h-[calc(100vh-100px)] flex flex-col space-y-3 max-w-7xl mx-auto pb-4">
+    <div className="space-y-6 max-w-5xl mx-auto pb-24">
+      {/* 1. CENTERED FULL-SCREEN SAVING OVERLAY MODAL */}
+      {saving && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl border border-slate-100 flex flex-col items-center text-center space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 rounded-3xl bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center shadow-inner">
+              <Loader2 className="w-8 h-8 animate-spin text-emerald-700" />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900">Saving SOP Template</h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                Updating version & synchronizing checklist items with your workspace...
+              </p>
+            </div>
+            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+              <div className="bg-emerald-600 h-full w-2/3 rounded-full animate-pulse" />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Toast Notification */}
       {toastMsg && (
         <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in">
@@ -340,14 +403,14 @@ export default function ChecklistBuilderPage() {
               <button
                 type="button"
                 onClick={() => setConfirmDialog({ isOpen: false, title: "", message: "", onConfirm: () => {} })}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={confirmDialog.onConfirm}
-                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md shadow-rose-600/20"
+                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md shadow-rose-600/20 cursor-pointer"
               >
                 Delete
               </button>
@@ -356,384 +419,427 @@ export default function ChecklistBuilderPage() {
         </div>
       )}
 
-      {/* 1. TOP HEADER & SAVE BAR */}
-      <div className="bg-white p-3.5 sm:p-4 rounded-3xl border border-[#bed6c2] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+      {/* 2. TOP HEADER & ACTION BAR */}
+      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#bed6c2] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
-            href="/app"
-            className="p-2 rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 transition group flex items-center justify-center shrink-0"
-            title="Back to Operations Hub"
+            href="/app/checklists"
+            className="p-2.5 rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 transition group flex items-center justify-center shrink-0"
+            title="Back to Daily Checklist"
           >
             <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
           </Link>
 
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">
+              <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
                 SOP Template Customizer
               </h1>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-[10px] font-bold border border-emerald-300">
-                {sections.length} Sections
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold border border-emerald-300">
+                {sections.length} Categories • {totalItemsCount} Tasks
               </span>
             </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Easily add, rename, and organize categories and check tasks for your staff.
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-auto">
-          <div className="flex items-center gap-2 text-xs">
+        <div className="flex items-center gap-2.5 self-end sm:self-auto">
+          <button
+            type="button"
+            onClick={handleAddSection}
+            className="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-emerald-50 border border-slate-200 text-slate-800 hover:text-emerald-900 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+          >
+            <Plus className="w-4 h-4 text-emerald-700" />
+            <span>+ Add Category</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleSaveTemplate()}
+            disabled={saving}
+            className="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 flex items-center gap-2 cursor-pointer transition disabled:opacity-50"
+          >
+            <Save className="w-4 h-4" />
+            <span>Save Template</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 3. TEMPLATE GENERAL SETTINGS CARD */}
+      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#bed6c2] shadow-xs space-y-3">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <Sliders className="w-4 h-4 text-emerald-700" />
+            <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
+              Template Overview
+            </h2>
+          </div>
+          <span className="text-[11px] text-slate-400 font-medium">Standard Daily SOP</span>
+        </div>
+
+        <div className="grid sm:grid-cols-3 gap-3">
+          <div className="sm:col-span-2">
+            <label className="block text-[11px] font-bold text-slate-600 mb-1">
+              Checklist Title
+            </label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Template Title"
-              className="p-1.5 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-slate-50 focus:bg-white w-40 sm:w-48"
+              placeholder="e.g. Daily Opening Checklist"
+              className="w-full p-2.5 px-3 rounded-xl border border-slate-200 font-bold text-xs text-slate-900 bg-slate-50/50 focus:bg-white focus:border-emerald-600 focus:outline-hidden"
             />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-slate-600 mb-1 flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-slate-400" />
+              <span>Target Completion Time</span>
+            </label>
             <input
               type="text"
               value={targetTime}
               onChange={(e) => setTargetTime(e.target.value)}
-              placeholder="10:00 AM"
-              className="p-1.5 px-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-slate-50 focus:bg-white w-24"
+              placeholder="e.g. 10:00 AM"
+              className="w-full p-2.5 px-3 rounded-xl border border-slate-200 font-bold text-xs text-slate-900 bg-slate-50/50 focus:bg-white focus:border-emerald-600 focus:outline-hidden"
             />
           </div>
-
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 flex items-center gap-1.5 cursor-pointer transition shrink-0"
-          >
-            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-            <span>Save Version</span>
-          </button>
         </div>
       </div>
 
       {errorMessage && (
-        <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2 shrink-0">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{errorMessage}</span>
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center justify-between gap-2 shadow-xs">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+            <span>{errorMessage}</span>
+          </div>
+          <button onClick={() => setErrorMessage("")} className="cursor-pointer text-rose-400 hover:text-rose-700">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
-      {/* 2. FIXED MASTER-DETAIL WORKSPACE */}
-      <div className="flex-1 grid lg:grid-cols-12 gap-4 min-h-0 overflow-hidden">
-        {/* LEFT COLUMN: SCROLLABLE SECTIONS LIST */}
-        <div className="lg:col-span-4 h-full flex flex-col bg-white rounded-3xl border border-[#bed6c2] p-3 sm:p-4 shadow-xs overflow-hidden">
-          <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 shrink-0">
-            <div>
-              <h2 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Checklist Sections</h2>
-              <span className="text-[10px] text-slate-400">Select section to edit tasks</span>
-            </div>
-            <button
-              type="button"
-              onClick={handleAddSection}
-              className="px-2.5 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-xs flex items-center gap-1 transition cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add</span>
-            </button>
-          </div>
-
-          {/* Scrollable Section Items List */}
-          <div ref={sectionsContainerRef} className="flex-1 overflow-y-auto space-y-1.5 py-2 pr-1">
-            {sections.map((sec, idx) => {
-              const isSelected = idx === activeSectionIndex;
-              const isHighlighted = idx === highlightedSecIdx;
-              const itemCount = (sec.items || []).length;
-
-              return (
-                <div
-                  key={idx}
-                  onClick={() => setActiveSectionIndex(idx)}
-                  className={`p-2.5 rounded-2xl border transition duration-300 flex items-center justify-between gap-2 cursor-pointer ${
-                    isHighlighted
-                      ? "bg-amber-100 border-amber-500 ring-2 ring-emerald-500 scale-[1.02] shadow-md"
-                      : isSelected
-                      ? "bg-emerald-50/90 border-emerald-500 text-emerald-950 shadow-xs"
-                      : "bg-slate-50/70 border-slate-200/80 hover:bg-slate-100 text-slate-700"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span
-                      className={`w-5 h-5 rounded-lg text-[10px] font-extrabold flex items-center justify-center shrink-0 ${
-                        isSelected
-                          ? "bg-emerald-700 text-white"
-                          : "bg-slate-200 text-slate-600"
-                      }`}
-                    >
-                      {sec.sectionCode || String.fromCharCode(65 + idx)}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <span className="font-bold text-xs block truncate">
-                        {sec.title || `Section ${idx + 1}`}
-                      </span>
-                      <span className="text-[10px] text-slate-400 block truncate">
-                        {itemCount} check items
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Section Controls */}
-                  <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      onClick={(e) => handleMoveSection(idx, "up", e)}
-                      disabled={idx === 0}
-                      className="p-1 rounded text-slate-400 hover:text-slate-700 disabled:opacity-20"
-                      title="Move Up"
-                    >
-                      <ArrowUp className="w-3 h-3" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => handleMoveSection(idx, "down", e)}
-                      disabled={idx === sections.length - 1}
-                      className="p-1 rounded text-slate-400 hover:text-slate-700 disabled:opacity-20"
-                      title="Move Down"
-                    >
-                      <ArrowDown className="w-3 h-3" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => handleDeleteSection(idx, e)}
-                      className="p-1 rounded text-slate-400 hover:text-rose-600 ml-0.5"
-                      title="Delete Section"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="pt-2 border-t border-slate-100 shrink-0">
-            <button
-              type="button"
-              onClick={handleAddSection}
-              className="w-full py-2 rounded-xl border border-dashed border-slate-300 hover:border-emerald-600 text-slate-600 hover:text-emerald-800 font-bold text-xs flex items-center justify-center gap-1 transition cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ Add New Section</span>
-            </button>
-          </div>
+      {/* 4. CONTROLS BAR: SEARCH & COLLAPSE ALL */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Search tasks or categories..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 rounded-xl bg-white border border-[#bed6c2] text-xs text-slate-800 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-hidden shadow-xs"
+          />
         </div>
 
-        {/* RIGHT COLUMN: SCROLLABLE ITEMS WORKSPACE */}
-        <div className="lg:col-span-8 h-full flex flex-col bg-white rounded-3xl border border-[#bed6c2] p-4 sm:p-5 shadow-xs overflow-hidden">
-          {activeSection ? (
-            <div className="flex-1 flex flex-col min-h-0">
-              {/* Active Section Header Settings */}
-              <div className="pb-3 border-b border-slate-100 space-y-2 shrink-0">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-lg bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center">
-                      {activeSection.sectionCode || String.fromCharCode(65 + activeSectionIndex)}
-                    </span>
-                    <span className="text-xs font-bold text-slate-900">
-                      Section {activeSectionIndex + 1} Configuration
-                    </span>
-                  </div>
-                </div>
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          <button
+            type="button"
+            onClick={() => toggleAllSections(false)}
+            className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer"
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
+            <span>Expand All</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => toggleAllSections(true)}
+            className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-bold flex items-center gap-1 shadow-xs cursor-pointer"
+          >
+            <Minimize2 className="w-3.5 h-3.5" />
+            <span>Collapse All</span>
+          </button>
+        </div>
+      </div>
 
-                <div className="grid sm:grid-cols-3 gap-2">
-                  <div className="sm:col-span-2">
-                    <label className="block text-[10px] font-bold text-slate-500 mb-0.5">Section Title</label>
+      {/* 5. VISUAL SECTION CARDS LIST */}
+      <div className="space-y-4">
+        {sections.map((section: any, secIdx: number) => {
+          const isCollapsed = collapsedSections[secIdx];
+          const items = section.items || [];
+          const matchesSearch =
+            !searchQuery.trim() ||
+            section.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            items.some((it: any) => it.label.toLowerCase().includes(searchQuery.toLowerCase()));
+
+          if (!matchesSearch) return null;
+
+          return (
+            <div
+              key={secIdx}
+              className="bg-white rounded-3xl border border-[#bed6c2] shadow-xs overflow-hidden transition-all duration-200 hover:border-emerald-300"
+            >
+              {/* Category Header */}
+              <div className="p-3.5 sm:p-4 bg-slate-50/70 border-b border-slate-100 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                  <span className="w-7 h-7 rounded-xl bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-xs">
+                    {section.sectionCode || String.fromCharCode(65 + secIdx)}
+                  </span>
+
+                  <div className="flex-1 min-w-0">
                     <input
                       type="text"
                       required
-                      value={activeSection.title || ""}
+                      value={section.title || ""}
                       onChange={(e) => {
                         const copy = [...sections];
-                        copy[activeSectionIndex].title = e.target.value;
+                        copy[secIdx].title = e.target.value;
                         setSections(copy);
                       }}
-                      className="w-full p-2 rounded-xl border border-slate-200 font-bold text-xs text-slate-900 focus:border-emerald-500 focus:outline-hidden"
+                      placeholder="Category Title (e.g. Kitchen Station, Dining Area)"
+                      className="w-full p-1.5 px-2.5 rounded-xl border border-transparent hover:border-slate-300 focus:border-emerald-600 bg-transparent focus:bg-white font-extrabold text-sm sm:text-base text-slate-900 transition focus:outline-hidden"
                     />
                   </div>
+                </div>
 
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 mb-0.5">Code</label>
-                    <input
-                      type="text"
-                      value={activeSection.sectionCode || ""}
-                      onChange={(e) => {
-                        const copy = [...sections];
-                        copy[activeSectionIndex].sectionCode = e.target.value;
-                        setSections(copy);
-                      }}
-                      placeholder="e.g. A"
-                      className="w-full p-2 rounded-xl border border-slate-200 font-bold text-xs text-slate-900 focus:border-emerald-500 focus:outline-hidden"
-                    />
-                  </div>
+                {/* Header Action Controls */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="hidden sm:inline-block px-2.5 py-1 rounded-full bg-white border border-slate-200 text-slate-600 text-[10px] font-bold">
+                    {items.length} {items.length === 1 ? "task" : "tasks"}
+                  </span>
 
-                  <div className="sm:col-span-3">
-                    <input
-                      type="text"
-                      value={activeSection.description || ""}
-                      onChange={(e) => {
-                        const copy = [...sections];
-                        copy[activeSectionIndex].description = e.target.value;
-                        setSections(copy);
-                      }}
-                      placeholder="Optional station guidance note..."
-                      className="w-full p-1.5 px-2.5 rounded-lg border border-slate-200 text-[11px] text-slate-700 focus:border-emerald-500 focus:outline-hidden"
-                    />
+                  <button
+                    type="button"
+                    onClick={() => handleAddItem(secIdx)}
+                    className="px-2.5 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold text-xs flex items-center gap-1 transition cursor-pointer"
+                    title="Add task to this category"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Add Task</span>
+                  </button>
+
+                  <div className="flex items-center gap-0.5 border-l border-slate-200 pl-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleMoveSection(secIdx, "up")}
+                      disabled={secIdx === 0}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer"
+                      title="Move Category Up"
+                    >
+                      <ArrowUp className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleMoveSection(secIdx, "down")}
+                      disabled={secIdx === sections.length - 1}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer"
+                      title="Move Category Down"
+                    >
+                      <ArrowDown className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSection(secIdx)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 cursor-pointer"
+                      title="Delete Category"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleCollapseSection(secIdx)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer"
+                      title={isCollapsed ? "Expand Tasks" : "Collapse Tasks"}
+                    >
+                      {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
               </div>
 
-              {/* Items Action Subheader */}
-              <div className="flex items-center justify-between pt-2 pb-1 shrink-0">
-                <h3 className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
-                  <span>Check Items List</span>
-                  <span className="px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold">
-                    {(activeSection.items || []).length}
-                  </span>
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => handleAddItem(activeSectionIndex)}
-                  className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-bold text-xs flex items-center gap-1 transition cursor-pointer"
-                >
-                  <Plus className="w-3 h-3" />
-                  <span>Add Item</span>
-                </button>
-              </div>
+              {/* Tasks List inside Section */}
+              {!isCollapsed && (
+                <div className="p-3 sm:p-4 space-y-2 bg-white">
+                  {items.length === 0 ? (
+                    <div className="py-8 rounded-2xl border border-dashed border-slate-200 text-center text-xs text-slate-400 space-y-2">
+                      <p>No check tasks in this category yet.</p>
+                      <button
+                        type="button"
+                        onClick={() => handleAddItem(secIdx)}
+                        className="px-3 py-1.5 rounded-xl bg-emerald-700 text-white font-bold text-xs cursor-pointer"
+                      >
+                        + Add First Task
+                      </button>
+                    </div>
+                  ) : (
+                    items.map((item: any, itIdx: number) => {
+                      const isLast = itIdx === items.length - 1;
 
-              {/* Scrollable Items Container */}
-              <div ref={itemsContainerRef} className="flex-1 overflow-y-auto space-y-2 py-1 pr-1">
-                {(!activeSection.items || activeSection.items.length === 0) && (
-                  <div className="py-12 rounded-2xl border border-dashed border-slate-200 text-center text-xs text-slate-400 space-y-2">
-                    <CheckSquare className="w-6 h-6 text-slate-300 mx-auto" />
-                    <p>No check items in this section yet.</p>
+                      return (
+                        <div
+                          key={itIdx}
+                          className="group p-2.5 sm:p-3 rounded-2xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300 transition flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
+                        >
+                          {/* Task Checkbox & Name */}
+                          <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                            <span className="w-5 h-5 rounded-md border-2 border-slate-300 flex items-center justify-center text-[10px] font-bold text-slate-400 shrink-0 bg-white">
+                              {itIdx + 1}
+                            </span>
+
+                            <input
+                              type="text"
+                              ref={isLast ? lastAddedInputRef : undefined}
+                              required
+                              value={item.label || ""}
+                              onChange={(e) => {
+                                const copy = [...sections];
+                                copy[secIdx].items[itIdx].label = e.target.value;
+                                setSections(copy);
+                              }}
+                              placeholder="Type check task (e.g. Clean oil filters, Check refrigeration)"
+                              className="w-full p-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-900 focus:border-emerald-600 focus:outline-hidden"
+                            />
+                          </div>
+
+                          {/* Task Options (Required, Remarks, Move, Delete) */}
+                          <div className="flex items-center gap-2 self-end sm:self-auto text-xs shrink-0">
+                            {/* Required Toggle */}
+                            <label
+                              className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1.5 cursor-pointer select-none transition ${
+                                item.isRequired
+                                  ? "bg-amber-50 border-amber-300 text-amber-900"
+                                  : "bg-white border-slate-200 text-slate-500 hover:text-slate-800"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={item.isRequired ?? false}
+                                onChange={(e) => {
+                                  const copy = [...sections];
+                                  copy[secIdx].items[itIdx].isRequired = e.target.checked;
+                                  setSections(copy);
+                                }}
+                                className="sr-only"
+                              />
+                              <span>{item.isRequired ? "★ Required" : "Optional"}</span>
+                            </label>
+
+                            {/* Remarks/Notes Toggle */}
+                            <label
+                              className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1.5 cursor-pointer select-none transition ${
+                                item.allowsRemarks ?? true
+                                  ? "bg-emerald-50 border-emerald-300 text-emerald-900"
+                                  : "bg-white border-slate-200 text-slate-500 hover:text-slate-800"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={item.allowsRemarks ?? true}
+                                onChange={(e) => {
+                                  const copy = [...sections];
+                                  copy[secIdx].items[itIdx].allowsRemarks = e.target.checked;
+                                  setSections(copy);
+                                }}
+                                className="sr-only"
+                              />
+                              <span>💬 Remarks</span>
+                            </label>
+
+                            {/* Action Buttons */}
+                            <div className="flex items-center gap-0.5 border-l border-slate-200 pl-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleDuplicateItem(secIdx, itIdx)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer"
+                                title="Duplicate Task"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleMoveItem(secIdx, itIdx, "up")}
+                                disabled={itIdx === 0}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer"
+                                title="Move Task Up"
+                              >
+                                <ArrowUp className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleMoveItem(secIdx, itIdx, "down")}
+                                disabled={itIdx === items.length - 1}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer"
+                                title="Move Task Down"
+                              >
+                                <ArrowDown className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteItem(secIdx, itIdx)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 cursor-pointer"
+                                title="Delete Task"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+
+                  {/* Inline Add Task at Bottom of Section */}
+                  <div className="pt-2">
                     <button
                       type="button"
-                      onClick={() => handleAddItem(activeSectionIndex)}
-                      className="px-3 py-1.5 rounded-lg bg-emerald-700 text-white font-bold text-xs"
+                      onClick={() => handleAddItem(secIdx)}
+                      className="w-full py-2.5 rounded-2xl border border-dashed border-slate-300 hover:border-emerald-600 hover:bg-emerald-50/50 text-slate-600 hover:text-emerald-900 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
                     >
-                      + Add First Check Item
+                      <Plus className="w-4 h-4 text-emerald-700" />
+                      <span>+ Add Task to {section.title || "Category"}</span>
                     </button>
                   </div>
-                )}
-
-                {(activeSection.items || []).map((item: any, itIdx: number) => {
-                  const isItemHighlighted = itIdx === highlightedItemIdx;
-
-                  return (
-                    <div
-                      key={itIdx}
-                      className={`p-2.5 sm:p-3 rounded-2xl border transition duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
-                        isItemHighlighted
-                          ? "bg-amber-100 border-amber-500 ring-2 ring-emerald-500 scale-[1.01] shadow-sm"
-                          : "bg-slate-50 border-slate-200/80 hover:border-slate-300"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <span className="text-[11px] font-bold text-slate-400 w-4 shrink-0">
-                          {itIdx + 1}.
-                        </span>
-                        <input
-                          type="text"
-                          required
-                          value={item.label || ""}
-                          onChange={(e) => {
-                            const copy = [...sections];
-                            copy[activeSectionIndex].items[itIdx].label = e.target.value;
-                            setSections(copy);
-                          }}
-                          placeholder="e.g. Check refrigerator temperature (1°C - 4°C)"
-                          className="flex-1 p-1.5 px-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
-                        />
-                      </div>
-
-                      <div className="flex items-center gap-2.5 self-end sm:self-auto text-xs shrink-0">
-                        {/* Required Toggle */}
-                        <label className="flex items-center gap-1 cursor-pointer select-none text-slate-600 text-[11px] font-medium">
-                          <input
-                            type="checkbox"
-                            checked={item.isRequired ?? false}
-                            onChange={(e) => {
-                              const copy = [...sections];
-                              copy[activeSectionIndex].items[itIdx].isRequired = e.target.checked;
-                              setSections(copy);
-                            }}
-                            className="w-3.5 h-3.5 rounded text-emerald-700"
-                          />
-                          <span>Required</span>
-                        </label>
-
-                        {/* Remarks Toggle */}
-                        <label className="flex items-center gap-1 cursor-pointer select-none text-slate-600 text-[11px] font-medium">
-                          <input
-                            type="checkbox"
-                            checked={item.allowsRemarks ?? true}
-                            onChange={(e) => {
-                              const copy = [...sections];
-                              copy[activeSectionIndex].items[itIdx].allowsRemarks = e.target.checked;
-                              setSections(copy);
-                            }}
-                            className="w-3.5 h-3.5 rounded text-emerald-700"
-                          />
-                          <span>Remarks</span>
-                        </label>
-
-                        {/* Reorder & Delete */}
-                        <div className="flex items-center gap-0.5 border-l border-slate-200 pl-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleMoveItem(activeSectionIndex, itIdx, "up")}
-                            disabled={itIdx === 0}
-                            className="p-1 text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer"
-                            title="Move Up"
-                          >
-                            <ArrowUp className="w-3 h-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleMoveItem(activeSectionIndex, itIdx, "down")}
-                            disabled={itIdx === (activeSection.items?.length || 0) - 1}
-                            className="p-1 text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer"
-                            title="Move Down"
-                          >
-                            <ArrowDown className="w-3 h-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteItem(activeSectionIndex, itIdx)}
-                            className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
-                            title="Delete Item"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Bottom Add Item Trigger */}
-              <div className="pt-2 border-t border-slate-100 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => handleAddItem(activeSectionIndex)}
-                  className="w-full py-2 rounded-xl border border-dashed border-slate-300 hover:border-emerald-600 text-slate-600 hover:text-emerald-800 font-bold text-xs flex items-center justify-center gap-1 transition cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>+ Add Item to {activeSection.title || "Section"}</span>
-                </button>
-              </div>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="py-20 text-center text-slate-400 text-xs flex-1 flex flex-col items-center justify-center">
-              <Layers className="w-8 h-8 text-slate-300 mb-2" />
-              <p>No section selected. Click a section on the left or add a new one.</p>
-            </div>
-          )}
+          );
+        })}
+      </div>
+
+      {/* 6. BOTTOM BIG ADD CATEGORY BUTTON */}
+      <div className="pt-2">
+        <button
+          type="button"
+          onClick={handleAddSection}
+          className="w-full py-4 rounded-3xl bg-white border-2 border-dashed border-emerald-300 hover:border-emerald-600 hover:bg-emerald-50/60 text-emerald-900 font-extrabold text-sm flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
+        >
+          <Plus className="w-5 h-5 text-emerald-700" />
+          <span>+ Add Another Category / Station</span>
+        </button>
+      </div>
+
+      {/* 7. STICKY BOTTOM SAVE FLOATING DOCK */}
+      <div className="fixed bottom-4 inset-x-0 z-30 pointer-events-none flex justify-center px-4">
+        <div className="pointer-events-auto bg-slate-900/95 backdrop-blur-md text-white p-3 px-6 rounded-2xl shadow-2xl border border-slate-800 flex items-center justify-between gap-6 max-w-xl w-full animate-in fade-in slide-in-from-bottom-3">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-xs font-bold text-slate-200">
+              {sections.length} Categories • {totalItemsCount} Tasks
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Link
+              href="/app/checklists"
+              className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition"
+            >
+              Cancel
+            </Link>
+            <button
+              type="button"
+              onClick={() => handleSaveTemplate()}
+              disabled={saving}
+              className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <Save className="w-4 h-4 text-slate-950" />
+              <span>Save Template</span>
+            </button>
+          </div>
         </div>
       </div>
-    </form>
+    </div>
   );
 }
