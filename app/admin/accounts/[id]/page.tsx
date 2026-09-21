@@ -19,6 +19,7 @@ import {
   Edit2,
   X,
   Check,
+  LogIn,
 } from "lucide-react";
 import { formatCurrency, formatDateTime, formatDate } from "@/lib/utils";
 
@@ -45,12 +46,37 @@ export default function AdminAccountDetailPage({
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [resettingPassword, setResettingPassword] = useState(false);
+  const [impersonating, setImpersonating] = useState(false);
 
   const [banner, setBanner] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
     loadAccount();
   }, [id]);
+
+  const handleImpersonate = async (targetRestaurantId?: string, targetUserId?: string) => {
+    setImpersonating(true);
+    try {
+      const res = await fetch("/api/admin/impersonate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          restaurantId: targetRestaurantId || id,
+          userId: targetUserId,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.redirect) {
+        window.location.href = data.redirect;
+      } else {
+        setBanner({ type: "error", text: data.error || "Failed to log in as user" });
+        setImpersonating(false);
+      }
+    } catch (err: any) {
+      setBanner({ type: "error", text: err.message || "Failed to log in as user" });
+      setImpersonating(false);
+    }
+  };
 
   const loadAccount = async () => {
     setLoading(true);
@@ -224,21 +250,37 @@ export default function AdminAccountDetailPage({
           </div>
         </div>
 
-        <button
-          onClick={handleToggleStatus}
-          disabled={actionLoading}
-          className={`px-5 py-2.5 rounded-xl font-bold text-xs shadow-md transition cursor-pointer disabled:opacity-50 ${
-            restaurant.accountStatus === "active"
-              ? "bg-rose-900 hover:bg-rose-800 text-white"
-              : "bg-emerald-600 hover:bg-emerald-700 text-white"
-          }`}
-        >
-          {actionLoading
-            ? "Updating..."
-            : restaurant.accountStatus === "active"
-            ? "Deactivate Workspace"
-            : "Reactivate Workspace"}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => handleImpersonate(restaurant.id)}
+            disabled={impersonating}
+            className="px-5 py-2.5 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
+            title="Log in directly into this restaurant account without entering credentials"
+          >
+            {impersonating ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <LogIn className="w-4 h-4" />
+            )}
+            <span>{impersonating ? "Connecting..." : "Login to Workspace as User"}</span>
+          </button>
+
+          <button
+            onClick={handleToggleStatus}
+            disabled={actionLoading}
+            className={`px-5 py-2.5 rounded-xl font-bold text-xs shadow-md transition cursor-pointer disabled:opacity-50 ${
+              restaurant.accountStatus === "active"
+                ? "bg-rose-900 hover:bg-rose-800 text-white"
+                : "bg-emerald-700 hover:bg-emerald-600 text-white"
+            }`}
+          >
+            {actionLoading
+              ? "Updating..."
+              : restaurant.accountStatus === "active"
+              ? "Deactivate Workspace"
+              : "Reactivate Workspace"}
+          </button>
+        </div>
       </div>
 
       {/* Information Cards */}
@@ -358,7 +400,16 @@ export default function AdminAccountDetailPage({
                   <td className="py-3 px-4 text-slate-500">
                     {u.lastLoginAt ? formatDateTime(u.lastLoginAt) : "Never"}
                   </td>
-                  <td className="py-3 px-4 text-right">
+                  <td className="py-3 px-4 text-right space-x-2">
+                    <button
+                      onClick={() => handleImpersonate(undefined, u.id)}
+                      disabled={impersonating}
+                      className="px-2.5 py-1 rounded-lg bg-emerald-950 hover:bg-emerald-900 border border-emerald-800 text-emerald-300 hover:text-white font-bold text-xs transition inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                      title="Log in directly as this specific user"
+                    >
+                      <LogIn className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Login as User</span>
+                    </button>
                     <button
                       onClick={() => {
                         setSelectedUser(u);

@@ -33,6 +33,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isQuickRecordOpen, setIsQuickRecordOpen] = useState(false);
+  const [isExitingImpersonation, setIsExitingImpersonation] = useState(false);
 
   useEffect(() => {
     checkSession();
@@ -64,6 +65,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
     router.refresh();
+  };
+
+  const handleExitImpersonation = async () => {
+    setIsExitingImpersonation(true);
+    try {
+      const res = await fetch("/api/admin/impersonate/exit", { method: "POST" });
+      const data = await res.json();
+      if (res.ok && data.redirect) {
+        window.location.href = data.redirect;
+      } else {
+        window.location.href = "/admin/accounts";
+      }
+    } catch (err) {
+      console.error("Failed to exit impersonation:", err);
+      window.location.href = "/admin/accounts";
+    }
   };
 
   const isHub = pathname === "/app";
@@ -131,6 +148,37 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (isHub) {
     return (
       <div className="min-h-screen bg-[#dcece1] flex flex-col pb-16 md:pb-0">
+        {/* Superadmin Impersonation Notice Bar */}
+        {authContext?.isImpersonating && (
+          <div className="bg-amber-500 text-slate-950 px-4 sm:px-8 py-2.5 text-xs font-bold flex flex-wrap items-center justify-between gap-3 shadow-md border-b border-amber-600 sticky top-0 z-40">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="bg-amber-950 text-amber-200 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shrink-0 animate-pulse">
+                Superadmin Impersonation Mode
+              </span>
+              <span className="truncate">
+                Logged in as <strong>{authContext?.restaurant?.businessName}</strong> ({authContext?.user?.name} &lt;{authContext?.user?.email}&gt;)
+              </span>
+            </div>
+            <button
+              onClick={handleExitImpersonation}
+              disabled={isExitingImpersonation}
+              className="bg-slate-950 hover:bg-slate-900 text-amber-400 font-bold px-3.5 py-1.5 rounded-xl text-xs transition flex items-center gap-2 cursor-pointer shadow-xs disabled:opacity-50 shrink-0"
+            >
+              {isExitingImpersonation ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Restoring Admin Session...</span>
+                </>
+              ) : (
+                <>
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Exit Impersonation & Return to Admin</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
         {/* Top Header */}
         <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-[#c2dac7] px-4 sm:px-8 h-16 flex items-center justify-between shadow-xs w-full">
           <div className="flex items-center gap-3">
@@ -508,6 +556,37 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* 3. MAIN CONTENT AREA (WITH md:pl-64 FOR MODULE PAGES) */}
       <div className="flex-1 flex flex-col md:pl-64 min-w-0">
+        {/* Superadmin Impersonation Notice Bar */}
+        {authContext?.isImpersonating && (
+          <div className="bg-amber-500 text-slate-950 px-4 sm:px-8 py-2.5 text-xs font-bold flex flex-wrap items-center justify-between gap-3 shadow-md border-b border-amber-600 sticky top-0 z-20">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="bg-amber-950 text-amber-200 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shrink-0 animate-pulse">
+                Superadmin Impersonation Mode
+              </span>
+              <span className="truncate">
+                Logged in as <strong>{authContext?.restaurant?.businessName}</strong> ({authContext?.user?.name} &lt;{authContext?.user?.email}&gt;)
+              </span>
+            </div>
+            <button
+              onClick={handleExitImpersonation}
+              disabled={isExitingImpersonation}
+              className="bg-slate-950 hover:bg-slate-900 text-amber-400 font-bold px-3.5 py-1.5 rounded-xl text-xs transition flex items-center gap-2 cursor-pointer shadow-xs disabled:opacity-50 shrink-0"
+            >
+              {isExitingImpersonation ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Restoring Admin Session...</span>
+                </>
+              ) : (
+                <>
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Exit Impersonation & Return to Admin</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
         <main className="flex-1 min-w-0 max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 w-full">
           {children}
         </main>

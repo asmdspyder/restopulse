@@ -17,6 +17,8 @@ export interface SessionPayload {
   canManageChecklists?: boolean;
   restaurantId?: string;
   businessName?: string;
+  isImpersonating?: boolean;
+  impersonatorAdminId?: string;
 }
 
 export interface AuthContext {
@@ -49,6 +51,8 @@ export interface AuthContext {
   isSubscriptionActive: boolean;
   canAccessApp: boolean;
   blockReason?: "deactivated" | "subscription_inactive";
+  isImpersonating?: boolean;
+  impersonatorAdminId?: string;
 }
 
 export async function createSessionToken(payload: SessionPayload): Promise<string> {
@@ -195,8 +199,10 @@ export async function getAuthContext(): Promise<AuthContext | null> {
         : undefined,
       isDeactivated,
       isSubscriptionActive,
-      canAccessApp: !isDeactivated && isSubscriptionActive,
-      blockReason,
+      canAccessApp: session.isImpersonating ? true : (!isDeactivated && isSubscriptionActive),
+      blockReason: session.isImpersonating ? undefined : blockReason,
+      isImpersonating: Boolean(session.isImpersonating),
+      impersonatorAdminId: session.impersonatorAdminId,
     };
   } catch (err) {
     console.error("getAuthContext error:", err);

@@ -13,6 +13,7 @@ import {
   Search,
   CheckCircle2,
   XCircle,
+  LogIn,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -20,6 +21,7 @@ export default function AdminOverviewPage() {
   const [metrics, setMetrics] = useState<any>(null);
   const [accounts, setAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadAdminData();
@@ -42,6 +44,27 @@ export default function AdminOverviewPage() {
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleImpersonate = async (accountId: string) => {
+    setImpersonatingId(accountId);
+    try {
+      const res = await fetch("/api/admin/impersonate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accountId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Failed to log in as user");
+        return;
+      }
+      window.location.href = data.redirect || "/app";
+    } catch (err) {
+      alert("Error connecting to workspace");
+    } finally {
+      setImpersonatingId(null);
     }
   };
 
@@ -76,6 +99,8 @@ export default function AdminOverviewPage() {
     );
   }
 
+  const activeAccountsCount = accounts.filter((a) => a.accountStatus === "active").length;
+
   return (
     <div className="space-y-8">
       <div>
@@ -87,53 +112,63 @@ export default function AdminOverviewPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Workspaces</span>
-          <div className="text-3xl font-extrabold text-white mt-2">{metrics?.totalRestaurants}</div>
-          <span className="text-xs text-emerald-400 mt-1 block">
-            {metrics?.activeAccounts} active • {metrics?.deactivatedAccounts} deactivated
+        <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-1">
+          <div className="flex items-center justify-between text-slate-400">
+            <span className="text-xs font-semibold">Total Accounts</span>
+            <Building className="w-4 h-4 text-emerald-400" />
+          </div>
+          <div className="text-2xl font-extrabold text-white tracking-tight">{accounts.length}</div>
+          <span className="text-[11px] text-emerald-400 font-semibold">{activeAccountsCount} Active Workspaces</span>
+        </div>
+
+        <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-1">
+          <div className="flex items-center justify-between text-slate-400">
+            <span className="text-xs font-semibold">Active Subscriptions</span>
+            <CreditCard className="w-4 h-4 text-teal-400" />
+          </div>
+          <div className="text-2xl font-extrabold text-white tracking-tight">{metrics?.activeSubscriptions || 0}</div>
+          <span className="text-[11px] text-slate-400 font-semibold">
+            {metrics?.totalAccounts ? Math.round((metrics.activeSubscriptions / metrics.totalAccounts) * 100) : 0}% Paid Retention
           </span>
         </div>
 
-        <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Approx. Monthly MRR</span>
-          <div className="text-3xl font-extrabold text-emerald-400 mt-2">
-            {formatCurrency(metrics?.approxMRR)}
+        <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-1">
+          <div className="flex items-center justify-between text-slate-400">
+            <span className="text-xs font-semibold">Monthly MRR</span>
+            <TrendingUp className="w-4 h-4 text-emerald-400" />
           </div>
-          <span className="text-xs text-slate-400 mt-1 block">
-            {metrics?.monthlySubscriptions} monthly • {metrics?.yearlySubscriptions} annual
+          <div className="text-2xl font-extrabold text-white tracking-tight">
+            {formatCurrency(metrics?.approxMRR || metrics?.monthlyRecurringRevenue || 0)}
+          </div>
+          <span className="text-[11px] text-slate-400 font-semibold">
+            {metrics?.monthlySubscriptions || 0} monthly • {metrics?.yearlySubscriptions || 0} annual
           </span>
         </div>
 
-        <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Approx. Annual ARR</span>
-          <div className="text-3xl font-extrabold text-white mt-2">
-            {formatCurrency(metrics?.approxARR)}
+        <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-1">
+          <div className="flex items-center justify-between text-slate-400">
+            <span className="text-xs font-semibold">Total Food Waste Tracked</span>
+            <ShieldCheck className="w-4 h-4 text-teal-400" />
           </div>
-          <span className="text-xs text-slate-400 mt-1 block">Annualized Run Rate</span>
-        </div>
-
-        <div className="p-5 rounded-3xl bg-slate-900 border border-slate-800">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Active Subscriptions</span>
-          <div className="text-3xl font-extrabold text-white mt-2">
-            {(metrics?.monthlySubscriptions || 0) + (metrics?.yearlySubscriptions || 0)}
+          <div className="text-2xl font-extrabold text-white tracking-tight">
+            {formatCurrency(metrics?.totalWasteValueTracked || 0)}
           </div>
-          <span className="text-xs text-slate-400 mt-1 block">Razorpay active plans</span>
+          <span className="text-[11px] text-slate-400 font-semibold">{metrics?.totalWastageRecords || 0} records logged</span>
         </div>
       </div>
 
-      {/* Subscriber Accounts Table */}
+      {/* Recent Restaurant Accounts */}
       <div className="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden">
-        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
           <div>
-            <h3 className="font-bold text-white text-base">Subscribed Restaurant Accounts</h3>
-            <span className="text-xs text-slate-400">All registered workspaces and independent access controls</span>
+            <h2 className="text-base font-bold text-white">Recent Customer Accounts</h2>
+            <p className="text-xs text-slate-500">Fast access to customer workspaces and account settings</p>
           </div>
           <Link
             href="/admin/accounts"
-            className="text-xs font-bold text-emerald-400 hover:underline flex items-center gap-1"
+            className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition"
           >
-            <span>View All</span>
+            <span>View All ({accounts.length})</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -183,7 +218,20 @@ export default function AdminOverviewPage() {
                     )}
                   </td>
                   <td className="py-3.5 px-4 text-slate-400">{formatDate(acc.createdAt)}</td>
-                  <td className="py-3.5 px-4 text-right">
+                  <td className="py-3.5 px-4 text-right space-x-2">
+                    <button
+                      onClick={() => handleImpersonate(acc.id)}
+                      disabled={impersonatingId === acc.id}
+                      className="px-3 py-1 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      title="Log in directly as this restaurant user"
+                    >
+                      {impersonatingId === acc.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <LogIn className="w-3.5 h-3.5" />
+                      )}
+                      <span>{impersonatingId === acc.id ? "Connecting..." : "Login"}</span>
+                    </button>
                     <button
                       onClick={() => handleToggleStatus(acc.id, acc.accountStatus)}
                       className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${

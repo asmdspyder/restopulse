@@ -15,6 +15,7 @@ import {
   Key,
   Calendar,
   ShieldCheck,
+  LogIn,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ export default function AdminAccountsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
 
   // Create Managed Account Modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -133,6 +135,27 @@ export default function AdminAccountsPage() {
     }
   };
 
+  const handleImpersonate = async (restaurantId: string) => {
+    setImpersonatingId(restaurantId);
+    try {
+      const res = await fetch("/api/admin/impersonate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurantId }),
+      });
+      const data = await res.json();
+      if (res.ok && data.redirect) {
+        window.location.href = data.redirect;
+      } else {
+        alert(data.error || "Failed to log in as user");
+        setImpersonatingId(null);
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to log in as user");
+      setImpersonatingId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -156,13 +179,13 @@ export default function AdminAccountsPage() {
       {/* Filter & Search */}
       <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-500" />
+          <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
           <input
             type="text"
+            placeholder="Search by restaurant name, contact or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by restaurant name, contact, or email..."
-            className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white placeholder:text-slate-500 focus:border-emerald-500 focus:outline-hidden"
+            className="w-full pl-9 p-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-hidden"
           />
         </div>
 
@@ -235,15 +258,29 @@ export default function AdminAccountsPage() {
                     </td>
                     <td className="py-3.5 px-4 text-slate-400">{formatDate(acc.createdAt)}</td>
                     <td className="py-3.5 px-4 text-right space-x-2">
+                      {/* Direct Login As User / Impersonate Button */}
+                      <button
+                        onClick={() => handleImpersonate(acc.id)}
+                        disabled={impersonatingId === acc.id}
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        title="Log in directly to this restaurant account without credentials"
+                      >
+                        {impersonatingId === acc.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <LogIn className="w-3.5 h-3.5" />
+                        )}
+                        <span>{impersonatingId === acc.id ? "Connecting..." : "Login"}</span>
+                      </button>
                       <Link
                         href={`/admin/accounts/${acc.id}`}
-                        className="px-3 py-1 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white transition inline-block"
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white transition inline-block"
                       >
                         Manage
                       </Link>
                       <button
                         onClick={() => handleToggleStatus(acc.id, acc.accountStatus)}
-                        className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                           acc.accountStatus === "active"
                             ? "bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-800"
                             : "bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800"
