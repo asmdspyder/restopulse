@@ -185,6 +185,15 @@ export default function RecordWastagePage() {
     (i) => i.name.toLowerCase() === cleanSearch.toLowerCase()
   );
 
+  if (loading) {
+    return (
+      <div className="py-24 flex flex-col items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-700 mb-2" />
+        <span className="text-xs font-semibold text-slate-600">Loading wastage module...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-5xl mx-auto space-y-4">
       {/* 1. COMPACT TOP HEADER */}
@@ -537,6 +546,11 @@ export default function RecordWastagePage() {
                     </span>
                     <span className="text-[10px] text-slate-400">{formatDateTime(rec.recordedAt)}</span>
                   </div>
+                  {rec.notes && (
+                    <p className="text-[10px] text-slate-600 bg-amber-50/70 border border-amber-200/60 p-1.5 rounded-lg mt-1.5 italic">
+                      "{rec.notes}"
+                    </p>
+                  )}
                 </div>
               ))
             )}

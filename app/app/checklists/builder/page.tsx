@@ -467,49 +467,6 @@ export default function ChecklistBuilderPage() {
         </div>
       </div>
 
-      {/* 3. TEMPLATE GENERAL SETTINGS CARD */}
-      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#bed6c2] shadow-xs space-y-3">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <Sliders className="w-4 h-4 text-emerald-700" />
-            <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
-              Template Overview
-            </h2>
-          </div>
-          <span className="text-[11px] text-slate-400 font-medium">Standard Daily SOP</span>
-        </div>
-
-        <div className="grid sm:grid-cols-3 gap-3">
-          <div className="sm:col-span-2">
-            <label className="block text-[11px] font-bold text-slate-600 mb-1">
-              Checklist Title
-            </label>
-            <input
-              type="text"
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Daily Opening Checklist"
-              className="w-full p-2.5 px-3 rounded-xl border border-slate-200 font-bold text-xs text-slate-900 bg-slate-50/50 focus:bg-white focus:border-emerald-600 focus:outline-hidden"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-bold text-slate-600 mb-1 flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5 text-slate-400" />
-              <span>Target Completion Time</span>
-            </label>
-            <input
-              type="text"
-              value={targetTime}
-              onChange={(e) => setTargetTime(e.target.value)}
-              placeholder="e.g. 10:00 AM"
-              className="w-full p-2.5 px-3 rounded-xl border border-slate-200 font-bold text-xs text-slate-900 bg-slate-50/50 focus:bg-white focus:border-emerald-600 focus:outline-hidden"
-            />
-          </div>
-        </div>
-      </div>
-
       {errorMessage && (
         <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center justify-between gap-2 shadow-xs">
           <div className="flex items-center gap-2">
@@ -522,7 +479,7 @@ export default function ChecklistBuilderPage() {
         </div>
       )}
 
-      {/* 4. CONTROLS BAR: SEARCH & COLLAPSE ALL */}
+      {/* 3. CONTROLS BAR: SEARCH & COLLAPSE ALL */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
         <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -555,7 +512,7 @@ export default function ChecklistBuilderPage() {
         </div>
       </div>
 
-      {/* 5. VISUAL SECTION CARDS LIST */}
+      {/* 4. VISUAL SECTION CARDS LIST */}
       <div className="space-y-4">
         {sections.map((section: any, secIdx: number) => {
           const isCollapsed = collapsedSections[secIdx];
@@ -573,9 +530,9 @@ export default function ChecklistBuilderPage() {
               className="bg-white rounded-3xl border border-[#bed6c2] shadow-xs overflow-hidden transition-all duration-200 hover:border-emerald-300"
             >
               {/* Category Header */}
-              <div className="p-3.5 sm:p-4 bg-slate-50/70 border-b border-slate-100 flex items-center justify-between gap-3">
+              <div className="p-3.5 sm:p-4 bg-slate-50/90 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                  <span className="w-7 h-7 rounded-xl bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-xs">
+                  <span className="w-8 h-8 rounded-xl bg-emerald-700 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-sm">
                     {section.sectionCode || String.fromCharCode(65 + secIdx)}
                   </span>
 
@@ -590,59 +547,59 @@ export default function ChecklistBuilderPage() {
                         setSections(copy);
                       }}
                       placeholder="Category Title (e.g. Kitchen Station, Dining Area)"
-                      className="w-full p-1.5 px-2.5 rounded-xl border border-transparent hover:border-slate-300 focus:border-emerald-600 bg-transparent focus:bg-white font-extrabold text-sm sm:text-base text-slate-900 transition focus:outline-hidden"
+                      className="w-full p-2 px-3 rounded-xl border border-transparent hover:border-slate-300 focus:border-emerald-600 bg-transparent focus:bg-white font-extrabold text-sm sm:text-base text-slate-900 transition focus:outline-hidden"
                     />
                   </div>
                 </div>
 
-                {/* Header Action Controls */}
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="hidden sm:inline-block px-2.5 py-1 rounded-full bg-white border border-slate-200 text-slate-600 text-[10px] font-bold">
+                {/* Header Action Controls - Clear, prominent buttons */}
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-extrabold">
                     {items.length} {items.length === 1 ? "task" : "tasks"}
                   </span>
 
                   <button
                     type="button"
                     onClick={() => handleAddItem(secIdx)}
-                    className="px-2.5 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold text-xs flex items-center gap-1 transition cursor-pointer"
+                    className="px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer"
                     title="Add task to this category"
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Add Task</span>
+                    <Plus className="w-4 h-4" />
+                    <span>Add Task</span>
                   </button>
 
-                  <div className="flex items-center gap-0.5 border-l border-slate-200 pl-1.5">
+                  <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-xs">
                     <button
                       type="button"
                       onClick={() => handleMoveSection(secIdx, "up")}
                       disabled={secIdx === 0}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer"
+                      className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-20 cursor-pointer transition"
                       title="Move Category Up"
                     >
-                      <ArrowUp className="w-3.5 h-3.5" />
+                      <ArrowUp className="w-4 h-4" />
                     </button>
                     <button
                       type="button"
                       onClick={() => handleMoveSection(secIdx, "down")}
                       disabled={secIdx === sections.length - 1}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer"
+                      className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-20 cursor-pointer transition"
                       title="Move Category Down"
                     >
-                      <ArrowDown className="w-3.5 h-3.5" />
+                      <ArrowDown className="w-4 h-4" />
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDeleteSection(secIdx)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 cursor-pointer"
+                      className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 hover:text-rose-700 cursor-pointer transition"
                       title="Delete Category"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                     <button
                       type="button"
                       onClick={() => toggleCollapseSection(secIdx)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer"
-                      title={isCollapsed ? "Expand Tasks" : "Collapse Tasks"}
+                      className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 cursor-pointer transition"
+                      title={isCollapsed ? "Expand Category" : "Collapse Category"}
                     >
                       {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                     </button>
@@ -652,7 +609,7 @@ export default function ChecklistBuilderPage() {
 
               {/* Tasks List inside Section */}
               {!isCollapsed && (
-                <div className="p-3 sm:p-4 space-y-2 bg-white">
+                <div className="p-3 sm:p-4 space-y-2.5 bg-white">
                   {items.length === 0 ? (
                     <div className="py-8 rounded-2xl border border-dashed border-slate-200 text-center text-xs text-slate-400 space-y-2">
                       <p>No check tasks in this category yet.</p>
@@ -671,7 +628,7 @@ export default function ChecklistBuilderPage() {
                       return (
                         <div
                           key={itIdx}
-                          className="group p-2.5 sm:p-3 rounded-2xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300 transition flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
+                          className="group p-2.5 sm:p-3 rounded-2xl border border-slate-200/80 bg-slate-50/50 hover:bg-emerald-50/70 hover:border-emerald-300 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
                         >
                           {/* Task Checkbox & Name */}
                           <div className="flex items-center gap-2.5 flex-1 min-w-0">

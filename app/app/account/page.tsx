@@ -267,6 +267,15 @@ function AccountManagementContent() {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="py-24 flex flex-col items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-700 mb-2" />
+        <span className="text-xs font-semibold text-slate-600">Loading account & team settings...</span>
+      </div>
+    );
+  }
+
   const isAdmin = authContext?.user?.role === "admin";
 
   return (

@@ -96,39 +96,47 @@ export default function RestaurantOperationsHub() {
 
   return (
     <div className="space-y-8 pb-12">
-      {/* 1. TOP WELCOME HERO BANNER */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white p-6 sm:p-9 rounded-3xl shadow-xl border border-emerald-800/40">
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-          <div className="space-y-2">
+      {/* 1. TOP WELCOME HERO BANNER - COMPACT & SLEEK */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-slate-850 to-emerald-950 text-white p-4 sm:p-5 rounded-2xl shadow-md border border-emerald-850/50">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-extrabold uppercase tracking-wider border border-emerald-500/30">
+              <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold uppercase tracking-wider border border-emerald-500/30">
                 Operations Hub
               </span>
-              <span className="text-slate-500">•</span>
+              <span className="text-slate-500 text-xs">•</span>
               <span className="text-xs text-slate-300 font-medium">{todayFormatted}</span>
             </div>
-            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
-              {getGreeting()}, {userName.split(" ")[0]} 👋
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
-              Welcome to <strong className="text-white font-bold">{businessName}</strong>. Choose a module below to inspect daily opening checklists, record kitchen food waste, or manage your workspace team.
-            </p>
+            <div className="flex items-baseline gap-2">
+              <h1 className="text-lg sm:text-xl font-extrabold tracking-tight">
+                {getGreeting()}, {userName.split(" ")[0]} 👋
+              </h1>
+              <span className="text-xs text-slate-400 font-medium hidden md:inline">
+                • {businessName}
+              </span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
+            <Link
+              href="/app/checklists"
+              className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/10 transition flex items-center gap-1.5"
+            >
+              <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Daily Checklist</span>
+            </Link>
             <Link
               href="/app/wastage"
-              className="px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 flex items-center gap-2 transition hover:scale-105 active:scale-95"
+              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/30 flex items-center gap-1.5 transition"
             >
-              <PlusCircle className="w-4 h-4" />
+              <PlusCircle className="w-3.5 h-3.5" />
               <span>Record Wastage</span>
             </Link>
           </div>
         </div>
 
         {/* Subtle decorative background circles */}
-        <div className="absolute -right-10 -bottom-10 w-48 h-48 rounded-full bg-emerald-600/10 blur-2xl pointer-events-none" />
-        <div className="absolute right-36 -top-10 w-36 h-36 rounded-full bg-teal-500/10 blur-xl pointer-events-none" />
+        <div className="absolute -right-10 -bottom-10 w-36 h-36 rounded-full bg-emerald-600/10 blur-xl pointer-events-none" />
       </div>
 
       {/* 2. THE THREE PRIMARY MODULE CARDS */}

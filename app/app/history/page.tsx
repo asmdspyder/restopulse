@@ -266,6 +266,7 @@ export default function WastageHistoryPage() {
                     <th className="py-3.5 px-4">Wastage Value</th>
                     <th className="py-3.5 px-4">Reason</th>
                     <th className="py-3.5 px-4">Area</th>
+                    <th className="py-3.5 px-4">Notes</th>
                     <th className="py-3.5 px-4">Logged By</th>
                     <th className="py-3.5 px-4 text-right">Action</th>
                   </tr>
@@ -293,6 +294,15 @@ export default function WastageHistoryPage() {
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-slate-500">{r.responsibleArea || "—"}</td>
+                      <td className="py-3.5 px-4 text-slate-600 max-w-[200px]">
+                        {r.notes ? (
+                          <span className="inline-block truncate max-w-[180px] text-slate-700 bg-amber-50/80 px-2 py-0.5 rounded-md border border-amber-200/60 font-medium" title={r.notes}>
+                            {r.notes}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300">—</span>
+                        )}
+                      </td>
                       <td className="py-3.5 px-4 text-slate-500">{r.userName || "Staff"}</td>
                       <td className="py-3.5 px-4 text-right">
                         <button
