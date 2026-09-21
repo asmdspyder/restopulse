@@ -7,37 +7,30 @@ import {
   TrendingUp,
   PlusCircle,
   Sparkles,
-  AlertTriangle,
-  Info,
+  AlertCircle,
   CheckCircle2,
-  IndianRupee,
   Calendar,
-  Layers,
-  ArrowRight,
-  Loader2,
-  Filter,
   ArrowLeft,
+  Loader2,
+  Trash2,
+  Lightbulb,
+  Utensils,
+  HelpCircle,
 } from "lucide-react";
 import {
-  AreaChart,
-  Area,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
-  BarChart,
-  Bar,
 } from "recharts";
-import { formatCurrency, formatPercentage } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import QuickRecordModal from "@/components/app/quick-record-modal";
 
 export default function DashboardPage() {
-  const [period, setPeriod] = useState<"today" | "week" | "month" | "year" | "custom">("month");
-  const [customStart, setCustomStart] = useState("");
-  const [customEnd, setCustomEnd] = useState("");
-  const [showCustomModal, setShowCustomModal] = useState(false);
-
+  const [period, setPeriod] = useState<"today" | "week" | "month" | "year">("month");
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
   const [userContext, setUserContext] = useState<any>(null);
@@ -45,18 +38,13 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [period, customStart, customEnd]);
+  }, [period]);
 
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      let url = `/api/analytics?period=${period}`;
-      if (period === "custom" && customStart && customEnd) {
-        url += `&customStart=${customStart}&customEnd=${customEnd}`;
-      }
-
       const [analyticsRes, authRes] = await Promise.all([
-        fetch(url),
+        fetch(`/api/analytics?period=${period}`),
         fetch("/api/auth/me"),
       ]);
 
@@ -82,47 +70,49 @@ export default function DashboardPage() {
   const formattedChartData =
     data?.trend?.map((t: any) => ({
       ...t,
-      displayDate: t.date.slice(5), // MM-DD
+      displayDate: new Date(t.date).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+      }),
     })) || [];
 
+  const totalLoss = Number(data?.totalWastage || 0);
+  const recordCount = Number(data?.recordCount || 0);
+  const dailyAverage = Number(data?.averageWastagePerDay || 0);
+  const topReason = data?.topWasteReason;
+
   return (
-    <div className="space-y-6">
-      {/* 1. TOP HEADER & PERIOD SWITCHER */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <Link
-              href="/app"
-              className="p-2 rounded-xl bg-white border border-[#bed6c2] hover:bg-emerald-50 text-slate-700 shadow-xs transition group flex items-center justify-center shrink-0"
-              title="Back to Operations Hub"
-            >
-              <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
-            </Link>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+    <div className="space-y-6 max-w-6xl mx-auto">
+      {/* 1. TOP HEADER & TIME FILTER */}
+      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#bed6c2] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/app"
+            className="p-2.5 rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 transition group flex items-center justify-center shrink-0"
+            title="Back to Operations Hub"
+          >
+            <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
+          </Link>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
               {getGreeting()}, {userContext?.user?.name?.split(" ")[0] || "Chef"} 👋
             </h1>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Simple summary of kitchen food waste and money saved.
+            </p>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Here is your restaurant's wastage and margin analysis for {data?.periodLabel || "this month"}.
-          </p>
         </div>
 
-        {/* Period Selector Tabs */}
-        <div className="flex items-center gap-1.5 bg-slate-200/70 p-1.5 rounded-2xl self-start sm:self-auto overflow-x-auto max-w-full">
-          {(["today", "week", "month", "year", "custom"] as const).map((p) => (
+        {/* Simple Period Filter */}
+        <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl self-start sm:self-auto">
+          {(["today", "week", "month", "year"] as const).map((p) => (
             <button
               key={p}
-              onClick={() => {
-                if (p === "custom") {
-                  setShowCustomModal(true);
-                } else {
-                  setPeriod(p);
-                }
-              }}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize transition whitespace-nowrap ${
+              onClick={() => setPeriod(p)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                 period === p
-                  ? "bg-white text-emerald-800 shadow-sm shadow-slate-300"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-emerald-700 text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
               }`}
             >
               {p === "today"
@@ -131,350 +121,267 @@ export default function DashboardPage() {
                 ? "This Week"
                 : p === "month"
                 ? "This Month"
-                : p === "year"
-                ? "This Year"
-                : "Custom Range"}
+                : "This Year"}
             </button>
           ))}
         </div>
       </div>
 
       {loading ? (
-        <div className="py-20 flex flex-col items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mb-2" />
-          <span className="text-xs font-semibold text-slate-500">Aggregating wastage numbers...</span>
+        <div className="py-24 flex flex-col items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-emerald-700 mb-2" />
+          <span className="text-xs font-semibold text-slate-600">Loading summary...</span>
         </div>
       ) : (
         <>
-          {/* 2. KPI METRIC CARDS */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* KPI 1: Total Wastage */}
-            <div className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-xs relative overflow-hidden">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Wastage</span>
-              <div className="text-3xl font-extrabold text-slate-900 mt-2">
-                {formatCurrency(data?.totalWastage)}
+          {/* 2. THREE SIMPLE KEY NUMBER CARDS */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* CARD 1: TOTAL MONEY LOST */}
+            <div className="p-5 rounded-3xl bg-white border border-[#bed6c2] shadow-xs relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Total Food Waste Loss
+                </span>
+                <span className="p-2 rounded-xl bg-rose-50 text-rose-600 font-bold text-xs">
+                  ₹ Loss
+                </span>
               </div>
-              <div className="mt-2 flex items-center gap-1.5">
-                {data?.prevTotalWastage > 0 ? (
-                  data?.wastagePercentChange?.direction === "down" ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
-                      <TrendingDown className="w-3.5 h-3.5" />
-                      {data.wastagePercentChange.formatted} vs previous period
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md">
-                      <TrendingUp className="w-3.5 h-3.5" />
-                      {data.wastagePercentChange.formatted} vs previous period
-                    </span>
-                  )
-                ) : (
-                  <span className="text-xs text-slate-400">Base period</span>
-                )}
+              <div className="text-3xl sm:text-4xl font-black text-slate-900 mt-2">
+                {formatCurrency(totalLoss)}
               </div>
+              <p className="text-xs text-slate-500 mt-1">
+                {recordCount} items logged in {period === "today" ? "today" : period === "week" ? "this week" : period === "month" ? "this month" : "this year"}
+              </p>
             </div>
 
-            {/* KPI 2: Top Waste Driver */}
-            <div className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-xs">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Top Waste Driver</span>
-              {data?.topWasteReason ? (
-                <>
-                  <div className="text-2xl font-extrabold text-emerald-800 mt-2 truncate">
-                    {data.topWasteReason.name}
-                  </div>
-                  <span className="text-xs text-slate-500 mt-2 block">
-                    {formatCurrency(data.topWasteReason.value)} ({data.topWasteReason.percentage}% of total)
-                  </span>
-                </>
-              ) : (
-                <>
-                  <div className="text-base font-bold text-slate-400 mt-2">No waste logged</div>
-                  <span className="text-xs text-slate-400 mt-2 block">Awaiting logs</span>
-                </>
-              )}
+            {/* CARD 2: BIGGEST REASON */}
+            <div className="p-5 rounded-3xl bg-white border border-[#bed6c2] shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Main Cause of Waste
+                </span>
+                <span className="p-2 rounded-xl bg-amber-50 text-amber-700 font-bold text-xs">
+                  Reason
+                </span>
+              </div>
+              <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-2 truncate">
+                {topReason ? topReason.name : "None logged"}
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                {topReason ? `${formatCurrency(topReason.value)} (${topReason.percentage}% of total waste)` : "No waste recorded"}
+              </p>
             </div>
 
-            {/* KPI 3: Number of Wastage Incidents */}
-            <div className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-xs">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Wastage Incidents</span>
-              <div className="text-3xl font-extrabold text-slate-900 mt-2">
-                {data?.recordCount}
+            {/* CARD 3: DAILY AVERAGE */}
+            <div className="p-5 rounded-3xl bg-white border border-[#bed6c2] shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Daily Average Loss
+                </span>
+                <span className="p-2 rounded-xl bg-emerald-50 text-emerald-800 font-bold text-xs">
+                  Per Day
+                </span>
               </div>
-              <span className="text-xs text-slate-500 mt-2 block">
-                {data?.recordCount > 0
-                  ? `Avg. ${formatCurrency(data.totalWastage / data.recordCount)} per log`
-                  : "No events recorded"}
-              </span>
-            </div>
-
-            {/* KPI 4: Daily Average Wastage */}
-            <div className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-xs">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Daily Average</span>
-              <div className="text-3xl font-extrabold text-slate-900 mt-2">
-                {formatCurrency(data?.averageWastagePerDay)}
-                <span className="text-xs font-normal text-slate-400">/day</span>
+              <div className="text-3xl sm:text-4xl font-black text-slate-900 mt-2">
+                {formatCurrency(dailyAverage)}
               </div>
-              <span className="text-xs text-slate-500 mt-2 block">
-                Based on active period days
-              </span>
+              <p className="text-xs text-slate-500 mt-1">
+                Average money thrown in trash per day
+              </p>
             </div>
           </div>
 
-          {/* 3. SIGNATURE RULE-BASED INSIGHT ENGINE CARDS ("WHAT WENT WRONG?") */}
-          {data?.insights && data.insights.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
-                    <Sparkles className="w-3.5 h-3.5" />
-                  </div>
-                  <h3 className="font-bold text-slate-900 text-sm">Actionable Insights & Observations</h3>
-                </div>
-                <span className="text-[11px] text-slate-400">Rule-based statistical detection</span>
+          {/* 3. SIMPLE ADVICE BOX */}
+          {totalLoss > 0 && (
+            <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-300 flex items-start gap-3 shadow-xs">
+              <div className="w-8 h-8 rounded-xl bg-emerald-700 text-white flex items-center justify-center shrink-0 mt-0.5">
+                <Lightbulb className="w-4 h-4" />
               </div>
-
-              <div className="grid sm:grid-cols-2 gap-3">
-                {data.insights.map((insight: any) => (
-                  <div
-                    key={insight.id}
-                    className={`p-4 rounded-2xl border flex items-start gap-3.5 ${
-                      insight.type === "critical"
-                        ? "bg-rose-50/60 border-rose-200/80 text-rose-950"
-                        : insight.type === "warning"
-                        ? "bg-amber-50/60 border-amber-200/80 text-amber-950"
-                        : insight.type === "positive"
-                        ? "bg-emerald-50/60 border-emerald-200/80 text-emerald-950"
-                        : "bg-slate-50 border-slate-200 text-slate-900"
-                    }`}
-                  >
-                    <div className="shrink-0 mt-0.5">
-                      {insight.type === "critical" ? (
-                        <AlertTriangle className="w-5 h-5 text-rose-600" />
-                      ) : insight.type === "warning" ? (
-                        <AlertTriangle className="w-5 h-5 text-amber-600" />
-                      ) : insight.type === "positive" ? (
-                        <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                      ) : (
-                        <Info className="w-5 h-5 text-slate-500" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <h4 className="font-bold text-sm leading-snug">{insight.title}</h4>
-                        {insight.metric && (
-                          <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-white shadow-2xs">
-                            {insight.metric}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs opacity-90 mt-1 leading-relaxed">{insight.description}</p>
-                      {insight.recommendation && (
-                        <div className="mt-2 text-[11px] font-semibold flex items-center gap-1.5 opacity-90">
-                          <span className="underline">Tip:</span>
-                          <span>{insight.recommendation}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+              <div className="text-xs text-slate-800 space-y-0.5">
+                <strong className="text-slate-900 font-bold block text-sm">
+                  Quick Kitchen Tip:
+                </strong>
+                <p className="leading-relaxed">
+                  {topReason ? (
+                    `Most of your food waste is due to "${topReason.name}". Review your daily prep quantities or check storage fridge temperature to save money.`
+                  ) : (
+                    "Keep logging thrown food daily. Consistent tracking reduces kitchen food costs by 30%."
+                  )}
+                </p>
               </div>
             </div>
           )}
 
-          {/* 4. MAIN CHARTS & BREAKDOWNS */}
-          {data?.recordCount === 0 ? (
-            /* EMPTY STATE */
-            <div className="p-12 rounded-3xl bg-white border border-slate-200 text-center max-w-xl mx-auto my-6">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto mb-4">
-                <PlusCircle className="w-8 h-8" />
+          {/* 4. MAIN CONTENT: CHART & TOP WASTED ITEMS */}
+          {recordCount === 0 ? (
+            <div className="p-12 rounded-3xl bg-white border border-[#bed6c2] text-center max-w-lg mx-auto space-y-3">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-7 h-7" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900">No wastage recorded yet for this period</h3>
-              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
-                Record your first wastage event to start understanding where money is being lost and identify trends.
+              <h3 className="text-base font-extrabold text-slate-900">No food waste logged for this period!</h3>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+                Whenever food spoils, burns, or gets thrown away in your kitchen, log it here in 10 seconds.
               </p>
-              <button
-                onClick={() => setIsRecordModalOpen(true)}
-                className="mt-6 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-600/20 transition inline-flex items-center gap-2 cursor-pointer"
+              <Link
+                href="/app/wastage"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md transition"
               >
                 <PlusCircle className="w-4 h-4" />
-                <span>+ Record First Wastage</span>
-              </button>
+                <span>+ Log Food Waste</span>
+              </Link>
             </div>
           ) : (
-            <div className="grid lg:grid-cols-3 gap-6">
-              {/* Wastage Trend Chart (2 Columns) */}
-              <div className="lg:col-span-2 p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-base">Wastage Trend</h3>
-                    <span className="text-xs text-slate-500">Daily wastage value over time</span>
+            <div className="grid lg:grid-cols-2 gap-6">
+              {/* LEFT: SIMPLE DAILY LOSS BAR CHART */}
+              <div className="p-5 sm:p-6 rounded-3xl bg-white border border-[#bed6c2] shadow-xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-extrabold text-slate-900 text-sm sm:text-base">
+                        Daily Waste (₹)
+                      </h3>
+                      <p className="text-xs text-slate-500">How much money was thrown each day</p>
+                    </div>
+                    <span className="text-xs font-bold text-emerald-900 bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded-lg">
+                      {formatCurrency(totalLoss)} Total
+                    </span>
                   </div>
-                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg">
-                    {formatCurrency(data.totalWastage)} Total
-                  </span>
+
+                  <div className="h-60 sm:h-64 w-full pt-2">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={formattedChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="displayDate" stroke="#64748b" fontSize={11} tickLine={false} />
+                        <YAxis stroke="#64748b" fontSize={11} tickLine={false} />
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const d = payload[0].payload;
+                              return (
+                                <div className="bg-slate-900 text-white p-2.5 rounded-xl shadow-xl text-xs space-y-0.5">
+                                  <p className="font-bold text-slate-300">{d.displayDate}</p>
+                                  <p className="text-emerald-400 font-extrabold text-sm">
+                                    Loss: {formatCurrency(d.wastageValue)}
+                                  </p>
+                                  <p className="text-slate-400 text-[11px]">{d.recordsCount} items logged</p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Bar dataKey="wastageValue" fill="#047857" radius={[6, 6, 0, 0]} maxBarSize={40} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
 
-                <div className="h-64 sm:h-72 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={formattedChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="wasteGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#059669" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#059669" stopOpacity={0.0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                      <XAxis dataKey="displayDate" stroke="#94a3b8" fontSize={11} tickLine={false} />
-                      <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} />
-                      <Tooltip
-                        content={({ active, payload, label }) => {
-                          if (active && payload && payload.length) {
-                            const d = payload[0].payload;
-
-                            return (
-                              <div className="bg-slate-900 text-white p-3 rounded-xl shadow-xl text-xs space-y-1">
-                                <p className="font-bold text-slate-300">{d.date}</p>
-                                <p className="text-emerald-400 font-extrabold text-sm">
-                                  Wastage: {formatCurrency(d.wastageValue)}
-                                </p>
-                                <p className="text-slate-400">{d.recordsCount} record(s) logged</p>
-                              </div>
-                            );
-                          }
-                          return null;
-                        }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="wastageValue"
-                        stroke="#059669"
-                        strokeWidth={2.5}
-                        fillOpacity={1}
-                        fill="url(#wasteGradient)"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
+                <p className="text-[11px] text-slate-400 text-center pt-2">
+                  Tip: Taller bars mean more food was wasted on that day.
+                </p>
               </div>
 
-              {/* Top Wastage Reasons (1 Column) */}
-              <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex flex-col">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-base">Why are we wasting?</h3>
-                    <span className="text-xs text-slate-500">Top causes by cost</span>
+              {/* RIGHT: TOP WASTED INGREDIENTS */}
+              <div className="p-5 sm:p-6 rounded-3xl bg-white border border-[#bed6c2] shadow-xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-extrabold text-slate-900 text-sm sm:text-base">
+                        Top Wasted Items
+                      </h3>
+                      <p className="text-xs text-slate-500">Items costing your kitchen the most money</p>
+                    </div>
+                    <Link
+                      href="/app/items"
+                      className="text-xs font-bold text-emerald-700 hover:text-emerald-800"
+                    >
+                      View Items →
+                    </Link>
                   </div>
-                  <Link href="/app/analytics" className="text-xs font-semibold text-emerald-600 hover:underline">
-                    View all
-                  </Link>
+
+                  <div className="space-y-3">
+                    {data?.topItems?.slice(0, 5).map((item: any, idx: number) => (
+                      <div
+                        key={item.name}
+                        className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-900 font-extrabold text-xs flex items-center justify-center shrink-0">
+                            #{idx + 1}
+                          </span>
+                          <div className="min-w-0">
+                            <span className="font-bold text-xs sm:text-sm text-slate-900 truncate block">
+                              {item.name}
+                            </span>
+                            <span className="text-[11px] text-slate-500">
+                              {item.quantity} {item.unit} thrown away
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span className="font-extrabold text-sm text-slate-900 block">
+                            {formatCurrency(item.value)}
+                          </span>
+                          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded-md">
+                            {item.percentage}% of waste
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="flex-1 space-y-3.5">
-                  {data?.topReasons?.slice(0, 5).map((r: any) => (
-                    <div key={r.name} className="space-y-1">
-                      <div className="flex items-center justify-between text-xs font-bold">
-                        <span className="text-slate-800">{r.name}</span>
-                        <span className="text-slate-900">
-                          {formatCurrency(r.value)} <span className="text-slate-400 font-normal">({r.percentage}%)</span>
-                        </span>
-                      </div>
-                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                        <div
-                          className="bg-emerald-600 h-full rounded-full transition-all duration-500"
-                          style={{ width: `${Math.min(100, r.percentage)}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-xs text-slate-500">Want to see all waste logs?</span>
+                  <Link
+                    href="/app/history"
+                    className="text-xs font-bold text-emerald-700 hover:underline"
+                  >
+                    View History Log →
+                  </Link>
                 </div>
               </div>
             </div>
           )}
 
-          {/* 5. WHAT IS COSTING US (TOP ITEMS) */}
-          {data?.recordCount > 0 && (
-            <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="font-bold text-slate-900 text-base">What is costing us?</h3>
-                  <span className="text-xs text-slate-500">Highest financial wastage items this period</span>
-                </div>
-                <Link href="/app/items" className="text-xs font-semibold text-emerald-600 hover:underline">
-                  Manage items
-                </Link>
+          {/* 5. WHY ARE WE WASTING FOOD? (REASONS BREAKDOWN) */}
+          {recordCount > 0 && data?.topReasons && data.topReasons.length > 0 && (
+            <div className="p-5 sm:p-6 rounded-3xl bg-white border border-[#bed6c2] shadow-xs">
+              <div className="mb-4">
+                <h3 className="font-extrabold text-slate-900 text-sm sm:text-base">
+                  Reasons Why Food Was Thrown Away
+                </h3>
+                <p className="text-xs text-slate-500">
+                  See what went wrong so your kitchen team can fix it
+                </p>
               </div>
 
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {data?.topItems?.slice(0, 4).map((item: any, idx: number) => (
-                  <div key={item.name} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center shrink-0">
-                      #{idx + 1}
+              <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {data.topReasons.map((r: any) => (
+                  <div
+                    key={r.name}
+                    className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1.5"
+                  >
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <span className="text-slate-800">{r.name}</span>
+                      <span className="text-slate-900">{formatCurrency(r.value)}</span>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="font-bold text-slate-900 text-sm truncate">{item.name}</h4>
-                      <div className="text-base font-extrabold text-slate-900 mt-0.5">
-                        {formatCurrency(item.value)}
-                      </div>
-                      <span className="text-[11px] text-slate-500 block">
-                        {item.quantity} {item.unit} ({item.percentage}% of loss)
-                      </span>
+                    <div className="w-full bg-slate-200/80 h-2 rounded-full overflow-hidden">
+                      <div
+                        className="bg-emerald-700 h-full rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min(100, r.percentage)}%` }}
+                      />
                     </div>
+                    <span className="text-[10px] text-slate-500 block">
+                      {r.percentage}% of total waste cost
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
           )}
         </>
-      )}
-
-      {/* Custom Date Range Modal */}
-      {showCustomModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full border border-slate-200 shadow-2xl">
-            <h3 className="font-bold text-slate-900 text-base mb-4">Select Custom Date Range</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1">Start Date</label>
-                <input
-                  type="date"
-                  value={customStart}
-                  onChange={(e) => setCustomStart(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-300 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1">End Date</label>
-                <input
-                  type="date"
-                  value={customEnd}
-                  onChange={(e) => setCustomEnd(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-300 text-sm"
-                />
-              </div>
-            </div>
-            <div className="mt-6 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setShowCustomModal(false)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (customStart && customEnd) {
-                    setPeriod("custom");
-                    setShowCustomModal(false);
-                  }
-                }}
-                disabled={!customStart || !customEnd}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
-              >
-                Apply Range
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Quick Record Modal */}
