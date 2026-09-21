@@ -161,13 +161,23 @@ export default function DailyChecklistPage() {
     if (!dailyRecordId) return;
 
     const itemKey = item.id || item.label;
-    const existingVal = (checklistData.values || []).find((v: any) => v.itemKey === itemKey || v.itemId === item.id);
+    const existingVal = (checklistData.values || []).find(
+      (v: any) =>
+        (item.id && (v.itemId === item.id || v.itemKey === item.id)) ||
+        (item.label && (v.itemKey === item.label || v.itemKey?.toLowerCase().trim() === item.label.toLowerCase().trim()))
+    );
     const nextBool = !(existingVal?.valueBoolean === true);
     const currentUserName = authContext?.user?.name || "Staff";
 
     // Optimistic UI update
     setSavingStatus("saving");
-    const updatedValues = (checklistData.values || []).filter((v: any) => v.itemKey !== itemKey && v.itemId !== item.id);
+    const updatedValues = (checklistData.values || []).filter(
+      (v: any) =>
+        !(
+          (item.id && (v.itemId === item.id || v.itemKey === item.id)) ||
+          (item.label && (v.itemKey === item.label || v.itemKey?.toLowerCase().trim() === item.label.toLowerCase().trim()))
+        )
+    );
     updatedValues.push({
       itemKey,
       itemId: item.id,
@@ -181,7 +191,11 @@ export default function DailyChecklistPage() {
     let completed = 0;
     (checklistData.structure?.sections || []).forEach((sec: any) => {
       (sec.items || []).forEach((it: any) => {
-        const v = updatedValues.find((val: any) => val.itemId === it.id || val.itemKey === it.id || val.itemKey === it.label);
+        const v = updatedValues.find(
+          (val: any) =>
+            (it.id && (val.itemId === it.id || val.itemKey === it.id)) ||
+            (it.label && (val.itemKey === it.label || val.itemKey?.toLowerCase().trim() === it.label.toLowerCase().trim()))
+        );
         let isDone = false;
         if (it.fieldType === "checkbox" || it.field_type === "checkbox") {
           isDone = v?.valueBoolean === true;
@@ -260,7 +274,11 @@ export default function DailyChecklistPage() {
     if (!dailyRecordId) return;
 
     const itemKey = item.id || item.label;
-    const existingVal = (checklistData.values || []).find((v: any) => v.itemKey === itemKey || v.itemId === item.id);
+    const existingVal = (checklistData.values || []).find(
+      (v: any) =>
+        (item.id && (v.itemId === item.id || v.itemKey === item.id)) ||
+        (item.label && (v.itemKey === item.label || v.itemKey?.toLowerCase().trim() === item.label.toLowerCase().trim()))
+    );
 
     setSavingStatus("saving");
     try {
@@ -283,12 +301,25 @@ export default function DailyChecklistPage() {
 
       if (res.ok) {
         setSavingStatus("saved");
+        let found = false;
         const updatedValues = (checklistData.values || []).map((v: any) => {
-          if (v.itemKey === itemKey || v.itemId === item.id) {
+          if (
+            (item.id && (v.itemId === item.id || v.itemKey === item.id)) ||
+            (item.label && (v.itemKey === item.label || v.itemKey?.toLowerCase().trim() === item.label.toLowerCase().trim()))
+          ) {
+            found = true;
             return { ...v, remarks: text.trim() };
           }
           return v;
         });
+        if (!found) {
+          updatedValues.push({
+            itemKey,
+            itemId: item.id,
+            sectionId: section.id,
+            remarks: text.trim(),
+          });
+        }
         setChecklistData({ ...checklistData, values: updatedValues });
       } else {
         setSavingStatus("error");
@@ -460,7 +491,29 @@ export default function DailyChecklistPage() {
   const sections = structure.sections || [];
   const dailyRecord = checklistData?.dailyRecord || {};
   const values = checklistData?.values || [];
-  const valuesMap = new Map<string, any>(values.map((v: any) => [v.itemKey, v]));
+
+  const valuesMap = new Map<string, any>();
+  values.forEach((v: any) => {
+    if (v.itemKey) {
+      valuesMap.set(v.itemKey, v);
+      if (typeof v.itemKey === "string") {
+        valuesMap.set(v.itemKey.toLowerCase().trim(), v);
+      }
+    }
+    if (v.itemId) {
+      valuesMap.set(v.itemId, v);
+    }
+  });
+
+  const getItemValue = (item: any) => {
+    if (!item) return null;
+    if (item.id && valuesMap.has(item.id)) return valuesMap.get(item.id);
+    if (item.label && valuesMap.has(item.label)) return valuesMap.get(item.label);
+    if (item.label && typeof item.label === "string" && valuesMap.has(item.label.toLowerCase().trim())) {
+      return valuesMap.get(item.label.toLowerCase().trim());
+    }
+    return null;
+  };
 
   const completionPercent = Math.round(Number(dailyRecord.completionPercent || 0));
   const completedCount = Number(dailyRecord.completedItemsCount || 0);
@@ -721,7 +774,7 @@ export default function DailyChecklistPage() {
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                   {(section.items || []).map((item: any) => {
                     const itemKey = item.id || item.label;
-                    const val = valuesMap.get(itemKey);
+                    const val = getItemValue(item);
                     const isChecked = val?.valueBoolean === true;
                     const remarks = val?.remarks || "";
                     const isRemarksOpen = expandedRemarks[itemKey] || !!remarks;

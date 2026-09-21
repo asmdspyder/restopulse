@@ -115,6 +115,10 @@ export async function saveChecklistTemplate(
   let templateId = templateData.id;
   let newVersion = 1;
 
+  // Existing sections and items in DB if updating
+  let existingSections: any[] = [];
+  let existingItems: any[] = [];
+
   if (templateId) {
     const [existing] = await db
       .select()
@@ -138,17 +142,18 @@ export async function saveChecklistTemplate(
       })
       .where(eq(checklistTemplates.id, templateId));
 
-    // Delete existing items & sections for this template
-    const oldSections = await db
+    existingSections = await db
       .select()
       .from(checklistSections)
       .where(eq(checklistSections.templateId, templateId));
 
-    const oldSecIds = oldSections.map((s) => s.id);
+    const oldSecIds = existingSections.map((s) => s.id);
     if (oldSecIds.length > 0) {
-      await db.delete(checklistItems).where(sql`${checklistItems.sectionId} IN ${oldSecIds}`);
+      existingItems = await db
+        .select()
+        .from(checklistItems)
+        .where(sql`${checklistItems.sectionId} IN ${oldSecIds}`);
     }
-    await db.delete(checklistSections).where(eq(checklistSections.templateId, templateId));
   } else {
     // Insert new template
     const cleanCode = (templateData.code || templateData.title)
@@ -174,47 +179,133 @@ export async function saveChecklistTemplate(
     templateId = created.id;
   }
 
-  // Insert Sections & Items
+  // Non-destructive synchronization of Sections & Items
+  const keptSectionIds = new Set<string>();
+  const keptItemIds = new Set<string>();
   const insertedSectionsWithItems: any[] = [];
 
   for (let sIdx = 0; sIdx < templateData.sections.length; sIdx++) {
     const s = templateData.sections[sIdx];
-    const [createdSec] = await db
-      .insert(checklistSections)
-      .values({
-        templateId: templateId!,
-        version: String(newVersion),
-        sectionCode: s.sectionCode || String.fromCharCode(65 + sIdx),
-        title: s.title.trim(),
-        description: s.description || null,
-        sectionType: s.sectionType || "checklist",
-        displayOrder: String(s.displayOrder || sIdx + 1),
-      })
-      .returning();
+    let secRecord: any = null;
 
-    const itemsToInsert = (s.items || []).map((it, itIdx) => ({
-      sectionId: createdSec.id,
-      label: it.label.trim(),
-      description: it.description || null,
-      fieldType: it.fieldType || "checkbox",
-      options: it.options || null,
-      isRequired: it.isRequired ?? false,
-      allowsRemarks: it.allowsRemarks ?? true,
-      remarksRequired: it.remarksRequired ?? false,
-      defaultValue: it.defaultValue || null,
-      calculationFormula: it.calculationFormula || null,
-      displayOrder: String(it.displayOrder || itIdx + 1),
-    }));
+    // Check if this section already exists
+    const matchingExistingSec = existingSections.find(
+      (es) => (s.id && es.id === s.id) || es.title.trim().toLowerCase() === s.title.trim().toLowerCase()
+    );
 
-    let createdItems: any[] = [];
-    if (itemsToInsert.length > 0) {
-      createdItems = await db.insert(checklistItems).values(itemsToInsert).returning();
+    if (matchingExistingSec) {
+      keptSectionIds.add(matchingExistingSec.id);
+      const [updatedSec] = await db
+        .update(checklistSections)
+        .set({
+          version: String(newVersion),
+          sectionCode: s.sectionCode || String.fromCharCode(65 + sIdx),
+          title: s.title.trim(),
+          description: s.description || null,
+          sectionType: s.sectionType || "checklist",
+          displayOrder: String(s.displayOrder || sIdx + 1),
+          updatedAt: new Date(),
+        })
+        .where(eq(checklistSections.id, matchingExistingSec.id))
+        .returning();
+      secRecord = updatedSec;
+    } else {
+      const [createdSec] = await db
+        .insert(checklistSections)
+        .values({
+          templateId: templateId!,
+          version: String(newVersion),
+          sectionCode: s.sectionCode || String.fromCharCode(65 + sIdx),
+          title: s.title.trim(),
+          description: s.description || null,
+          sectionType: s.sectionType || "checklist",
+          displayOrder: String(s.displayOrder || sIdx + 1),
+        })
+        .returning();
+      secRecord = createdSec;
+      keptSectionIds.add(createdSec.id);
+    }
+
+    // Now process items for this section
+    const currentSecExistingItems = existingItems.filter(
+      (ei) => ei.sectionId === matchingExistingSec?.id || ei.sectionId === secRecord.id
+    );
+
+    const sectionItemsList: any[] = [];
+
+    for (let itIdx = 0; itIdx < (s.items || []).length; itIdx++) {
+      const it = s.items[itIdx];
+      let itemRecord: any = null;
+
+      // Find matching existing item by ID or by label in this section
+      const matchingItem =
+        (it.id && existingItems.find((ei) => ei.id === it.id)) ||
+        currentSecExistingItems.find(
+          (ei) => !keptItemIds.has(ei.id) && ei.label.trim().toLowerCase() === it.label.trim().toLowerCase()
+        );
+
+      if (matchingItem) {
+        keptItemIds.add(matchingItem.id);
+        const [updatedIt] = await db
+          .update(checklistItems)
+          .set({
+            sectionId: secRecord.id,
+            label: it.label.trim(),
+            description: it.description || null,
+            fieldType: it.fieldType || "checkbox",
+            options: it.options || null,
+            isRequired: it.isRequired ?? false,
+            allowsRemarks: it.allowsRemarks ?? true,
+            remarksRequired: it.remarksRequired ?? false,
+            defaultValue: it.defaultValue || null,
+            calculationFormula: it.calculationFormula || null,
+            displayOrder: String(it.displayOrder || itIdx + 1),
+            updatedAt: new Date(),
+          })
+          .where(eq(checklistItems.id, matchingItem.id))
+          .returning();
+        itemRecord = updatedIt;
+      } else {
+        const [createdIt] = await db
+          .insert(checklistItems)
+          .values({
+            sectionId: secRecord.id,
+            label: it.label.trim(),
+            description: it.description || null,
+            fieldType: it.fieldType || "checkbox",
+            options: it.options || null,
+            isRequired: it.isRequired ?? false,
+            allowsRemarks: it.allowsRemarks ?? true,
+            remarksRequired: it.remarksRequired ?? false,
+            defaultValue: it.defaultValue || null,
+            calculationFormula: it.calculationFormula || null,
+            displayOrder: String(it.displayOrder || itIdx + 1),
+          })
+          .returning();
+        itemRecord = createdIt;
+        keptItemIds.add(createdIt.id);
+      }
+
+      sectionItemsList.push(itemRecord);
     }
 
     insertedSectionsWithItems.push({
-      ...createdSec,
-      items: createdItems,
+      ...secRecord,
+      items: sectionItemsList,
     });
+  }
+
+  // Delete sections and items that were removed by the user in the builder
+  if (existingSections.length > 0) {
+    const deletedSecIds = existingSections.map((s) => s.id).filter((id) => !keptSectionIds.has(id));
+    const deletedItemIds = existingItems.map((i) => i.id).filter((id) => !keptItemIds.has(id));
+
+    if (deletedItemIds.length > 0) {
+      await db.delete(checklistItems).where(sql`${checklistItems.id} IN ${deletedItemIds}`);
+    }
+    if (deletedSecIds.length > 0) {
+      await db.delete(checklistSections).where(sql`${checklistSections.id} IN ${deletedSecIds}`);
+    }
   }
 
   // Save Immutable Template Version Snapshot
@@ -233,7 +324,7 @@ export async function saveChecklistTemplate(
     createdBy: user.id,
   });
 
-  // Automatically update any open / in-progress daily checklist records for this template
+  // Automatically update and heal any active daily checklist records for this template
   try {
     const activeRecords = await db
       .select()
@@ -245,19 +336,63 @@ export async function saveChecklistTemplate(
         )
       );
 
-    for (const rec of activeRecords) {
-      if (rec.status !== "completed") {
-        await db
-          .update(dailyChecklistRecords)
-          .set({
-            structureSnapshot: fullSnapshot,
-            versionNumber: String(newVersion),
-            updatedAt: new Date(),
-          })
-          .where(eq(dailyChecklistRecords.id, rec.id));
+    // Flatten all items in new snapshot
+    const allNewItems: any[] = [];
+    insertedSectionsWithItems.forEach((sec) => {
+      (sec.items || []).forEach((it: any) => {
+        allNewItems.push({ ...it, sectionTitle: sec.title });
+      });
+    });
 
-        await recalculateDailyRecordMetrics(rec.id);
+    for (const rec of activeRecords) {
+      // Re-map any daily_checklist_values that had previous item keys or labels
+      const recordVals = await db
+        .select()
+        .from(dailyChecklistValues)
+        .where(eq(dailyChecklistValues.dailyRecordId, rec.id));
+
+      for (const val of recordVals) {
+        // Find if this value belongs to any item in allNewItems
+        const matchingItem = allNewItems.find(
+          (ni) =>
+            ni.id === val.itemId ||
+            ni.id === val.itemKey ||
+            ni.label.trim().toLowerCase() === val.itemKey.trim().toLowerCase()
+        );
+
+        if (matchingItem && (val.itemId !== matchingItem.id || val.itemKey !== matchingItem.id)) {
+          // Prevent unique constraint clash
+          await db
+            .delete(dailyChecklistValues)
+            .where(
+              and(
+                eq(dailyChecklistValues.dailyRecordId, rec.id),
+                eq(dailyChecklistValues.itemKey, matchingItem.id),
+                sql`${dailyChecklistValues.id} != ${val.id}`
+              )
+            );
+
+          await db
+            .update(dailyChecklistValues)
+            .set({
+              itemId: matchingItem.id,
+              itemKey: matchingItem.id,
+              sectionId: matchingItem.sectionId,
+            })
+            .where(eq(dailyChecklistValues.id, val.id));
+        }
       }
+
+      await db
+        .update(dailyChecklistRecords)
+        .set({
+          structureSnapshot: fullSnapshot,
+          versionNumber: String(newVersion),
+          updatedAt: new Date(),
+        })
+        .where(eq(dailyChecklistRecords.id, rec.id));
+
+      await recalculateDailyRecordMetrics(rec.id);
     }
   } catch (err) {
     console.error("Error auto-updating active daily records on template save:", err);
@@ -425,7 +560,10 @@ export async function recalculateDailyRecordMetrics(dailyRecordId: string) {
   structure?.sections?.forEach((sec: any) => {
     sec.items?.forEach((item: any) => {
       const val = allValues.find(
-        (v) => v.itemId === item.id || v.itemKey === item.id || v.itemKey === item.label
+        (v) =>
+          (v.itemId && v.itemId === item.id) ||
+          (v.itemKey && v.itemKey === item.id) ||
+          (v.itemKey && item.label && v.itemKey.toLowerCase().trim() === item.label.toLowerCase().trim())
       );
 
       let isCompleted = false;
