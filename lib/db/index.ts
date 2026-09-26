@@ -306,12 +306,76 @@ export async function initializeDatabaseSchema() {
           created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
         );
 
-        CREATE INDEX IF NOT EXISTS idx_templates_rest ON checklist_templates(restaurant_id);
-        CREATE INDEX IF NOT EXISTS idx_sections_templ ON checklist_sections(template_id);
-        CREATE INDEX IF NOT EXISTS idx_items_sect ON checklist_items(section_id);
+        -- Performance Indexes
+        CREATE INDEX IF NOT EXISTS idx_restaurants_status ON restaurants(account_status);
+        CREATE INDEX IF NOT EXISTS idx_restaurants_created_at ON restaurants(created_at DESC);
+
+        CREATE INDEX IF NOT EXISTS idx_users_restaurant_id ON users(restaurant_id);
+        CREATE INDEX IF NOT EXISTS idx_users_rest_status ON users(restaurant_id, status);
+        CREATE INDEX IF NOT EXISTS idx_users_rest_role ON users(restaurant_id, role);
+
+        CREATE INDEX IF NOT EXISTS idx_subscriptions_restaurant_id ON subscriptions(restaurant_id);
+        CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
+        CREATE INDEX IF NOT EXISTS idx_subscriptions_razorpay_sub ON subscriptions(razorpay_subscription_id);
+        CREATE INDEX IF NOT EXISTS idx_subscriptions_rest_status ON subscriptions(restaurant_id, status);
+
+        CREATE INDEX IF NOT EXISTS idx_categories_restaurant ON categories(restaurant_id);
+        CREATE INDEX IF NOT EXISTS idx_categories_rest_active ON categories(restaurant_id, is_active);
+
+        CREATE INDEX IF NOT EXISTS idx_units_restaurant ON units(restaurant_id);
+        CREATE INDEX IF NOT EXISTS idx_units_rest_active ON units(restaurant_id, is_active);
+
+        CREATE INDEX IF NOT EXISTS idx_items_restaurant ON items(restaurant_id);
+        CREATE INDEX IF NOT EXISTS idx_items_category ON items(category_id);
+        CREATE INDEX IF NOT EXISTS idx_items_rest_active ON items(restaurant_id, is_active);
+        CREATE INDEX IF NOT EXISTS idx_items_rest_name ON items(restaurant_id, name);
+
+        CREATE INDEX IF NOT EXISTS idx_reasons_restaurant ON wastage_reasons(restaurant_id);
+        CREATE INDEX IF NOT EXISTS idx_reasons_rest_active ON wastage_reasons(restaurant_id, is_active);
+
+        CREATE INDEX IF NOT EXISTS idx_wastage_rest_recorded ON wastage_records(restaurant_id, recorded_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_wastage_rest_item ON wastage_records(restaurant_id, item_id);
+        CREATE INDEX IF NOT EXISTS idx_wastage_rest_reason ON wastage_records(restaurant_id, reason_id);
+        CREATE INDEX IF NOT EXISTS idx_wastage_rest_category ON wastage_records(restaurant_id, category_id);
+        CREATE INDEX IF NOT EXISTS idx_wastage_rest_created_by ON wastage_records(restaurant_id, created_by);
+        CREATE INDEX IF NOT EXISTS idx_wastage_rest_area ON wastage_records(restaurant_id, responsible_area);
+        CREATE INDEX IF NOT EXISTS idx_wastage_item ON wastage_records(item_id);
+        CREATE INDEX IF NOT EXISTS idx_wastage_reason ON wastage_records(reason_id);
+        CREATE INDEX IF NOT EXISTS idx_wastage_category ON wastage_records(category_id);
+        CREATE INDEX IF NOT EXISTS idx_wastage_item_name ON wastage_records(restaurant_id, item_name_snapshot);
+
+        CREATE INDEX IF NOT EXISTS idx_sales_restaurant ON sales_records(restaurant_id);
+        CREATE INDEX IF NOT EXISTS idx_sales_rest_date ON sales_records(restaurant_id, date DESC);
+
+        CREATE INDEX IF NOT EXISTS idx_templates_restaurant ON checklist_templates(restaurant_id);
+        CREATE INDEX IF NOT EXISTS idx_templates_code ON checklist_templates(code);
+        CREATE INDEX IF NOT EXISTS idx_templates_rest_active ON checklist_templates(restaurant_id, is_active);
+        CREATE INDEX IF NOT EXISTS idx_templates_rest_code ON checklist_templates(restaurant_id, code);
+
+        CREATE INDEX IF NOT EXISTS idx_template_versions_template ON checklist_template_versions(template_id, version);
+
+        CREATE INDEX IF NOT EXISTS idx_sections_template ON checklist_sections(template_id);
+        CREATE INDEX IF NOT EXISTS idx_sections_templ_order ON checklist_sections(template_id, display_order ASC);
+
+        CREATE INDEX IF NOT EXISTS idx_items_section ON checklist_items(section_id);
+        CREATE INDEX IF NOT EXISTS idx_items_sect_order ON checklist_items(section_id, display_order ASC);
+
         CREATE INDEX IF NOT EXISTS idx_daily_records_lookup ON daily_checklist_records(restaurant_id, date);
-        CREATE INDEX IF NOT EXISTS idx_daily_values_rec ON daily_checklist_values(daily_record_id);
-        CREATE INDEX IF NOT EXISTS idx_audit_rec ON checklist_audit_logs(daily_record_id);
+        CREATE INDEX IF NOT EXISTS idx_daily_records_rest_status ON daily_checklist_records(restaurant_id, status);
+        CREATE INDEX IF NOT EXISTS idx_daily_records_template ON daily_checklist_records(template_id);
+
+        CREATE INDEX IF NOT EXISTS idx_daily_values_record ON daily_checklist_values(daily_record_id);
+        CREATE INDEX IF NOT EXISTS idx_daily_values_rec_item ON daily_checklist_values(daily_record_id, item_id);
+
+        CREATE INDEX IF NOT EXISTS idx_repeatable_record_sec ON daily_repeatable_rows(daily_record_id, section_code);
+        CREATE INDEX IF NOT EXISTS idx_repeatable_rec_sec_row ON daily_repeatable_rows(daily_record_id, section_code, row_index ASC);
+
+        CREATE INDEX IF NOT EXISTS idx_audit_record_date ON checklist_audit_logs(daily_record_id, created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_audit_rest_date ON checklist_audit_logs(restaurant_id, operational_date);
+        CREATE INDEX IF NOT EXISTS idx_audit_rest_created ON checklist_audit_logs(restaurant_id, created_at DESC);
+
+        CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token);
+        CREATE INDEX IF NOT EXISTS idx_password_resets_user ON password_resets(user_id);
       `);
       console.log("Database tables verified/initialized successfully.");
     } finally {

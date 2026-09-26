@@ -40,6 +40,7 @@ export const restaurants = pgTable(
   (table) => [
     index("idx_restaurants_email").on(table.email),
     index("idx_restaurants_status").on(table.accountStatus),
+    index("idx_restaurants_created_at").on(table.createdAt),
   ]
 );
 
@@ -64,6 +65,8 @@ export const users = pgTable(
   (table) => [
     index("idx_users_restaurant_id").on(table.restaurantId),
     index("idx_users_email").on(table.email),
+    index("idx_users_rest_status").on(table.restaurantId, table.status),
+    index("idx_users_rest_role").on(table.restaurantId, table.role),
   ]
 );
 
@@ -94,6 +97,8 @@ export const subscriptions = pgTable(
   (table) => [
     index("idx_subscriptions_restaurant_id").on(table.restaurantId),
     index("idx_subscriptions_status").on(table.status),
+    index("idx_subscriptions_razorpay_sub").on(table.razorpaySubscriptionId),
+    index("idx_subscriptions_rest_status").on(table.restaurantId, table.status),
   ]
 );
 
@@ -113,6 +118,7 @@ export const categories = pgTable(
   },
   (table) => [
     index("idx_categories_restaurant").on(table.restaurantId),
+    index("idx_categories_rest_active").on(table.restaurantId, table.isActive),
   ]
 );
 
@@ -131,6 +137,7 @@ export const units = pgTable(
   },
   (table) => [
     index("idx_units_restaurant").on(table.restaurantId),
+    index("idx_units_rest_active").on(table.restaurantId, table.isActive),
   ]
 );
 
@@ -156,6 +163,8 @@ export const items = pgTable(
   (table) => [
     index("idx_items_restaurant").on(table.restaurantId),
     index("idx_items_category").on(table.categoryId),
+    index("idx_items_rest_active").on(table.restaurantId, table.isActive),
+    index("idx_items_rest_name").on(table.restaurantId, table.name),
   ]
 );
 
@@ -175,6 +184,7 @@ export const wastageReasons = pgTable(
   },
   (table) => [
     index("idx_reasons_restaurant").on(table.restaurantId),
+    index("idx_reasons_rest_active").on(table.restaurantId, table.isActive),
   ]
 );
 
@@ -209,10 +219,16 @@ export const wastageRecords = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
-    index("idx_wastage_restaurant_date").on(table.restaurantId, table.recordedAt),
+    index("idx_wastage_rest_recorded").on(table.restaurantId, table.recordedAt),
+    index("idx_wastage_rest_item").on(table.restaurantId, table.itemId),
+    index("idx_wastage_rest_reason").on(table.restaurantId, table.reasonId),
+    index("idx_wastage_rest_category").on(table.restaurantId, table.categoryId),
+    index("idx_wastage_rest_created_by").on(table.restaurantId, table.createdBy),
+    index("idx_wastage_rest_area").on(table.restaurantId, table.responsibleArea),
     index("idx_wastage_item").on(table.itemId),
     index("idx_wastage_reason").on(table.reasonId),
     index("idx_wastage_category").on(table.categoryId),
+    index("idx_wastage_item_name").on(table.restaurantId, table.itemNameSnapshot),
   ]
 );
 
@@ -235,6 +251,7 @@ export const salesRecords = pgTable(
   (table) => [
     uniqueIndex("idx_sales_restaurant_date").on(table.restaurantId, table.date),
     index("idx_sales_restaurant").on(table.restaurantId),
+    index("idx_sales_rest_date").on(table.restaurantId, table.date),
   ]
 );
 
@@ -253,6 +270,7 @@ export const passwordResets = pgTable(
   },
   (table) => [
     index("idx_password_resets_token").on(table.token),
+    index("idx_password_resets_user").on(table.userId),
   ]
 );
 
@@ -278,6 +296,8 @@ export const checklistTemplates = pgTable(
   (table) => [
     index("idx_templates_restaurant").on(table.restaurantId),
     index("idx_templates_code").on(table.code),
+    index("idx_templates_rest_active").on(table.restaurantId, table.isActive),
+    index("idx_templates_rest_code").on(table.restaurantId, table.code),
   ]
 );
 
@@ -319,6 +339,7 @@ export const checklistSections = pgTable(
   },
   (table) => [
     index("idx_sections_template").on(table.templateId),
+    index("idx_sections_templ_order").on(table.templateId, table.displayOrder),
   ]
 );
 
@@ -345,6 +366,7 @@ export const checklistItems = pgTable(
   },
   (table) => [
     index("idx_items_section").on(table.sectionId),
+    index("idx_items_sect_order").on(table.sectionId, table.displayOrder),
   ]
 );
 
@@ -379,8 +401,10 @@ export const dailyChecklistRecords = pgTable(
   },
   (table) => [
     uniqueIndex("idx_daily_records_unique").on(table.restaurantId, table.templateId, table.date),
-    index("idx_daily_records_date").on(table.restaurantId, table.date),
+    index("idx_daily_records_lookup").on(table.restaurantId, table.date),
     index("idx_daily_records_status").on(table.status),
+    index("idx_daily_records_rest_status").on(table.restaurantId, table.status),
+    index("idx_daily_records_template").on(table.templateId),
   ]
 );
 
@@ -407,6 +431,7 @@ export const dailyChecklistValues = pgTable(
   (table) => [
     uniqueIndex("idx_daily_values_unique").on(table.dailyRecordId, table.itemKey),
     index("idx_daily_values_record").on(table.dailyRecordId),
+    index("idx_daily_values_rec_item").on(table.dailyRecordId, table.itemId),
   ]
 );
 
@@ -427,6 +452,7 @@ export const dailyRepeatableRows = pgTable(
   },
   (table) => [
     index("idx_repeatable_record_sec").on(table.dailyRecordId, table.sectionCode),
+    index("idx_repeatable_rec_sec_row").on(table.dailyRecordId, table.sectionCode, table.rowIndex),
   ]
 );
 
@@ -454,6 +480,8 @@ export const checklistAuditLogs = pgTable(
   (table) => [
     index("idx_audit_record_date").on(table.dailyRecordId, table.createdAt),
     index("idx_audit_rest_date").on(table.restaurantId, table.operationalDate),
+    index("idx_audit_rec_created").on(table.dailyRecordId, table.createdAt),
+    index("idx_audit_rest_created").on(table.restaurantId, table.createdAt),
   ]
 );
 
