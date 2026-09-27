@@ -169,7 +169,7 @@ export default function WastageHistoryPage() {
           <div className="flex items-center gap-2.5">
             <Link
               href="/app"
-              className="p-2 rounded-xl bg-white border border-[slate-200] hover:bg-emerald-50 text-slate-700 shadow-xs transition group flex items-center justify-center shrink-0"
+              className="p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-xs transition group flex items-center justify-center shrink-0"
               title="Back to Operations Hub"
             >
               <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
@@ -186,7 +186,7 @@ export default function WastageHistoryPage() {
           disabled={records.length === 0}
           className="self-start sm:self-auto px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs shadow-xs transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
         >
-          <Download className="w-4 h-4 text-emerald-600" />
+          <Download className="w-4 h-4 text-indigo-600" />
           <span>Export CSV</span>
         </button>
       </div>

@@ -76,32 +76,32 @@ function BlockedContent() {
   const isDeactivated = reasonParam === "deactivated" || authStatus?.isDeactivated;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center py-12 sm:px-6 lg:px-8 selection:bg-indigo-100 selection:text-indigo-900 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-10 px-6 shadow-xl shadow-slate-200/60 sm:rounded-2xl sm:px-10 border border-slate-200/80 text-center">
+        <div className="bg-white py-10 px-6 shadow-xl shadow-slate-200/50 sm:rounded-3xl sm:px-10 border border-slate-200 text-center">
           {isDeactivated ? (
             /* MANUAL DEACTIVATION STATE (NO PAYMENT OPTION) */
             <>
               <div className="w-16 h-16 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-5">
                 <ShieldAlert className="w-9 h-9" />
               </div>
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+              <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
                 Account Deactivated
               </h2>
-              <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-700 leading-relaxed text-left">
+              <div className="mt-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-700 leading-relaxed text-left">
                 <p className="font-semibold text-slate-900 mb-1">
                   Your account has been deactivated by the administrator.
                 </p>
                 <p className="text-xs text-slate-600">
                   Please contact the administrator or your support team at{" "}
-                  <span className="font-mono text-emerald-700">support@restopulse.io</span> to continue using the application.
+                  <span className="font-mono text-indigo-700 font-semibold">support@restopulse.io</span> to continue using the application.
                 </p>
               </div>
 
               <div className="mt-8 space-y-3">
                 <button
                   onClick={handleLogout}
-                  className="w-full py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition flex items-center justify-center gap-2"
+                  className="w-full py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Sign Out</span>
@@ -111,10 +111,10 @@ function BlockedContent() {
           ) : (
             /* SUBSCRIPTION INACTIVE / EXPIRED STATE */
             <>
-              <div className="w-16 h-16 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto mb-5">
+              <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-5 border border-amber-200">
                 <CreditCard className="w-9 h-9" />
               </div>
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+              <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
                 Your subscription is inactive
               </h2>
               <p className="mt-3 text-sm text-slate-600 leading-relaxed">
@@ -132,9 +132,9 @@ function BlockedContent() {
                 <button
                   type="button"
                   onClick={() => setPlan("monthly")}
-                  className={`p-3 rounded-xl border text-xs transition ${
+                  className={`p-3 rounded-2xl border text-xs transition cursor-pointer ${
                     plan === "monthly"
-                      ? "border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20"
+                      ? "border-indigo-600 bg-indigo-50/50 ring-2 ring-indigo-500/20"
                       : "border-slate-200 hover:bg-slate-50"
                   }`}
                 >
@@ -145,15 +145,15 @@ function BlockedContent() {
                 <button
                   type="button"
                   onClick={() => setPlan("yearly")}
-                  className={`p-3 rounded-xl border text-xs transition relative ${
+                  className={`p-3 rounded-2xl border text-xs transition relative cursor-pointer ${
                     plan === "yearly"
-                      ? "border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20"
+                      ? "border-indigo-600 bg-indigo-50/50 ring-2 ring-indigo-500/20"
                       : "border-slate-200 hover:bg-slate-50"
                   }`}
                 >
                   <span className="font-bold text-slate-900 block">Annual</span>
-                  <span className="text-emerald-700 font-extrabold text-sm">₹3,999 / yr</span>
-                  <span className="text-[9px] uppercase font-bold text-emerald-800">Save 17%</span>
+                  <span className="text-indigo-700 font-extrabold text-sm">₹3,999 / yr</span>
+                  <span className="text-[9px] uppercase font-bold text-emerald-800 bg-emerald-100 px-1 py-0.2 rounded">Save ₹789</span>
                 </button>
               </div>
 
@@ -161,7 +161,7 @@ function BlockedContent() {
                 <button
                   onClick={handleRenew}
                   disabled={loading}
-                  className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
+                  className="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-500/20 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
                 >
                   {loading ? (
                     <>
@@ -178,7 +178,7 @@ function BlockedContent() {
 
                 <button
                   onClick={handleLogout}
-                  className="w-full py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition flex items-center justify-center gap-2"
+                  className="w-full py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Sign Out</span>
@@ -194,7 +194,7 @@ function BlockedContent() {
 
 export default function BlockedPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-emerald-600" /></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /></div>}>
       <BlockedContent />
     </Suspense>
   );

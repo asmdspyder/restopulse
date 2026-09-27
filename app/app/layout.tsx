@@ -155,13 +155,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center text-slate-950 font-black text-2xl shadow-xl shadow-amber-500/20 animate-pulse">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-extrabold text-2xl shadow-xl shadow-indigo-500/20 animate-pulse">
             R
           </div>
-          <Loader2 className="w-5 h-5 animate-spin text-amber-400" />
-          <span className="text-xs font-semibold text-slate-400 tracking-wide">Loading workspace...</span>
+          <Loader2 className="w-5 h-5 animate-spin text-indigo-600" />
+          <span className="text-xs font-semibold text-slate-500 tracking-wide">Loading workspace...</span>
         </div>
       </div>
     );
@@ -170,7 +170,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // A. OPERATIONS HUB VIEW (/app) -> CLEAN FULL-WIDTH HEADER + CENTERED WORKSPACE
   if (isHub) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col pb-16 md:pb-0 font-sans selection:bg-amber-500 selection:text-slate-950">
+      <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col pb-16 md:pb-0 font-sans selection:bg-indigo-100 selection:text-indigo-900">
         {/* Superadmin Impersonation Notice Bar */}
         {authContext?.isImpersonating && (
           <div className="bg-amber-400 text-slate-950 px-4 sm:px-8 py-2.5 text-xs font-bold flex flex-wrap items-center justify-between gap-3 shadow-md border-b border-amber-500 sticky top-0 z-50">
@@ -203,9 +203,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Top Header */}
-        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 h-16 flex items-center justify-between shadow-2xs w-full">
+        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 h-16 flex items-center justify-between shadow-xs w-full">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-slate-900 text-amber-400 font-black flex items-center justify-center text-xl shadow-md border border-slate-800">
+            <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white font-extrabold flex items-center justify-center text-lg shadow-md shadow-indigo-500/20">
               R
             </div>
             <div>
@@ -213,7 +213,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 {authContext?.restaurant?.businessName || "RestoPulse"}
               </span>
               <span className="text-[10px] text-slate-500 font-semibold tracking-wider block">
-                {isStaff ? "Staff Operations" : "Restaurant Manager Hub"}
+                {isStaff ? "Staff Portal" : "Operations Hub"}
               </span>
             </div>
           </div>
@@ -221,9 +221,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsQuickRecordOpen(true)}
-              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer transition"
+              className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer transition"
             >
-              <PlusCircle className="w-4 h-4 text-amber-400" />
+              <PlusCircle className="w-4 h-4" />
               <span>Log Wastage</span>
             </button>
             <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-slate-200">
@@ -259,13 +259,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   // B. INSIDE OPERATIONAL MODULE (CHECKLISTS, WASTAGE, ACCOUNT) -> SLEEK MODERN SIDEBAR ON DESKTOP & TOP BAR
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col md:flex-row pb-16 md:pb-0 font-sans selection:bg-amber-500 selection:text-slate-950">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col md:flex-row pb-16 md:pb-0 font-sans selection:bg-indigo-100 selection:text-indigo-900">
       {/* 1. DESKTOP SIDEBAR */}
-      <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-white border-r border-slate-200/80 z-30 shadow-2xs">
+      <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-white border-r border-slate-200/80 z-30 shadow-xs">
         <div className="flex flex-col flex-1 min-h-0">
           {/* Logo & Restaurant Name */}
           <div className="flex items-center gap-3 px-5 h-16 border-b border-slate-100">
-            <div className="w-9 h-9 rounded-xl bg-slate-900 text-amber-400 flex items-center justify-center font-black text-lg shadow-2xs border border-slate-800">
+            <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-extrabold text-lg shadow-md shadow-indigo-500/20">
               R
             </div>
             <div className="min-w-0 flex-1">
@@ -274,7 +274,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </span>
               <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                {isStaff ? "Staff Portal" : "RestoPulse Hub"}
+                {isStaff ? "Staff Portal" : "RestoPulse"}
               </span>
             </div>
           </div>
@@ -283,7 +283,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="px-3 pt-3 pb-1">
             <Link
               href="/app"
-              className="w-full py-2 px-3 rounded-xl bg-slate-100/80 hover:bg-slate-200/80 text-slate-700 hover:text-slate-950 font-bold text-xs flex items-center gap-2 border border-slate-200/60 transition group"
+              className="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-950 font-bold text-xs flex items-center gap-2 border border-slate-200 transition group"
               title="Back to Hub"
             >
               <ArrowLeft className="w-4 h-4 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
@@ -305,9 +305,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="px-3 pb-2">
               <button
                 onClick={() => setIsQuickRecordOpen(true)}
-                className="w-full py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm shadow-slate-900/10 transition flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-500/20 transition flex items-center justify-center gap-2 cursor-pointer"
               >
-                <PlusCircle className="w-4 h-4 text-amber-400" />
+                <PlusCircle className="w-4 h-4" />
                 <span>+ Log Wastage</span>
               </button>
             </div>
@@ -330,13 +330,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       href={item.href}
                       className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition ${
                         isActive
-                          ? "bg-slate-900 text-white font-bold shadow-xs"
-                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                          ? "bg-indigo-50 text-indigo-700 font-bold border border-indigo-100 shadow-xs"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                       }`}
                     >
                       <Icon
                         className={`w-4 h-4 shrink-0 ${
-                          isActive ? "text-amber-400" : "text-slate-400"
+                          isActive ? "text-indigo-600" : "text-slate-400"
                         }`}
                       />
                       <span>{item.name}</span>
@@ -361,13 +361,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       href={item.href}
                       className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition ${
                         isActive
-                          ? "bg-slate-900 text-white font-bold shadow-xs"
-                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                          ? "bg-indigo-50 text-indigo-700 font-bold border border-indigo-100 shadow-xs"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                       }`}
                     >
                       <Icon
                         className={`w-4 h-4 shrink-0 ${
-                          isActive ? "text-amber-400" : "text-slate-400"
+                          isActive ? "text-indigo-600" : "text-slate-400"
                         }`}
                       />
                       <span>{item.name}</span>
@@ -387,7 +387,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <Link
                       key={item.name}
                       href={item.href}
-                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                     >
                       <Icon className="w-4 h-4 shrink-0 text-slate-400" />
                       <span>{item.name}</span>
@@ -400,7 +400,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           {/* Module Switcher Shortcuts (Hidden for Staff) */}
           {!isStaff && (
-            <div className="p-3 border-t border-slate-100 bg-slate-50/70 space-y-1">
+            <div className="p-3 border-t border-slate-100 bg-slate-50/50 space-y-1">
               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1 mb-1">
                 Quick Switch
               </div>
@@ -408,7 +408,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 {currentModule !== "sop" && (
                   <Link
                     href="/app/checklists"
-                    className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-[10px] font-bold text-slate-700 text-center transition"
+                    className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-[10px] font-bold text-slate-700 text-center transition shadow-xs"
                   >
                     📋 Checklists
                   </Link>
@@ -416,7 +416,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 {currentModule !== "wastage" && (
                   <Link
                     href="/app/wastage"
-                    className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-[10px] font-bold text-slate-700 text-center transition"
+                    className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-[10px] font-bold text-slate-700 text-center transition shadow-xs"
                   >
                     🗑️ Wastage
                   </Link>
@@ -424,7 +424,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 {currentModule !== "account" && (
                   <Link
                     href="/app/account"
-                    className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-[10px] font-bold text-slate-700 text-center transition"
+                    className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-[10px] font-bold text-slate-700 text-center transition shadow-xs"
                   >
                     ⚙️ Settings
                   </Link>
@@ -434,7 +434,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           )}
 
           {/* User Profile Footer */}
-          <div className="p-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/80">
+          <div className="p-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/60">
             <div className="min-w-0 flex-1 mr-2">
               <span className="font-bold text-xs text-slate-900 block truncate">
                 {authContext?.user?.name || "User"}
@@ -474,9 +474,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsQuickRecordOpen(true)}
-            className="px-2.5 py-1 rounded-lg bg-slate-900 text-white text-xs font-bold shadow-xs flex items-center gap-1 cursor-pointer"
+            className="px-2.5 py-1 rounded-lg bg-indigo-600 text-white text-xs font-bold shadow-xs flex items-center gap-1 cursor-pointer"
           >
-            <PlusCircle className="w-3.5 h-3.5 text-amber-400" />
+            <PlusCircle className="w-3.5 h-3.5" />
             <span>Log Waste</span>
           </button>
           <button

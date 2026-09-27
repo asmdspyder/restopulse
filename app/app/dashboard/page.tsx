@@ -84,11 +84,11 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       {/* 1. TOP HEADER & TIME FILTER */}
-      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[slate-200] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
             href="/app"
-            className="p-2.5 rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 transition group flex items-center justify-center shrink-0"
+            className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition group flex items-center justify-center shrink-0"
             title="Back to Operations Hub"
           >
             <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
@@ -111,7 +111,7 @@ export default function DashboardPage() {
               onClick={() => setPeriod(p)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                 period === p
-                  ? "bg-emerald-700 text-white shadow-xs"
+                  ? "bg-indigo-600 text-white shadow-xs"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
               }`}
             >
@@ -129,15 +129,15 @@ export default function DashboardPage() {
 
       {loading ? (
         <div className="py-24 flex flex-col items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-emerald-700 mb-2" />
-          <span className="text-xs font-semibold text-slate-600">Loading summary...</span>
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-2" />
+          <span className="text-xs font-semibold text-slate-500">Loading summary...</span>
         </div>
       ) : (
         <>
           {/* 2. THREE SIMPLE KEY NUMBER CARDS */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* CARD 1: TOTAL MONEY LOST */}
-            <div className="p-5 rounded-3xl bg-white border border-[slate-200] shadow-xs relative overflow-hidden">
+            <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs relative overflow-hidden">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
                   Total Food Waste Loss
@@ -155,7 +155,7 @@ export default function DashboardPage() {
             </div>
 
             {/* CARD 2: BIGGEST REASON */}
-            <div className="p-5 rounded-3xl bg-white border border-[slate-200] shadow-xs">
+            <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
                   Main Cause of Waste
@@ -173,7 +173,7 @@ export default function DashboardPage() {
             </div>
 
             {/* CARD 3: DAILY AVERAGE */}
-            <div className="p-5 rounded-3xl bg-white border border-[slate-200] shadow-xs">
+            <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
                   Daily Average Loss
@@ -214,7 +214,7 @@ export default function DashboardPage() {
 
           {/* 4. MAIN CONTENT: CHART & TOP WASTED ITEMS */}
           {recordCount === 0 ? (
-            <div className="p-12 rounded-3xl bg-white border border-[slate-200] text-center max-w-lg mx-auto space-y-3">
+            <div className="p-12 rounded-3xl bg-white border border-slate-200 text-center max-w-lg mx-auto space-y-3">
               <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto">
                 <CheckCircle2 className="w-7 h-7" />
               </div>
@@ -233,7 +233,7 @@ export default function DashboardPage() {
           ) : (
             <div className="grid lg:grid-cols-2 gap-6">
               {/* LEFT: SIMPLE DAILY LOSS BAR CHART */}
-              <div className="p-5 sm:p-6 rounded-3xl bg-white border border-[slate-200] shadow-xs flex flex-col justify-between">
+              <div className="p-5 sm:p-6 rounded-3xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -282,7 +282,7 @@ export default function DashboardPage() {
               </div>
 
               {/* RIGHT: TOP WASTED INGREDIENTS */}
-              <div className="p-5 sm:p-6 rounded-3xl bg-white border border-[slate-200] shadow-xs flex flex-col justify-between">
+              <div className="p-5 sm:p-6 rounded-3xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -347,7 +347,7 @@ export default function DashboardPage() {
 
           {/* 5. WHY ARE WE WASTING FOOD? (REASONS BREAKDOWN) */}
           {recordCount > 0 && data?.topReasons && data.topReasons.length > 0 && (
-            <div className="p-5 sm:p-6 rounded-3xl bg-white border border-[slate-200] shadow-xs">
+            <div className="p-5 sm:p-6 rounded-3xl bg-white border border-slate-200 shadow-xs">
               <div className="mb-4">
                 <h3 className="font-extrabold text-slate-900 text-sm sm:text-base">
                   Reasons Why Food Was Thrown Away

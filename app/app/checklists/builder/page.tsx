@@ -343,7 +343,7 @@ export default function ChecklistBuilderPage() {
 
   if (!canManage) {
     return (
-      <div className="bg-white rounded-3xl p-12 border border-[slate-200] text-center max-w-md mx-auto my-12 shadow-xs">
+      <div className="bg-white rounded-3xl p-12 border border-slate-200 text-center max-w-md mx-auto my-12 shadow-xs">
         <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto mb-3 font-bold">
           <Lock className="w-6 h-6" />
         </div>
@@ -420,11 +420,11 @@ export default function ChecklistBuilderPage() {
       )}
 
       {/* 2. TOP HEADER & ACTION BAR */}
-      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[slate-200] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
             href="/app/checklists"
-            className="p-2.5 rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 transition group flex items-center justify-center shrink-0"
+            className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition group flex items-center justify-center shrink-0"
             title="Back to Daily Checklist"
           >
             <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
@@ -435,7 +435,7 @@ export default function ChecklistBuilderPage() {
               <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
                 SOP Template Customizer
               </h1>
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold border border-emerald-300">
+              <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-200">
                 {sections.length} Categories • {totalItemsCount} Tasks
               </span>
             </div>
@@ -449,9 +449,9 @@ export default function ChecklistBuilderPage() {
           <button
             type="button"
             onClick={handleAddSection}
-            className="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-emerald-50 border border-slate-200 text-slate-800 hover:text-emerald-900 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+            className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-xs"
           >
-            <Plus className="w-4 h-4 text-emerald-700" />
+            <Plus className="w-4 h-4 text-indigo-600" />
             <span>+ Add Category</span>
           </button>
 
@@ -459,7 +459,7 @@ export default function ChecklistBuilderPage() {
             type="button"
             onClick={() => handleSaveTemplate()}
             disabled={saving}
-            className="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 flex items-center gap-2 cursor-pointer transition disabled:opacity-50"
+            className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-500/20 flex items-center gap-2 cursor-pointer transition disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
             <span>Save Template</span>
@@ -488,7 +488,7 @@ export default function ChecklistBuilderPage() {
             placeholder="Search tasks or categories..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-xl bg-white border border-[slate-200] text-xs text-slate-800 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-hidden shadow-xs"
+            className="w-full pl-9 pr-4 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-800 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-hidden shadow-xs"
           />
         </div>
 
@@ -527,7 +527,7 @@ export default function ChecklistBuilderPage() {
           return (
             <div
               key={secIdx}
-              className="bg-white rounded-3xl border border-[slate-200] shadow-xs overflow-hidden transition-all duration-200 hover:border-emerald-300"
+              className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden transition-all duration-200 hover:border-emerald-300"
             >
               {/* Category Header */}
               <div className="p-3.5 sm:p-4 bg-slate-50/90 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">

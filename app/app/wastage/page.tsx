@@ -237,7 +237,7 @@ export default function RecordWastagePage() {
         <div className="flex items-center gap-3">
           <Link
             href="/app"
-            className="p-2 rounded-xl bg-white border border-[slate-200] hover:bg-emerald-50 text-slate-700 shadow-xs transition group"
+            className="p-2 rounded-xl bg-white border border-slate-200 hover:bg-emerald-50 text-slate-700 shadow-xs transition group"
             title="Back to Operations Hub"
           >
             <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
@@ -474,7 +474,7 @@ export default function RecordWastagePage() {
                       onClick={() => setSelectedReasonId(r.id)}
                       className={`py-2 px-2.5 rounded-xl text-xs font-bold transition text-center border cursor-pointer ${
                         selectedReasonId === r.id
-                          ? "bg-emerald-700 text-white border-emerald-700 shadow-2xs"
+                          ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
                           : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
                       }`}
                     >
@@ -493,10 +493,10 @@ export default function RecordWastagePage() {
                 </label>
 
                 {capturedPhoto ? (
-                  <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200 flex items-center justify-between gap-3 animate-in fade-in">
+                  <div className="p-3 rounded-2xl bg-indigo-50/60 border border-indigo-200 flex items-center justify-between gap-3 animate-in fade-in">
                     <div className="flex items-center gap-3">
                       <div
-                        className="relative w-16 h-12 rounded-xl overflow-hidden bg-slate-900 border border-amber-300 shadow-xs cursor-pointer group shrink-0"
+                        className="relative w-16 h-12 rounded-xl overflow-hidden bg-slate-900 border border-indigo-300 shadow-xs cursor-pointer group shrink-0"
                         onClick={() => setViewingPhotoUrl(capturedPhoto.previewUrl)}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -513,7 +513,7 @@ export default function RecordWastagePage() {
                         <span className="text-xs font-bold text-slate-900 block">
                           Camera Photo Attached
                         </span>
-                        <span className="text-[10px] text-amber-800 font-mono">
+                        <span className="text-[10px] text-indigo-700 font-mono">
                           {(capturedPhoto.sizeBytes / 1024).toFixed(0)} KB • Ready to save
                         </span>
                       </div>
@@ -526,7 +526,7 @@ export default function RecordWastagePage() {
                           setReuploadTarget(null);
                           setIsCameraModalOpen(true);
                         }}
-                        className="p-2 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                        className="p-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-900 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
                         title="Retake or re-upload photo"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
@@ -549,9 +549,9 @@ export default function RecordWastagePage() {
                       setReuploadTarget(null);
                       setIsCameraModalOpen(true);
                     }}
-                    className="w-full py-2.5 px-3 rounded-2xl border-2 border-dashed border-slate-200 hover:border-amber-400 hover:bg-amber-50/40 text-slate-600 hover:text-amber-900 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer group"
+                    className="w-full py-2.5 px-3 rounded-2xl border-2 border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/40 text-slate-600 hover:text-indigo-900 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer group"
                   >
-                    <div className="w-7 h-7 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center group-hover:scale-105 transition-transform shadow-2xs">
+                    <div className="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs">
                       <Camera className="w-4 h-4" />
                     </div>
                     <span>Open Camera & Snap Photo (Optional)</span>
@@ -618,7 +618,7 @@ export default function RecordWastagePage() {
             <button
               type="submit"
               disabled={saving || !selectedItem || !selectedReasonId || !quantity}
-              className="w-full py-3 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-700/20 transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+              className="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-indigo-500/20 transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               {saving ? (
                 <>
@@ -640,7 +640,7 @@ export default function RecordWastagePage() {
         {/* Right Feed: Recent Wastage Logs (1 Column) */}
         <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs">
           <div className="flex items-center gap-2 mb-3">
-            <History className="w-4 h-4 text-emerald-700" />
+            <History className="w-4 h-4 text-indigo-600" />
             <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">Recent Logs</h3>
           </div>
 

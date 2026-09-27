@@ -734,7 +734,7 @@ export default function DailyChecklistPage() {
           <div className="flex items-center gap-2.5">
             <Link
               href="/app"
-              className="p-2 rounded-xl bg-white border border-[slate-200] hover:bg-emerald-50 text-slate-700 shadow-xs transition group flex items-center justify-center shrink-0"
+              className="p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-xs transition group flex items-center justify-center shrink-0"
               title="Back to Operations Hub"
             >
               <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
@@ -743,11 +743,11 @@ export default function DailyChecklistPage() {
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
               {structure.title || "Daily Opening Checklist"}
             </h1>
-            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-[10px] font-bold border border-emerald-300">
+            <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-bold border border-indigo-200">
               v{dailyRecord.versionNumber || "1"}
             </span>
           </div>
-          <p className="text-xs text-slate-600 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Standard operating procedure verification & morning audit checklist with direct photo capture.
           </p>
         </div>
@@ -758,9 +758,9 @@ export default function DailyChecklistPage() {
             <button
               type="button"
               onClick={() => setIsCalendarOpen(!isCalendarOpen)}
-              className="px-3.5 py-2 rounded-2xl bg-white border border-[slate-200] hover:border-emerald-600 text-slate-800 text-xs font-bold shadow-xs flex items-center gap-2 transition cursor-pointer"
+              className="px-3.5 py-2 rounded-2xl bg-white border border-slate-200 hover:border-indigo-400 text-slate-800 text-xs font-bold shadow-xs flex items-center gap-2 transition cursor-pointer"
             >
-              <CalendarIcon className="w-4 h-4 text-emerald-700" />
+              <CalendarIcon className="w-4 h-4 text-indigo-600" />
               <span>{isToday ? `Today (${dateFormatted})` : dateFormatted}</span>
               {isToday && (
                 <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
@@ -845,7 +845,7 @@ export default function DailyChecklistPage() {
 
           <Link
             href="/app/checklists/builder"
-            className="p-2.5 rounded-2xl bg-white border border-[slate-200] hover:bg-emerald-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+            className="p-2.5 rounded-2xl bg-white border border-slate-200 hover:bg-emerald-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
             title="Customize Checklist & SOP Template"
           >
             <Sliders className="w-4 h-4 text-emerald-700" />
@@ -857,7 +857,7 @@ export default function DailyChecklistPage() {
               setIsAuditDrawerOpen(true);
               fetchAuditLogs();
             }}
-            className="p-2.5 rounded-2xl bg-white border border-[slate-200] hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+            className="p-2.5 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
             title="View Audit Log"
           >
             <History className="w-4 h-4 text-slate-600" />
@@ -867,7 +867,7 @@ export default function DailyChecklistPage() {
       </div>
 
       {/* 2. PROGRESS SUMMARY STRIP */}
-      <div className="bg-white rounded-3xl border border-[slate-200] p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white rounded-3xl border border-slate-200 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex-1 space-y-1.5">
           <div className="flex items-center justify-between text-xs font-bold">
             <span className="text-slate-700">Checklist Completion</span>
@@ -918,7 +918,7 @@ export default function DailyChecklistPage() {
           return (
             <div
               key={section.id || sIdx}
-              className="bg-white rounded-3xl border border-[slate-200] p-4 sm:p-5 shadow-xs"
+              className="bg-white rounded-3xl border border-slate-200 p-4 sm:p-5 shadow-xs"
             >
               <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-3">
                 <div className="flex items-center gap-2">
