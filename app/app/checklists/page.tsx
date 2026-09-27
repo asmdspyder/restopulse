@@ -28,8 +28,17 @@ import {
   IndianRupee,
   ArrowLeft,
   User,
+  Camera,
+  FileCheck2,
+  Receipt,
+  Banknote,
+  DollarSign,
 } from "lucide-react";
 import { formatCurrency, formatLocalDateToYMD } from "@/lib/utils";
+import {
+  ChecklistCameraModal,
+  ChecklistItemImage,
+} from "@/components/app/checklist-camera-modal";
 
 export default function DailyChecklistPage() {
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -63,9 +72,19 @@ export default function DailyChecklistPage() {
   const [isAuditDrawerOpen, setIsAuditDrawerOpen] = useState(false);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
 
-  // Remarks open modal/toggle map
+  // Remarks open map
   const [expandedRemarks, setExpandedRemarks] = useState<{ [itemKey: string]: boolean }>({});
   const [toastMsg, setToastMsg] = useState("");
+
+  // Camera Modal State
+  const [cameraModalItem, setCameraModalItem] = useState<{
+    item: any;
+    section: any;
+    itemKey: string;
+    itemLabel: string;
+    sectionTitle: string;
+    images: ChecklistItemImage[];
+  } | null>(null);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -110,7 +129,11 @@ export default function DailyChecklistPage() {
         const pRows = (data.repeatableRows || [])
           .filter((r: any) => r.sectionCode === "purchase")
           .map((r: any) => r.data);
-        setPurchaseRows(pRows.length > 0 ? pRows : [{ item: "", qty: "", vendor: "", amount: "", paymentMode: "Cash" }]);
+        setPurchaseRows(
+          pRows.length > 0
+            ? pRows
+            : [{ item: "", qty: "", vendor: "", amount: "", paymentMode: "Cash" }]
+        );
 
         const eRows = (data.repeatableRows || [])
           .filter((r: any) => r.sectionCode === "expense")
@@ -135,11 +158,25 @@ export default function DailyChecklistPage() {
         setManagerSignature(rec.managerSignature || "");
 
         // Find opening cash values if saved
-        const drawerVal = (data.values || []).find((v: any) => v.itemKey === "opening_cash_drawer");
-        if (drawerVal) setOpeningCashDrawer(drawerVal.valueNumber ? String(drawerVal.valueNumber) : drawerVal.valueText || "");
+        const drawerVal = (data.values || []).find(
+          (v: any) => v.itemKey === "opening_cash_drawer"
+        );
+        if (drawerVal)
+          setOpeningCashDrawer(
+            drawerVal.valueNumber
+              ? String(drawerVal.valueNumber)
+              : drawerVal.valueText || ""
+          );
 
-        const changeVal = (data.values || []).find((v: any) => v.itemKey === "small_change_available");
-        if (changeVal) setSmallChange(changeVal.valueNumber ? String(changeVal.valueNumber) : changeVal.valueText || "");
+        const changeVal = (data.values || []).find(
+          (v: any) => v.itemKey === "small_change_available"
+        );
+        if (changeVal)
+          setSmallChange(
+            changeVal.valueNumber
+              ? String(changeVal.valueNumber)
+              : changeVal.valueText || ""
+          );
 
         if (data.auditLogs) {
           setAuditLogs(data.auditLogs);
@@ -164,7 +201,9 @@ export default function DailyChecklistPage() {
     const existingVal = (checklistData.values || []).find(
       (v: any) =>
         (item.id && (v.itemId === item.id || v.itemKey === item.id)) ||
-        (item.label && (v.itemKey === item.label || v.itemKey?.toLowerCase().trim() === item.label.toLowerCase().trim()))
+        (item.label &&
+          (v.itemKey === item.label ||
+            v.itemKey?.toLowerCase().trim() === item.label.toLowerCase().trim()))
     );
     const nextBool = !(existingVal?.valueBoolean === true);
     const currentUserName = authContext?.user?.name || "Staff";
@@ -175,7 +214,9 @@ export default function DailyChecklistPage() {
       (v: any) =>
         !(
           (item.id && (v.itemId === item.id || v.itemKey === item.id)) ||
-          (item.label && (v.itemKey === item.label || v.itemKey?.toLowerCase().trim() === item.label.toLowerCase().trim()))
+          (item.label &&
+            (v.itemKey === item.label ||
+              v.itemKey?.toLowerCase().trim() === item.label.toLowerCase().trim()))
         )
     );
     updatedValues.push({
@@ -183,6 +224,7 @@ export default function DailyChecklistPage() {
       itemId: item.id,
       sectionId: section.id,
       valueBoolean: nextBool,
+      valueJson: existingVal?.valueJson,
       remarks: existingVal?.remarks,
       updatedByName: currentUserName,
     });
@@ -194,19 +236,36 @@ export default function DailyChecklistPage() {
         const v = updatedValues.find(
           (val: any) =>
             (it.id && (val.itemId === it.id || val.itemKey === it.id)) ||
-            (it.label && (val.itemKey === it.label || val.itemKey?.toLowerCase().trim() === it.label.toLowerCase().trim()))
+            (it.label &&
+              (val.itemKey === it.label ||
+                val.itemKey?.toLowerCase().trim() === it.label.toLowerCase().trim()))
         );
         let isDone = false;
         if (it.fieldType === "checkbox" || it.field_type === "checkbox") {
           isDone = v?.valueBoolean === true;
-        } else if (it.fieldType === "currency" || it.field_type === "currency" || it.fieldType === "number" || it.field_type === "number") {
-          isDone = v !== undefined && v.valueNumber !== null && String(v.valueNumber).trim() !== "";
+        } else if (
+          it.fieldType === "currency" ||
+          it.field_type === "currency" ||
+          it.fieldType === "number" ||
+          it.field_type === "number"
+        ) {
+          isDone =
+            v !== undefined &&
+            v.valueNumber !== null &&
+            String(v.valueNumber).trim() !== "";
         } else if (it.fieldType === "signature" || it.field_type === "signature") {
-          isDone = (v !== undefined && !!v.valueText?.trim()) || Boolean(checklistData.dailyRecord?.managerSignature?.trim());
+          isDone =
+            (v !== undefined && !!v.valueText?.trim()) ||
+            Boolean(checklistData.dailyRecord?.managerSignature?.trim());
         } else if (it.label === "Opening Manager Name") {
-          isDone = (v !== undefined && !!v.valueText?.trim()) || Boolean(checklistData.dailyRecord?.openingManagerName?.trim());
+          isDone =
+            (v !== undefined && !!v.valueText?.trim()) ||
+            Boolean(checklistData.dailyRecord?.openingManagerName?.trim());
         } else {
-          isDone = v !== undefined && (v.valueBoolean === true || (typeof v.valueText === "string" && v.valueText.trim() !== ""));
+          isDone =
+            v !== undefined &&
+            (v.valueBoolean === true ||
+              (typeof v.valueText === "string" && v.valueText.trim() !== ""));
         }
         if (it.isRequired || it.is_required) {
           totalReq++;
@@ -225,7 +284,12 @@ export default function DailyChecklistPage() {
         completedItemsCount: completed,
         totalRequiredItemsCount: totalReq,
         completionPercent: newPercent,
-        status: completed === 0 ? "not_started" : completed >= totalReq ? "completed" : "in_progress",
+        status:
+          completed === 0
+            ? "not_started"
+            : completed >= totalReq
+            ? "completed"
+            : "in_progress",
       },
     }));
 
@@ -240,6 +304,7 @@ export default function DailyChecklistPage() {
             itemId: item.id,
             sectionId: section.id,
             valueBoolean: nextBool,
+            valueJson: existingVal?.valueJson,
             remarks: existingVal?.remarks,
             sectionTitle: section.title,
             itemLabel: item.label,
@@ -277,7 +342,9 @@ export default function DailyChecklistPage() {
     const existingVal = (checklistData.values || []).find(
       (v: any) =>
         (item.id && (v.itemId === item.id || v.itemKey === item.id)) ||
-        (item.label && (v.itemKey === item.label || v.itemKey?.toLowerCase().trim() === item.label.toLowerCase().trim()))
+        (item.label &&
+          (v.itemKey === item.label ||
+            v.itemKey?.toLowerCase().trim() === item.label.toLowerCase().trim()))
     );
 
     setSavingStatus("saving");
@@ -292,6 +359,7 @@ export default function DailyChecklistPage() {
             itemId: item.id,
             sectionId: section.id,
             valueBoolean: existingVal?.valueBoolean,
+            valueJson: existingVal?.valueJson,
             remarks: text.trim(),
             sectionTitle: section.title,
             itemLabel: item.label,
@@ -305,7 +373,9 @@ export default function DailyChecklistPage() {
         const updatedValues = (checklistData.values || []).map((v: any) => {
           if (
             (item.id && (v.itemId === item.id || v.itemKey === item.id)) ||
-            (item.label && (v.itemKey === item.label || v.itemKey?.toLowerCase().trim() === item.label.toLowerCase().trim()))
+            (item.label &&
+              (v.itemKey === item.label ||
+                v.itemKey?.toLowerCase().trim() === item.label.toLowerCase().trim()))
           ) {
             found = true;
             return { ...v, remarks: text.trim() };
@@ -327,6 +397,55 @@ export default function DailyChecklistPage() {
     } catch (err) {
       setSavingStatus("error");
     }
+  };
+
+  // Handle Images Updated from Camera Modal
+  const handleImagesUpdated = (itemKey: string, newImages: ChecklistItemImage[]) => {
+    let found = false;
+    const updatedValues = (checklistData?.values || []).map((v: any) => {
+      if (
+        (cameraModalItem?.item.id &&
+          (v.itemId === cameraModalItem.item.id || v.itemKey === cameraModalItem.item.id)) ||
+        (cameraModalItem?.item.label &&
+          (v.itemKey === cameraModalItem.item.label ||
+            v.itemKey?.toLowerCase().trim() ===
+              cameraModalItem.item.label.toLowerCase().trim())) ||
+        v.itemKey === itemKey
+      ) {
+        found = true;
+        return {
+          ...v,
+          valueJson: {
+            ...(v.valueJson || {}),
+            images: newImages,
+          },
+        };
+      }
+      return v;
+    });
+
+    if (!found && cameraModalItem) {
+      updatedValues.push({
+        itemKey,
+        itemId: cameraModalItem.item.id,
+        sectionId: cameraModalItem.section.id,
+        valueJson: { images: newImages },
+      });
+    }
+
+    setChecklistData((prev: any) => ({
+      ...prev,
+      values: updatedValues,
+    }));
+
+    if (cameraModalItem) {
+      setCameraModalItem({
+        ...cameraModalItem,
+        images: newImages,
+      });
+    }
+
+    showToast(`Saved ${newImages.length} photo${newImages.length === 1 ? "" : "s"}`);
   };
 
   // Save Cash Drawer float values
@@ -449,7 +568,9 @@ export default function DailyChecklistPage() {
           cashierName,
           verifiedByName,
           pendingIssues,
-          managerSignature: isSigning ? managerSignature || authContext?.user?.name || "Manager" : undefined,
+          managerSignature: isSigning
+            ? managerSignature || authContext?.user?.name || "Manager"
+            : undefined,
         }),
       });
 
@@ -457,7 +578,9 @@ export default function DailyChecklistPage() {
         const updated = await res.json();
         setChecklistData({ ...checklistData, dailyRecord: updated.record });
         setSavingStatus("saved");
-        showToast(isSigning ? "Checklist signed & verified!" : "Verification details saved");
+        showToast(
+          isSigning ? "Checklist signed & verified!" : "Verification details saved"
+        );
       }
     } catch (e) {
       setSavingStatus("error");
@@ -482,15 +605,17 @@ export default function DailyChecklistPage() {
     return (
       <div className="py-24 flex flex-col items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-emerald-700 mb-2" />
-        <span className="text-xs font-semibold text-slate-600">Loading daily checklist...</span>
+        <span className="text-xs font-semibold text-slate-600">
+          Loading daily checklist...
+        </span>
       </div>
     );
   }
 
   const structure = checklistData?.structure || {};
-  const sections = structure.sections || [];
+  const sections: any[] = structure.sections || [];
   const dailyRecord = checklistData?.dailyRecord || {};
-  const values = checklistData?.values || [];
+  const values: any[] = checklistData?.values || [];
 
   const valuesMap = new Map<string, any>();
   values.forEach((v: any) => {
@@ -509,7 +634,11 @@ export default function DailyChecklistPage() {
     if (!item) return null;
     if (item.id && valuesMap.has(item.id)) return valuesMap.get(item.id);
     if (item.label && valuesMap.has(item.label)) return valuesMap.get(item.label);
-    if (item.label && typeof item.label === "string" && valuesMap.has(item.label.toLowerCase().trim())) {
+    if (
+      item.label &&
+      typeof item.label === "string" &&
+      valuesMap.has(item.label.toLowerCase().trim())
+    ) {
       return valuesMap.get(item.label.toLowerCase().trim());
     }
     return null;
@@ -521,8 +650,24 @@ export default function DailyChecklistPage() {
   const isCompleted = dailyRecord.status === "completed";
 
   // Calculate purchase & expense totals
-  const totalPurchase = purchaseRows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
-  const totalExpense = expenseRows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
+  const totalPurchase = purchaseRows.reduce(
+    (sum, r) => sum + (parseFloat(r.amount) || 0),
+    0
+  );
+  const totalExpense = expenseRows.reduce(
+    (sum, r) => sum + (parseFloat(r.amount) || 0),
+    0
+  );
+
+  // SEPARATE CHECKLIST SECTIONS (TOP) VS OPERATIONAL SUMMARY / EXPENSE / CASH / SIGN-OFF (BOTTOM)
+  const isNonChecklistSection = (sec: any) =>
+    sec.sectionType === "table_purchase_expense" ||
+    sec.sectionType === "cash_summary" ||
+    sec.sectionType === "manager_signoff" ||
+    ["F", "G", "I"].includes(sec.sectionCode);
+
+  const checklistSectionsList = sections.filter((s) => !isNonChecklistSection(s));
+  const nonChecklistSectionsList = sections.filter((s) => isNonChecklistSection(s));
 
   // Generate Calendar Days for Popover
   const renderCalendarDays = () => {
@@ -537,7 +682,9 @@ export default function DailyChecklistPage() {
     }
 
     for (let d = 1; d <= totalDays; d++) {
-      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
+        d
+      ).padStart(2, "0")}`;
       const isSelected = dateStr === selectedDate;
       const isCurrentDay = dateStr === todayStr;
 
@@ -572,7 +719,7 @@ export default function DailyChecklistPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12">
+    <div className="space-y-6 max-w-5xl mx-auto pb-16">
       {/* Toast */}
       {toastMsg && (
         <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in">
@@ -601,11 +748,11 @@ export default function DailyChecklistPage() {
             </span>
           </div>
           <p className="text-xs text-slate-600 mt-1">
-            Standard operating procedure verification & morning audit checklist.
+            Standard operating procedure verification & morning audit checklist with direct photo capture.
           </p>
         </div>
 
-        {/* Calendar Trigger and Audit Button */}
+        {/* Calendar Trigger, Builder Link, and Audit Button */}
         <div className="flex items-center gap-2 relative">
           <div className="relative" ref={calendarRef}>
             <button
@@ -637,7 +784,10 @@ export default function DailyChecklistPage() {
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <span className="text-xs font-extrabold text-slate-900">
-                    {calendarMonth.toLocaleDateString("en-IN", { month: "long", year: "numeric" })}
+                    {calendarMonth.toLocaleDateString("en-IN", {
+                      month: "long",
+                      year: "numeric",
+                    })}
                   </span>
                   <button
                     type="button"
@@ -693,6 +843,15 @@ export default function DailyChecklistPage() {
             )}
           </div>
 
+          <Link
+            href="/app/checklists/builder"
+            className="p-2.5 rounded-2xl bg-white border border-[#bed6c2] hover:bg-emerald-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+            title="Customize Checklist & SOP Template"
+          >
+            <Sliders className="w-4 h-4 text-emerald-700" />
+            <span className="hidden sm:inline">Edit Template</span>
+          </Link>
+
           <button
             onClick={() => {
               setIsAuditDrawerOpen(true);
@@ -712,7 +871,9 @@ export default function DailyChecklistPage() {
         <div className="flex-1 space-y-1.5">
           <div className="flex items-center justify-between text-xs font-bold">
             <span className="text-slate-700">Checklist Completion</span>
-            <span className="text-slate-900 font-extrabold text-sm">{completionPercent}%</span>
+            <span className="text-slate-900 font-extrabold text-sm">
+              {completionPercent}% ({completedCount}/{totalRequired} completed)
+            </span>
           </div>
           <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
             <div
@@ -751,139 +912,238 @@ export default function DailyChecklistPage() {
         </div>
       </div>
 
-      {/* 3. DYNAMIC SECTIONS RENDERER */}
+      {/* 3. TOP SECTION: ALL STANDARD CHECKLIST CATEGORIES */}
       <div className="space-y-5">
-        {sections.map((section: any, sIdx: number) => {
-          // A. Standard Checklist Section (Checkboxes)
-          if (section.sectionType === "checklist" || !section.sectionType) {
-            return (
-              <div key={section.id || sIdx} className="bg-white rounded-3xl border border-[#bed6c2] p-4 sm:p-5 shadow-xs">
-                <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-900 font-extrabold text-xs flex items-center justify-center">
-                      {section.sectionCode || sIdx + 1}
-                    </span>
-                    <div>
-                      <h2 className="text-sm sm:text-base font-bold text-slate-900">{section.title}</h2>
-                      {section.description && <p className="text-[10px] text-slate-500">{section.description}</p>}
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2 to 3 Columns Grid for Optimal Space Usage */}
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                  {(section.items || []).map((item: any) => {
-                    const itemKey = item.id || item.label;
-                    const val = getItemValue(item);
-                    const isChecked = val?.valueBoolean === true;
-                    const remarks = val?.remarks || "";
-                    const isRemarksOpen = expandedRemarks[itemKey] || !!remarks;
-                    const markedByName = val?.updatedByName || (isChecked ? authContext?.user?.name || "Staff" : "");
-
-                    return (
-                      <div
-                        key={itemKey}
-                        className={`p-2.5 sm:p-3 rounded-2xl border transition flex flex-col justify-between ${
-                          isChecked
-                            ? "bg-emerald-50/80 border-emerald-300 text-emerald-950"
-                            : "bg-slate-50/70 border-slate-200/80 text-slate-800 hover:border-slate-300"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <label className="flex items-start gap-2.5 cursor-pointer flex-1 select-none">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => handleToggleItem(item, section)}
-                              className="mt-0.5 w-4 h-4 rounded text-emerald-700 focus:ring-emerald-600 cursor-pointer shrink-0"
-                            />
-                            <span className={`text-xs leading-snug ${isChecked ? "font-semibold text-slate-900 line-through opacity-85" : "font-medium text-slate-800"}`}>
-                              {item.label}
-                            </span>
-                          </label>
-
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            {/* CLEAR NAME DISPLAY OF WHO MARKED IT */}
-                            {isChecked && markedByName && (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-900 bg-emerald-100/90 border border-emerald-300/80 px-2 py-0.5 rounded-md">
-                                <Check className="w-3 h-3 text-emerald-700" />
-                                <span>{markedByName}</span>
-                              </span>
-                            )}
-                            {item.allowsRemarks && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setExpandedRemarks((prev) => ({
-                                    ...prev,
-                                    [itemKey]: !isRemarksOpen,
-                                  }))
-                                }
-                                className={`p-1 rounded-md text-[10px] transition ${
-                                  remarks
-                                    ? "text-emerald-800 bg-emerald-100/80 font-bold"
-                                    : "text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                                }`}
-                                title="Add remark / temperature log"
-                              >
-                                <MessageSquare className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Inline Remarks Input */}
-                        {isRemarksOpen && (
-                          <div className="mt-2 pt-2 border-t border-slate-200/60 flex items-center gap-1.5">
-                            <input
-                              type="text"
-                              defaultValue={remarks}
-                              placeholder="Add note or reading..."
-                              onBlur={(e) => handleUpdateRemarks(item, section, e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  handleUpdateRemarks(item, section, e.currentTarget.value);
-                                }
-                              }}
-                              className="w-full p-1.5 px-2.5 rounded-lg border border-slate-200 text-[11px] bg-white text-slate-900 focus:border-emerald-500 focus:outline-hidden"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          }
-
-          // B. Purchase & Expense Tables (Section F in Paper Checklist)
-          if (section.sectionType === "table_purchase_expense" || section.sectionCode === "F") {
-            return (
-              <div key={section.id || sIdx} className="bg-white rounded-3xl border border-[#bed6c2] p-4 sm:p-5 shadow-xs space-y-4">
-                <div className="flex items-center gap-2 pb-2.5 border-b border-slate-100">
+        {checklistSectionsList.map((section: any, sIdx: number) => {
+          return (
+            <div
+              key={section.id || sIdx}
+              className="bg-white rounded-3xl border border-[#bed6c2] p-4 sm:p-5 shadow-xs"
+            >
+              <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-3">
+                <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-900 font-extrabold text-xs flex items-center justify-center">
-                    {section.sectionCode || "F"}
+                    {section.sectionCode || sIdx + 1}
                   </span>
                   <div>
-                    <h2 className="text-sm sm:text-base font-bold text-slate-900">{section.title}</h2>
-                    <p className="text-[10px] text-slate-500">Quick entry for morning market purchases and daily cash expenses.</p>
+                    <h2 className="text-sm sm:text-base font-bold text-slate-900">
+                      {section.title}
+                    </h2>
+                    {section.description && (
+                      <p className="text-[10px] text-slate-500">{section.description}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* 2 to 3 Columns Grid for Checklist Items */}
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                {(section.items || []).map((item: any) => {
+                  const itemKey = item.id || item.label;
+                  const val = getItemValue(item);
+                  const isChecked = val?.valueBoolean === true;
+                  const remarks = val?.remarks || "";
+                  const isRemarksOpen = expandedRemarks[itemKey] || !!remarks;
+                  const markedByName =
+                    val?.updatedByName ||
+                    (isChecked ? authContext?.user?.name || "Staff" : "");
+
+                  // Extract images for this checklist item
+                  const itemImages: ChecklistItemImage[] =
+                    val?.valueJson?.images && Array.isArray(val.valueJson.images)
+                      ? val.valueJson.images
+                      : [];
+                  const photoCount = itemImages.length;
+
+                  return (
+                    <div
+                      key={itemKey}
+                      className={`p-2.5 sm:p-3 rounded-2xl border transition flex flex-col justify-between ${
+                        isChecked
+                          ? "bg-emerald-50/80 border-emerald-300 text-emerald-950"
+                          : "bg-slate-50/70 border-slate-200/80 text-slate-800 hover:border-slate-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <label className="flex items-start gap-2.5 cursor-pointer flex-1 select-none">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleToggleItem(item, section)}
+                            className="mt-0.5 w-4 h-4 rounded text-emerald-700 focus:ring-emerald-600 cursor-pointer shrink-0"
+                          />
+                          <span
+                            className={`text-xs leading-snug ${
+                              isChecked
+                                ? "font-semibold text-slate-900 line-through opacity-85"
+                                : "font-medium text-slate-800"
+                            }`}
+                          >
+                            {item.label}
+                          </span>
+                        </label>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {/* Photo Capture / Gallery Button */}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCameraModalItem({
+                                item,
+                                section,
+                                itemKey,
+                                itemLabel: item.label,
+                                sectionTitle: section.title,
+                                images: itemImages,
+                              })
+                            }
+                            className={`px-1.5 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 ${
+                              photoCount > 0
+                                ? "bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-xs"
+                                : "text-slate-400 hover:text-emerald-700 hover:bg-slate-200/60"
+                            }`}
+                            title={
+                              photoCount > 0
+                                ? `${photoCount} photo${photoCount > 1 ? "s" : ""} captured`
+                                : "Take photo with camera"
+                            }
+                          >
+                            <Camera className="w-3.5 h-3.5" />
+                            {photoCount > 0 && <span>{photoCount}</span>}
+                          </button>
+
+                          {/* Remarks Toggle Button */}
+                          {item.allowsRemarks && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setExpandedRemarks((prev) => ({
+                                  ...prev,
+                                  [itemKey]: !isRemarksOpen,
+                                }))
+                              }
+                              className={`p-1 rounded-md text-[10px] transition ${
+                                remarks
+                                  ? "text-emerald-800 bg-emerald-100/80 font-bold"
+                                  : "text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                              }`}
+                              title="Add remark / temperature log"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Staff Name Badge if Checked */}
+                      {isChecked && markedByName && (
+                        <div className="mt-1.5 flex items-center justify-between">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-900 bg-emerald-100/90 border border-emerald-300/80 px-2 py-0.5 rounded-md">
+                            <Check className="w-3 h-3 text-emerald-700" />
+                            <span>{markedByName}</span>
+                          </span>
+                          {photoCount > 0 && (
+                            <span className="text-[10px] text-emerald-700 font-semibold">
+                              📷 {photoCount} proof photo{photoCount > 1 ? "s" : ""}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Inline Remarks Input */}
+                      {isRemarksOpen && (
+                        <div className="mt-2 pt-2 border-t border-slate-200/60 flex items-center gap-1.5">
+                          <input
+                            type="text"
+                            defaultValue={remarks}
+                            placeholder="Add note or reading..."
+                            onBlur={(e) =>
+                              handleUpdateRemarks(item, section, e.target.value)
+                            }
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                handleUpdateRemarks(item, section, e.currentTarget.value);
+                              }
+                            }}
+                            className="w-full p-1.5 px-2.5 rounded-lg border border-slate-200 text-[11px] bg-white text-slate-900 focus:border-emerald-500 focus:outline-hidden"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 4. BOTTOM SECTION: SEPARATE VISUALLY DISTINCT PANEL FOR OPERATIONS, CASH & MANAGER SIGN-OFF */}
+      <div className="mt-10 pt-6 border-t-2 border-slate-200/80 space-y-6">
+        {/* Distinct Header For Non-Checklist Operations */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-xs">
+              <FileCheck2 className="w-4 h-4 text-emerald-400" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">
+                Operations, Cash & Manager Sign-Off
+              </h2>
+              <p className="text-xs text-slate-500">
+                Daily financial registers, morning purchases, and manager digital verification.
+              </p>
+            </div>
+          </div>
+          <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl border border-slate-200">
+            Shift Close & Handover
+          </span>
+        </div>
+
+        {/* Dynamic Render for Non-Checklist Sections */}
+        {nonChecklistSectionsList.map((section: any, sIdx: number) => {
+          // B. Purchase & Expense Tables
+          if (
+            section.sectionType === "table_purchase_expense" ||
+            section.sectionCode === "F"
+          ) {
+            return (
+              <div
+                key={section.id || sIdx}
+                className="bg-white rounded-3xl border-2 border-slate-200 p-4 sm:p-6 shadow-sm space-y-4"
+              >
+                <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                  <div className="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-700 font-extrabold text-xs flex items-center justify-center border border-indigo-100">
+                    <Receipt className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                      {section.title}
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Quick entry for morning market purchases and daily cash expenses.
+                    </p>
                   </div>
                 </div>
 
                 <div className="grid lg:grid-cols-2 gap-4">
                   {/* Purchase Table */}
-                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
+                  <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-900">Purchase Quick Record</span>
-                      <span className="text-xs font-extrabold text-emerald-800">
+                      <span className="text-xs font-bold text-slate-900">
+                        Purchase Quick Record
+                      </span>
+                      <span className="text-xs font-extrabold text-indigo-700">
                         Total: {formatCurrency(totalPurchase)}
                       </span>
                     </div>
 
                     <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
                       {purchaseRows.map((row, idx) => (
-                        <div key={idx} className="grid grid-cols-12 gap-1.5 text-xs items-center">
+                        <div
+                          key={idx}
+                          className="grid grid-cols-12 gap-1.5 text-xs items-center"
+                        >
                           <input
                             type="text"
                             placeholder="Item name"
@@ -919,8 +1179,10 @@ export default function DailyChecklistPage() {
                           />
                           <button
                             type="button"
-                            onClick={() => setPurchaseRows(purchaseRows.filter((_, i) => i !== idx))}
-                            className="col-span-1 text-slate-400 hover:text-rose-600 text-center"
+                            onClick={() =>
+                              setPurchaseRows(purchaseRows.filter((_, i) => i !== idx))
+                            }
+                            className="col-span-1 text-slate-400 hover:text-rose-600 text-center font-bold"
                           >
                             ×
                           </button>
@@ -934,17 +1196,23 @@ export default function DailyChecklistPage() {
                         onClick={() =>
                           setPurchaseRows([
                             ...purchaseRows,
-                            { item: "", qty: "", vendor: "", amount: "", paymentMode: "Cash" },
+                            {
+                              item: "",
+                              qty: "",
+                              vendor: "",
+                              amount: "",
+                              paymentMode: "Cash",
+                            },
                           ])
                         }
-                        className="text-[11px] font-bold text-emerald-800 hover:text-emerald-900"
+                        className="text-[11px] font-bold text-indigo-700 hover:text-indigo-800"
                       >
                         + Add Purchase Row
                       </button>
                       <button
                         type="button"
                         onClick={handleSavePurchases}
-                        className="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold"
+                        className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-xs"
                       >
                         Save Purchases
                       </button>
@@ -952,17 +1220,22 @@ export default function DailyChecklistPage() {
                   </div>
 
                   {/* Expense Table */}
-                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
+                  <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-900">Expenses Quick Record</span>
-                      <span className="text-xs font-extrabold text-emerald-800">
+                      <span className="text-xs font-bold text-slate-900">
+                        Expenses Quick Record
+                      </span>
+                      <span className="text-xs font-extrabold text-indigo-700">
                         Total: {formatCurrency(totalExpense)}
                       </span>
                     </div>
 
                     <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
                       {expenseRows.map((row, idx) => (
-                        <div key={idx} className="grid grid-cols-12 gap-1.5 text-xs items-center">
+                        <div
+                          key={idx}
+                          className="grid grid-cols-12 gap-1.5 text-xs items-center"
+                        >
                           <input
                             type="text"
                             placeholder="Category"
@@ -998,8 +1271,10 @@ export default function DailyChecklistPage() {
                           />
                           <button
                             type="button"
-                            onClick={() => setExpenseRows(expenseRows.filter((_, i) => i !== idx))}
-                            className="col-span-1 text-slate-400 hover:text-rose-600 text-center"
+                            onClick={() =>
+                              setExpenseRows(expenseRows.filter((_, i) => i !== idx))
+                            }
+                            className="col-span-1 text-slate-400 hover:text-rose-600 text-center font-bold"
                           >
                             ×
                           </button>
@@ -1011,16 +1286,19 @@ export default function DailyChecklistPage() {
                       <button
                         type="button"
                         onClick={() =>
-                          setExpenseRows([...expenseRows, { expense: "", amount: "", remarks: "" }])
+                          setExpenseRows([
+                            ...expenseRows,
+                            { expense: "", amount: "", remarks: "" },
+                          ])
                         }
-                        className="text-[11px] font-bold text-emerald-800 hover:text-emerald-900"
+                        className="text-[11px] font-bold text-indigo-700 hover:text-indigo-800"
                       >
                         + Add Expense Row
                       </button>
                       <button
                         type="button"
                         onClick={handleSaveExpenses}
-                        className="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold"
+                        className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-xs"
                       >
                         Save Expenses
                       </button>
@@ -1031,23 +1309,33 @@ export default function DailyChecklistPage() {
             );
           }
 
-          // C. Cash & Billing Section (Section G)
-          if (section.sectionType === "cash_summary" || section.sectionCode === "G") {
+          // C. Cash & Billing Section
+          if (
+            section.sectionType === "cash_summary" ||
+            section.sectionCode === "G"
+          ) {
             return (
-              <div key={section.id || sIdx} className="bg-white rounded-3xl border border-[#bed6c2] p-4 sm:p-5 shadow-xs space-y-3">
-                <div className="flex items-center gap-2 pb-2.5 border-b border-slate-100">
-                  <span className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-900 font-extrabold text-xs flex items-center justify-center">
-                    {section.sectionCode || "G"}
-                  </span>
+              <div
+                key={section.id || sIdx}
+                className="bg-white rounded-3xl border-2 border-slate-200 p-4 sm:p-6 shadow-sm space-y-4"
+              >
+                <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                  <div className="w-7 h-7 rounded-xl bg-amber-50 text-amber-700 font-extrabold text-xs flex items-center justify-center border border-amber-100">
+                    <Banknote className="w-3.5 h-3.5" />
+                  </div>
                   <div>
-                    <h2 className="text-sm sm:text-base font-bold text-slate-900">{section.title}</h2>
-                    <p className="text-[10px] text-slate-500">Opening register cash float and cashier handover.</p>
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                      {section.title}
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Opening register cash float and cashier handover.
+                    </p>
                   </div>
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-3 max-w-lg">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                <div className="grid sm:grid-cols-2 gap-4 max-w-lg">
+                  <div className="p-3 bg-slate-50/80 rounded-2xl border border-slate-200/80">
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
                       Opening Cash Drawer Float (₹)
                     </label>
                     <input
@@ -1056,12 +1344,12 @@ export default function DailyChecklistPage() {
                       value={openingCashDrawer}
                       onChange={(e) => setOpeningCashDrawer(e.target.value)}
                       onBlur={handleSaveCashValues}
-                      className="w-full p-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 focus:border-emerald-500"
+                      className="w-full p-2 rounded-xl border border-slate-200 text-sm font-bold text-slate-900 bg-white focus:border-emerald-500"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                  <div className="p-3 bg-slate-50/80 rounded-2xl border border-slate-200/80">
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
                       Small Change Available (₹)
                     </label>
                     <input
@@ -1070,7 +1358,7 @@ export default function DailyChecklistPage() {
                       value={smallChange}
                       onChange={(e) => setSmallChange(e.target.value)}
                       onBlur={handleSaveCashValues}
-                      className="w-full p-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 focus:border-emerald-500"
+                      className="w-full p-2 rounded-xl border border-slate-200 text-sm font-bold text-slate-900 bg-white focus:border-emerald-500"
                     />
                   </div>
                 </div>
@@ -1078,62 +1366,88 @@ export default function DailyChecklistPage() {
             );
           }
 
-          // D. Manager Verification & Sign-off Section (Section I)
-          if (section.sectionType === "manager_signoff" || section.sectionCode === "I") {
+          // D. Manager Verification & Sign-off Section
+          if (
+            section.sectionType === "manager_signoff" ||
+            section.sectionCode === "I"
+          ) {
             return (
-              <div key={section.id || sIdx} className="bg-white rounded-3xl border border-[#bed6c2] p-4 sm:p-5 shadow-xs space-y-4">
-                <div className="flex items-center gap-2 pb-2.5 border-b border-slate-100">
-                  <span className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-900 font-extrabold text-xs flex items-center justify-center">
-                    {section.sectionCode || "I"}
-                  </span>
+              <div
+                key={section.id || sIdx}
+                className="bg-white rounded-3xl border-2 border-slate-200 p-4 sm:p-6 shadow-sm space-y-4"
+              >
+                <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                  <div className="w-7 h-7 rounded-xl bg-emerald-50 text-emerald-700 font-extrabold text-xs flex items-center justify-center border border-emerald-100">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                  </div>
                   <div>
-                    <h2 className="text-sm sm:text-base font-bold text-slate-900">{section.title}</h2>
-                    <p className="text-[10px] text-slate-500">Manager sign-off and pending operational notes.</p>
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                      {section.title}
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Manager digital sign-off and pending operational handover notes.
+                    </p>
                   </div>
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-3">
+                <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Opening Manager Name</label>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Opening Manager Name
+                    </label>
                     <input
                       type="text"
                       value={openingManagerName}
                       onChange={(e) => setOpeningManagerName(e.target.value)}
                       placeholder="e.g. Rahul Sharma"
-                      className="w-full p-2 rounded-xl border border-slate-200 text-xs font-semibold"
+                      className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Cashier Name</label>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Cashier Name
+                    </label>
                     <input
                       type="text"
                       value={cashierName}
                       onChange={(e) => setCashierName(e.target.value)}
                       placeholder="e.g. Amit Kumar"
-                      className="w-full p-2 rounded-xl border border-slate-200 text-xs font-semibold"
+                      className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white"
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Pending Issues / Notes</label>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Pending Issues / Notes
+                    </label>
                     <textarea
                       rows={2}
                       value={pendingIssues}
                       onChange={(e) => setPendingIssues(e.target.value)}
                       placeholder="Equipment issues, stock shortages, or notes for evening shift..."
-                      className="w-full p-2 rounded-xl border border-slate-200 text-xs font-semibold"
+                      className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white"
                     />
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="text-xs">
                     {dailyRecord.managerSignature ? (
                       <span className="text-emerald-800 font-bold flex items-center gap-1.5">
                         <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                        <span>Signed by {dailyRecord.managerSignature} at {new Date(dailyRecord.verifiedAt || dailyRecord.updatedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
+                        <span>
+                          Signed by {dailyRecord.managerSignature} at{" "}
+                          {new Date(
+                            dailyRecord.verifiedAt || dailyRecord.updatedAt
+                          ).toLocaleTimeString("en-IN", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
                       </span>
                     ) : (
-                      <span className="text-slate-400 font-medium">Pending manager digital signature</span>
+                      <span className="text-slate-400 font-medium">
+                        Pending manager digital signature
+                      </span>
                     )}
                   </div>
 
@@ -1141,7 +1455,7 @@ export default function DailyChecklistPage() {
                     <button
                       type="button"
                       onClick={() => handleManagerVerification(false)}
-                      className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold"
+                      className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition"
                     >
                       Save Notes
                     </button>
@@ -1149,7 +1463,7 @@ export default function DailyChecklistPage() {
                       <button
                         type="button"
                         onClick={() => handleManagerVerification(true)}
-                        className="px-5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-md shadow-emerald-700/20 flex items-center gap-1.5"
+                        className="px-5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-md shadow-emerald-700/20 flex items-center gap-1.5 transition active:scale-95"
                       >
                         <PenTool className="w-3.5 h-3.5" />
                         <span>Sign & Verify</span>
@@ -1165,16 +1479,39 @@ export default function DailyChecklistPage() {
         })}
       </div>
 
-      {/* Audit Drawer */}
+      {/* 5. CAMERA MODAL FOR PHOTO PROOFS */}
+      {cameraModalItem && checklistData?.dailyRecord?.id && (
+        <ChecklistCameraModal
+          isOpen={!!cameraModalItem}
+          onClose={() => setCameraModalItem(null)}
+          dailyRecordId={checklistData.dailyRecord.id}
+          itemKey={cameraModalItem.itemKey}
+          itemLabel={cameraModalItem.itemLabel}
+          sectionTitle={cameraModalItem.sectionTitle}
+          itemId={cameraModalItem.item.id}
+          sectionId={cameraModalItem.section.id}
+          initialImages={cameraModalItem.images}
+          onImagesUpdated={(newImgs) =>
+            handleImagesUpdated(cameraModalItem.itemKey, newImgs)
+          }
+        />
+      )}
+
+      {/* 6. AUDIT LOG DRAWER */}
       {isAuditDrawerOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex justify-end">
           <div className="bg-white w-full max-w-md h-full p-6 space-y-4 overflow-y-auto shadow-2xl animate-in slide-in-from-right">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <History className="w-5 h-5 text-emerald-700" />
-                <h3 className="font-extrabold text-sm text-slate-900">Audit Trail ({selectedDate})</h3>
+                <h3 className="font-extrabold text-sm text-slate-900">
+                  Audit Trail ({selectedDate})
+                </h3>
               </div>
-              <button onClick={() => setIsAuditDrawerOpen(false)} className="p-1 rounded-lg text-slate-400 hover:text-slate-700">
+              <button
+                onClick={() => setIsAuditDrawerOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1186,16 +1523,32 @@ export default function DailyChecklistPage() {
                 </div>
               ) : (
                 auditLogs.map((log: any) => (
-                  <div key={log.id} className="p-3 rounded-2xl bg-slate-50 border border-slate-100 text-xs space-y-1">
+                  <div
+                    key={log.id}
+                    className="p-3 rounded-2xl bg-slate-50 border border-slate-100 text-xs space-y-1"
+                  >
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="font-bold text-slate-900">{log.userName || "User"}</span>
+                      <span className="font-bold text-slate-900">
+                        {log.userName || "User"}
+                      </span>
                       <span className="text-slate-400">
-                        {new Date(log.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                        {new Date(log.createdAt).toLocaleTimeString("en-IN", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                        })}
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-600 font-medium">
-                      <span className="font-bold text-emerald-800 capitalize">{log.action}: </span>
+                      <span className="font-bold text-emerald-800 capitalize">
+                        {log.action.replace("_", " ")}:{" "}
+                      </span>
                       <span>{log.itemLabel || log.sectionTitle}</span>
+                      {log.newValue && (
+                        <div className="text-[10px] text-slate-500 mt-0.5 font-mono">
+                          {log.newValue}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))
