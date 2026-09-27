@@ -31,41 +31,46 @@ import {
   Zap,
   Play,
   Star,
+  CheckCheck,
+  Shield,
+  ArrowUpRight,
 } from "lucide-react";
 
 export default function LandingPage() {
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [activeTab, setActiveTab] = useState<"checklist" | "wastage" | "reports">("checklist");
-  
+
   // Interactive Simulator States
   const [simChecklist, setSimChecklist] = useState([
-    { id: 1, text: "Deep fry oil temp checked (175°C - 180°C)", done: true, hasPhoto: true, time: "09:15 AM", user: "Chef Rahul" },
-    { id: 2, text: "Walk-in chiller & freezer temps logged (3°C)", done: true, hasPhoto: true, time: "09:22 AM", user: "Chef Rahul" },
-    { id: 3, text: "Raw meat prep station sanitized with food-grade spray", done: true, hasPhoto: false, time: "09:30 AM", user: "Vikram S." },
-    { id: 4, text: "Bar optics & draught lines flushed and wiped", done: false, hasPhoto: false, time: "", user: "" },
+    { id: 1, text: "Fryer oil temp checked (175°C - 180°C)", done: true, hasPhoto: true, time: "09:15 AM", user: "Chef Rahul" },
+    { id: 2, text: "Walk-in chiller & deep freezer temps logged (3°C)", done: true, hasPhoto: true, time: "09:22 AM", user: "Chef Rahul" },
+    { id: 3, text: "Meat prep counters sanitized with food-grade spray", done: true, hasPhoto: false, time: "09:30 AM", user: "Vikram S." },
+    { id: 4, text: "Bar draught lines flushed and sanitized", done: false, hasPhoto: false, time: "", user: "" },
     { id: 5, text: "POS cash float counted & verified (₹5,000)", done: false, hasPhoto: false, time: "", user: "" },
   ]);
 
   const [simWastages, setSimWastages] = useState([
     { id: 1, item: "Fresh Paneer Cubes", qty: "1.2 kg", cost: "₹420", reason: "Expired / Sour", photo: true, time: "11:45 AM" },
-    { id: 2, item: "Tomato Gravy Base", qty: "3.5 Ltr", cost: "₹385", reason: "Burnt bottom batch", photo: true, time: "02:15 PM" },
-    { id: 3, item: "Burger Buns (Pack of 12)", qty: "2 packs", cost: "₹190", reason: "Crushed in delivery", photo: false, time: "04:30 PM" },
+    { id: 2, item: "Tomato Gravy Base", qty: "3.5 L", cost: "₹385", reason: "Burnt batch", photo: true, time: "02:15 PM" },
+    { id: 3, item: "Burger Buns (Pack of 12)", qty: "2 packs", cost: "₹190", reason: "Damaged in transit", photo: false, time: "04:30 PM" },
   ]);
 
   const toggleChecklistItem = (id: number) => {
-    setSimChecklist(prev => prev.map(item => {
-      if (item.id === id) {
-        const nextDone = !item.done;
-        return {
-          ...item,
-          done: nextDone,
-          time: nextDone ? "Just now" : "",
-          user: nextDone ? "Staff" : "",
-        };
-      }
-      return item;
-    }));
+    setSimChecklist((prev) =>
+      prev.map((item) => {
+        if (item.id === id) {
+          const nextDone = !item.done;
+          return {
+            ...item,
+            done: nextDone,
+            time: nextDone ? "Just now" : "",
+            user: nextDone ? "Staff" : "",
+          };
+        }
+        return item;
+      })
+    );
   };
 
   const toggleFaq = (idx: number) => {
@@ -95,237 +100,168 @@ export default function LandingPage() {
     },
   ];
 
-  const simCompletedCount = simChecklist.filter(i => i.done).length;
+  const simCompletedCount = simChecklist.filter((i) => i.done).length;
   const simPercent = Math.round((simCompletedCount / simChecklist.length) * 100);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 selection:bg-indigo-100 selection:text-indigo-900 font-sans">
-      {/* 1. TOP NAVBAR */}
-      <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-extrabold text-xl shadow-md shadow-indigo-500/20">
-              R
+    <div className="min-h-screen bg-white text-zinc-900 font-sans selection:bg-zinc-900 selection:text-white">
+      {/* 1. TOP NAVIGATION */}
+      <header className="border-b border-zinc-100 bg-white/80 backdrop-blur-md sticky top-0 z-40">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-zinc-900 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+              RP
             </div>
-            <div>
-              <span className="font-extrabold text-xl tracking-tight text-slate-900">RestoPulse</span>
-              <span className="hidden sm:inline-block ml-2 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-                Kitchen OS
-              </span>
-            </div>
+            <span className="font-bold text-base tracking-tight text-zinc-900">RestoPulse</span>
           </div>
-
-          <nav className="hidden md:flex items-center gap-8 text-xs font-bold text-slate-600">
-            <a href="#features" className="hover:text-indigo-600 transition">Features</a>
-            <a href="#preview" className="hover:text-indigo-600 transition">Live Demo</a>
-            <a href="#pricing" className="hover:text-indigo-600 transition">Pricing</a>
-            <a href="#faq" className="hover:text-indigo-600 transition">FAQ</a>
-          </nav>
 
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="text-xs font-bold text-slate-700 hover:text-slate-900 px-3.5 py-2 rounded-xl hover:bg-slate-100 transition"
+              className="text-xs font-semibold text-zinc-600 hover:text-zinc-900 px-3 py-2 transition"
             >
               Sign In
             </Link>
             <Link
               href="/signup"
-              className="text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-xl shadow-md shadow-indigo-500/20 transition flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold transition shadow-xs cursor-pointer"
             >
-              <span className="hidden sm:inline">Start 14-Day Free Trial</span>
-              <span className="sm:hidden">Try Free</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              Start 14-Day Trial
             </Link>
           </div>
         </div>
       </header>
 
       {/* 2. HERO SECTION */}
-      <section className="relative pt-12 pb-20 md:pt-20 md:pb-28 overflow-hidden bg-gradient-to-b from-indigo-50/40 via-white to-[#F8FAFC]">
-        {/* Soft background accents */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-gradient-to-tr from-indigo-100/50 via-blue-50/40 to-transparent rounded-full blur-3xl pointer-events-none" />
+      <section className="pt-16 pb-20 px-4 sm:px-6 text-center max-w-4xl mx-auto space-y-6">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-100 border border-zinc-200 text-zinc-700 text-xs font-semibold">
+          <Sparkles className="w-3.5 h-3.5 text-zinc-600" />
+          <span>The Modern Standard for Restaurant Operations</span>
+        </div>
 
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          {/* Trust badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-indigo-100 text-indigo-700 text-xs font-bold mb-6 shadow-sm">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Modern Kitchen Operations Platform</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-            <span className="text-slate-500 font-semibold">Over 140+ Restaurants</span>
-          </div>
+        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-zinc-900 leading-[1.1]">
+          Kitchen SOPs, daily audits, & food waste reduction.
+        </h1>
 
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-slate-900 max-w-4xl mx-auto leading-tight sm:leading-tight">
-            Run Your Restaurant Shifts with{" "}
-            <span className="bg-gradient-to-r from-indigo-600 via-indigo-700 to-blue-600 bg-clip-text text-transparent">
-              Zero Chaos & Real Accountability
-            </span>
-          </h1>
+        <p className="text-base sm:text-lg text-zinc-500 max-w-2xl mx-auto leading-relaxed">
+          Replace messy clipboards and lost inventory. RestoPulse empowers kitchen teams with
+          1-tap daily checklists, live camera audit proof, and instant food waste logging.
+        </p>
 
-          <p className="mt-6 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed font-normal">
-            RestoPulse replaces messy paper logs with real-time camera-verified checklists, instant 10-second food wastage tracking, and digital shift sign-offs.
-          </p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+          <Link
+            href="/signup"
+            className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-bold shadow-md transition flex items-center justify-center gap-2"
+          >
+            <span>Start Free 14-Day Trial</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+          <a
+            href="#simulator"
+            className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-zinc-100 hover:bg-zinc-200/70 text-zinc-800 text-sm font-semibold transition flex items-center justify-center gap-2"
+          >
+            <span>Try Interactive Simulator</span>
+          </a>
+        </div>
 
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/signup"
-              className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-xl shadow-indigo-500/20 transition flex items-center justify-center gap-2 cursor-pointer group"
-            >
-              <span>Start Free Trial — ₹399/mo</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-            <a
-              href="#preview"
-              className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white border border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-50 hover:border-slate-300 transition flex items-center justify-center shadow-xs"
-            >
-              Explore Interactive Demo
-            </a>
-          </div>
-
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-600 font-medium">
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-indigo-600" /> Live camera photo proof
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-indigo-600" /> Works on any phone
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-indigo-600" /> Unlimited staff logins
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-indigo-600" /> Cancel anytime
-            </span>
-          </div>
+        <div className="pt-4 flex items-center justify-center gap-6 text-xs text-zinc-400 font-medium">
+          <span>✓ No credit card required</span>
+          <span>✓ 2-minute setup</span>
+          <span>✓ ₹399/month all-inclusive</span>
         </div>
       </section>
 
-      {/* 3. INTERACTIVE PRODUCT SIMULATOR SECTION */}
-      <section id="preview" className="py-16 md:py-24 bg-white border-y border-slate-200/80 relative">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10">
-            <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest block mb-1.5">
-              Interactive Product Demo
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Tap & Test How It Works in Your Kitchen
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-600 mt-1">
-              Click the items below to see instant completion updates and live camera photo triggers.
+      {/* 3. INTERACTIVE SIMULATOR SECTION */}
+      <section id="simulator" className="py-16 px-4 sm:px-6 bg-zinc-50/70 border-y border-zinc-200/80">
+        <div className="max-w-5xl mx-auto space-y-8">
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900">Experience RestoPulse in Action</h2>
+            <p className="text-xs sm:text-sm text-zinc-500">
+              Interactive preview: click tasks to mark them complete or view logged shift wastage.
             </p>
-
-            {/* Tab switcher */}
-            <div className="mt-6 inline-flex p-1.5 rounded-2xl bg-slate-100 border border-slate-200 gap-1.5 shadow-inner">
-              <button
-                onClick={() => setActiveTab("checklist")}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-                  activeTab === "checklist"
-                    ? "bg-white text-indigo-700 shadow-sm border border-slate-200"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                📋 Daily Checklists & Photos
-              </button>
-              <button
-                onClick={() => setActiveTab("wastage")}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-                  activeTab === "wastage"
-                    ? "bg-white text-indigo-700 shadow-sm border border-slate-200"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                🗑️ 10-Sec Wastage Logger
-              </button>
-              <button
-                onClick={() => setActiveTab("reports")}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-                  activeTab === "reports"
-                    ? "bg-white text-indigo-700 shadow-sm border border-slate-200"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                📊 Cost Reports & Shift Handover
-              </button>
-            </div>
           </div>
 
-          {/* Interactive Card Simulator */}
-          <div className="rounded-3xl border border-slate-200 bg-[#F8FAFC] p-6 sm:p-8 shadow-xl relative overflow-hidden">
+          {/* Simulator Tabs */}
+          <div className="flex items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab("checklist")}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                activeTab === "checklist"
+                  ? "bg-zinc-900 text-white shadow-xs"
+                  : "bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-50"
+              }`}
+            >
+              1. Opening Checklist & SOPs
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("wastage")}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                activeTab === "wastage"
+                  ? "bg-zinc-900 text-white shadow-xs"
+                  : "bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-50"
+              }`}
+            >
+              2. Rapid Wastage POS
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("reports")}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                activeTab === "reports"
+                  ? "bg-zinc-900 text-white shadow-xs"
+                  : "bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-50"
+              }`}
+            >
+              3. Cost Breakdown
+            </button>
+          </div>
+
+          {/* Simulator Window */}
+          <div className="bg-white border border-zinc-200 rounded-3xl p-5 sm:p-7 shadow-xl max-w-3xl mx-auto space-y-6">
             {activeTab === "checklist" && (
-              <div className="space-y-5 animate-in fade-in duration-300">
-                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
                   <div>
-                    <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block">
-                      Shift Opening Verification
-                    </span>
-                    <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
-                      Kitchen & Bar Station Morning Check
-                    </h3>
+                    <span className="text-xs font-bold text-zinc-900 block">Morning Kitchen Audit Checklist</span>
+                    <span className="text-[11px] text-zinc-400">{simCompletedCount} of {simChecklist.length} tasks marked</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <span className="text-xs font-bold text-slate-700 block">
-                        {simPercent}% Complete
-                      </span>
-                      <span className="text-[11px] text-slate-500 font-medium">
-                        {simCompletedCount} of {simChecklist.length} tasks done
-                      </span>
-                    </div>
-                    <div className="w-16 bg-slate-100 h-2 rounded-full overflow-hidden">
-                      <div
-                        className="bg-indigo-600 h-full rounded-full transition-all duration-300"
-                        style={{ width: `${simPercent}%` }}
-                      />
-                    </div>
-                  </div>
+                  <span className="text-xs font-bold text-zinc-900 bg-zinc-100 px-2.5 py-1 rounded-full">
+                    {simPercent}% Done
+                  </span>
                 </div>
 
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   {simChecklist.map((item) => (
                     <div
                       key={item.id}
                       onClick={() => toggleChecklistItem(item.id)}
-                      className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                      className={`p-3.5 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-3 ${
                         item.done
-                          ? "bg-white border-slate-200 shadow-xs"
-                          : "bg-white/80 border-slate-200 hover:border-indigo-300"
+                          ? "bg-emerald-50/30 border-emerald-200"
+                          : "bg-zinc-50/50 border-zinc-200 hover:bg-zinc-100/60"
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <div
-                          className={`w-5 h-5 rounded-lg flex items-center justify-center font-bold text-xs transition ${
-                            item.done
-                              ? "bg-emerald-600 text-white shadow-xs"
-                              : "border border-slate-300 bg-slate-50"
+                          className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 ${
+                            item.done ? "bg-emerald-600 text-white" : "border border-zinc-300 bg-white"
                           }`}
                         >
-                          {item.done && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                          {item.done && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
                         </div>
-                        <span
-                          className={`text-xs font-semibold ${
-                            item.done ? "text-slate-900" : "text-slate-600"
-                          }`}
-                        >
+                        <span className={`text-xs font-semibold ${item.done ? "text-zinc-900" : "text-zinc-700"}`}>
                           {item.text}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
-                        {item.hasPhoto && (
-                          <span className="px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 text-[10px] font-bold border border-indigo-200 flex items-center gap-1">
-                            <Camera className="w-3 h-3" /> Live Photo
-                          </span>
-                        )}
-                        {item.done && item.time && (
-                          <span className="text-[11px] font-medium text-slate-500 hidden sm:inline">
-                            {item.user} • {item.time}
-                          </span>
-                        )}
-                        {!item.done && (
-                          <span className="text-[11px] font-bold text-indigo-600 hover:underline">
-                            Tap to Check
-                          </span>
-                        )}
-                      </div>
+                      {item.hasPhoto && (
+                        <span className="px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-600 text-[10px] font-medium flex items-center gap-1 shrink-0">
+                          <Camera className="w-3 h-3 text-emerald-600" />
+                          <span>Photo Verified</span>
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -333,44 +269,34 @@ export default function LandingPage() {
             )}
 
             {activeTab === "wastage" && (
-              <div className="space-y-5 animate-in fade-in duration-300">
-                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
                   <div>
-                    <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block">
-                      Kitchen Food Waste Tracking
-                    </span>
-                    <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
-                      Today's Wastage Log
-                    </h3>
+                    <span className="text-xs font-bold text-zinc-900 block">Live Shift Wastage Stream</span>
+                    <span className="text-[11px] text-zinc-400">Total Loss: ₹995 today</span>
                   </div>
-                  <span className="px-3 py-1 rounded-full bg-rose-50 text-rose-700 text-xs font-bold border border-rose-200">
-                    Total Loss: ₹995.00
+                  <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                    Live Cloudflare R2 Sync
                   </span>
                 </div>
 
-                <div className="grid gap-2.5">
+                <div className="divide-y divide-zinc-100">
                   {simWastages.map((w) => (
-                    <div
-                      key={w.id}
-                      className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-between gap-3"
-                    >
+                    <div key={w.id} className="py-3 flex items-center justify-between gap-3">
                       <div>
-                        <h4 className="text-xs font-bold text-slate-900">{w.item}</h4>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          {w.qty} • Reason: <span className="font-semibold text-slate-700">{w.reason}</span>
-                        </p>
+                        <span className="text-xs font-bold text-zinc-900 block">{w.item}</span>
+                        <div className="flex items-center gap-2 text-[11px] text-zinc-500 mt-0.5">
+                          <span>{w.qty}</span>
+                          <span>•</span>
+                          <span className="text-zinc-700 font-medium">{w.reason}</span>
+                          {w.photo && (
+                            <span className="text-emerald-600 flex items-center gap-0.5 font-medium">
+                              <Camera className="w-3 h-3" /> Photo Attached
+                            </span>
+                          )}
+                        </div>
                       </div>
-
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs font-extrabold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-100">
-                          {w.cost}
-                        </span>
-                        {w.photo && (
-                          <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-bold border border-slate-200 flex items-center gap-1">
-                            <Camera className="w-3 h-3 text-indigo-600" /> Photo Proof
-                          </span>
-                        )}
-                      </div>
+                      <span className="text-xs font-bold text-zinc-900 font-mono">{w.cost}</span>
                     </div>
                   ))}
                 </div>
@@ -378,38 +304,27 @@ export default function LandingPage() {
             )}
 
             {activeTab === "reports" && (
-              <div className="space-y-5 animate-in fade-in duration-300">
-                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block">
-                      Shift Handover & Financial Audit
-                    </span>
-                    <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
-                      Evening Closing Summary
-                    </h3>
-                  </div>
-                  <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
-                    ✓ Verified by Manager
-                  </span>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+                  <span className="text-xs font-bold text-zinc-900">Monthly Wastage & Spoilage Analysis</span>
+                  <span className="text-xs font-mono font-bold text-zinc-900">₹14,250 Total Loss</span>
                 </div>
 
-                <div className="grid sm:grid-cols-3 gap-3">
-                  <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase block">Checklist Compliance</span>
-                    <span className="text-xl font-extrabold text-slate-900 mt-1 block">96%</span>
-                    <span className="text-[11px] text-emerald-600 font-semibold">18 of 19 verified</span>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-100">
+                    <span className="text-[10px] text-zinc-400 block font-semibold">Top Reason</span>
+                    <span className="text-xs font-bold text-zinc-900 block mt-1">Spoilage / Expiry</span>
+                    <span className="text-[10px] text-zinc-500">48% of total loss</span>
                   </div>
-
-                  <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase block">Total Wastage Cost</span>
-                    <span className="text-xl font-extrabold text-slate-900 mt-1 block">₹995</span>
-                    <span className="text-[11px] text-rose-600 font-semibold">3 items recorded</span>
+                  <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-100">
+                    <span className="text-[10px] text-zinc-400 block font-semibold">Highest Loss Item</span>
+                    <span className="text-xs font-bold text-zinc-900 block mt-1">Dairy & Paneer</span>
+                    <span className="text-[10px] text-zinc-500">₹5,400 monthly</span>
                   </div>
-
-                  <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase block">Petty Cash Expenses</span>
-                    <span className="text-xl font-extrabold text-slate-900 mt-1 block">₹650</span>
-                    <span className="text-[11px] text-slate-600 font-semibold">2 bills verified</span>
+                  <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-100">
+                    <span className="text-[10px] text-zinc-400 block font-semibold">SOP Completion</span>
+                    <span className="text-xs font-bold text-emerald-600 block mt-1">94.2%</span>
+                    <span className="text-[10px] text-zinc-500">28 of 30 shifts signed</span>
                   </div>
                 </div>
               </div>
@@ -418,178 +333,187 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 4. CORE FEATURES GRID */}
-      <section id="features" className="py-20 md:py-28 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest block mb-2">
-            Why Restaurant Owners Choose RestoPulse
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Built for Kitchen Speed, Designed for Owner Peace of Mind
-          </h2>
+      {/* 4. KEY PILLARS GRID */}
+      <section className="py-20 px-4 sm:px-6 max-w-5xl mx-auto space-y-12">
+        <div className="text-center space-y-2 max-w-2xl mx-auto">
+          <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900">Built specifically for busy restaurants</h2>
+          <p className="text-xs sm:text-sm text-zinc-500">
+            No bloated enterprise complexity. Zero training required for kitchen line staff.
+          </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-card hover:shadow-card-hover transition space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
-              <Camera className="w-6 h-6" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-6 rounded-3xl bg-zinc-50/70 border border-zinc-200/80 space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center">
+              <Camera className="w-5 h-5" />
             </div>
-            <h3 className="text-base font-bold text-slate-900">Live Camera Proof</h3>
-            <p className="text-xs text-slate-600 leading-relaxed font-normal">
-              No fake tickmarks. Staff take live photo proof of stations, food prep, and cleanliness directly from their camera.
+            <h3 className="text-base font-bold text-zinc-900">Live Camera Audits (No Gallery Uploads)</h3>
+            <p className="text-xs text-zinc-500 leading-relaxed">
+              Staff can only snap live photos through their camera. Eliminates fake checklists and guarantees
+              oil temperatures, prep hygiene, and clean counters are verified in real time.
             </p>
           </div>
 
-          <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-card hover:shadow-card-hover transition space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-              <Zap className="w-6 h-6" />
+          <div className="p-6 rounded-3xl bg-zinc-50/70 border border-zinc-200/80 space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center">
+              <TrendingDown className="w-5 h-5" />
             </div>
-            <h3 className="text-base font-bold text-slate-900">10-Second Wastage Logging</h3>
-            <p className="text-xs text-slate-600 leading-relaxed font-normal">
-              Quick food waste recording by kitchen staff with automatic unit pricing snapshots and rupee loss calculations.
+            <h3 className="text-base font-bold text-zinc-900">Sub-10s Food Wastage POS</h3>
+            <p className="text-xs text-zinc-500 leading-relaxed">
+              Kitchen staff tap the ingredient, select quick presets (+1kg, +0.5kg), pick a reason, and snap proof.
+              Instantly calculates rupee loss and alerts managers to food cost leaks.
             </p>
           </div>
 
-          <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-card hover:shadow-card-hover transition space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-              <CheckSquare className="w-6 h-6" />
+          <div className="p-6 rounded-3xl bg-zinc-50/70 border border-zinc-200/80 space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center">
+              <ShieldCheck className="w-5 h-5" />
             </div>
-            <h3 className="text-base font-bold text-slate-900">Custom SOP Builder</h3>
-            <p className="text-xs text-slate-600 leading-relaxed font-normal">
-              Build custom opening, closing, and hygiene checklists with manager digital signatures and petty cash logs.
+            <h3 className="text-base font-bold text-zinc-900">Digital Manager Sign-Off & Cash Float</h3>
+            <p className="text-xs text-zinc-500 leading-relaxed">
+              Duty managers sign off shift handovers directly on mobile touchscreens. Track opening cash float,
+              small change, and direct purchase expenses on a single unified audit ledger.
+            </p>
+          </div>
+
+          <div className="p-6 rounded-3xl bg-zinc-50/70 border border-zinc-200/80 space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center">
+              <Smartphone className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-bold text-zinc-900">Staff Mode: 2-Button Simplicity</h3>
+            <p className="text-xs text-zinc-500 leading-relaxed">
+              Kitchen staff are protected with an isolated 2-button interface (Checklist & Wastage).
+              Managers and owners retain complete control over pricing catalogs, reports, and templates.
             </p>
           </div>
         </div>
       </section>
 
-      {/* 5. PRICING SECTION - ₹399/mo & ₹3,999/yr */}
-      <section id="pricing" className="py-20 md:py-28 bg-[#F8FAFC] border-t border-slate-200/80">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest block mb-2">
-            Simple, Transparent Pricing
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            One Plan. All Features Included.
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-600 mt-2">
-            No hidden charges, no per-user pricing. Full access for your entire restaurant team.
-          </p>
+      {/* 5. PRICING SECTION */}
+      <section className="py-20 px-4 sm:px-6 bg-zinc-50/70 border-t border-zinc-200/80">
+        <div className="max-w-4xl mx-auto space-y-8 text-center">
+          <div className="space-y-2">
+            <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900">Simple, transparent pricing</h2>
+            <p className="text-xs sm:text-sm text-zinc-500">
+              One straightforward plan. Everything included. Unlimited staff.
+            </p>
+          </div>
 
-          {/* Billing Toggle */}
-          <div className="mt-8 inline-flex items-center p-1.5 rounded-2xl bg-white border border-slate-200 shadow-xs">
+          {/* Billing Switcher */}
+          <div className="inline-flex items-center gap-1.5 p-1 rounded-2xl bg-zinc-200/80">
             <button
+              type="button"
               onClick={() => setBillingPeriod("monthly")}
-              className={`px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-                billingPeriod === "monthly"
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "text-slate-600 hover:text-slate-900"
+              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                billingPeriod === "monthly" ? "bg-white text-zinc-900 shadow-xs" : "text-zinc-600"
               }`}
             >
               Monthly Billing
             </button>
             <button
+              type="button"
               onClick={() => setBillingPeriod("yearly")}
-              className={`px-5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                billingPeriod === "yearly"
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "text-slate-600 hover:text-slate-900"
+              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                billingPeriod === "yearly" ? "bg-white text-zinc-900 shadow-xs" : "text-zinc-600"
               }`}
             >
               <span>Annual Billing</span>
-              <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-black border border-emerald-200">
-                Save ₹789
+              <span className="px-1.5 py-0.2 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                Save 17%
               </span>
             </button>
           </div>
 
           {/* Pricing Card */}
-          <div className="mt-10 max-w-md mx-auto rounded-3xl border-2 border-indigo-600 bg-white p-8 shadow-xl relative">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-indigo-600 text-white font-bold text-[11px] uppercase tracking-wider shadow-md">
-              Complete Restaurant Access
+          <div className="max-w-md mx-auto bg-white border border-zinc-200 rounded-3xl p-6 sm:p-8 shadow-xl text-left space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-zinc-900">Pro Restaurant License</h3>
+                <p className="text-xs text-zinc-500">All features & unlimited team members</p>
+              </div>
+              <span className="px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-700 text-xs font-bold">
+                14-Day Free Trial
+              </span>
             </div>
 
-            <div className="text-center mt-2">
-              <div className="flex items-baseline justify-center gap-1">
-                <span className="text-4xl sm:text-5xl font-extrabold text-slate-900">
-                  {billingPeriod === "yearly" ? "₹3,999" : "₹399"}
+            <div className="space-y-1">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-4xl sm:text-5xl font-extrabold text-zinc-900">
+                  {billingPeriod === "monthly" ? "₹399" : "₹3,999"}
                 </span>
-                <span className="text-xs text-slate-500 font-bold">
-                  {billingPeriod === "yearly" ? "/ year" : "/ month"}
+                <span className="text-xs text-zinc-500 font-medium">
+                  {billingPeriod === "monthly" ? "/ month" : "/ year (₹333/mo)"}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-2 font-medium">
-                {billingPeriod === "yearly"
-                  ? "Billed annually (approx ₹333/month • 2 months free)"
-                  : "Billed monthly • 14-Day Free Trial • Cancel anytime"}
-              </p>
+              <p className="text-[11px] text-zinc-400">All-inclusive pricing. No hidden fees.</p>
             </div>
 
-            <ul className="mt-8 space-y-3 text-left text-xs font-medium text-slate-700 border-y border-slate-100 py-6">
-              <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-indigo-600 shrink-0 stroke-[2.5]" />
-                <span>Unlimited Staff & Manager Accounts</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-indigo-600 shrink-0 stroke-[2.5]" />
-                <span>Daily Shift Checklists & Custom Builder</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-indigo-600 shrink-0 stroke-[2.5]" />
-                <span>Live Camera Photo Proof with Cloud Storage</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-indigo-600 shrink-0 stroke-[2.5]" />
-                <span>10-Second Food Waste Logging with Cost Snapshots</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-indigo-600 shrink-0 stroke-[2.5]" />
-                <span>Digital Manager Signature & Cash Expense Logs</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Check className="w-4 h-4 text-indigo-600 shrink-0 stroke-[2.5]" />
-                <span>Exportable CSV Reports & Shift History</span>
-              </li>
-            </ul>
+            <div className="space-y-2.5 pt-4 border-t border-zinc-100 text-xs text-zinc-700">
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Unlimited Staff & Kitchen Accounts</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Unlimited Daily SOP & Hygiene Checklists</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Live Camera Photo Proofs on Cloudflare R2</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Sub-10s Food Wastage POS with Rupee Loss Tracking</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Digital Canvas Manager Signature Handover</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Visual Drag & Drop Checklist Builder</span>
+              </div>
+            </div>
 
             <Link
               href="/signup"
-              className="mt-6 w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-3 px-4 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-md"
             >
-              <span>Start 14-Day Free Trial</span>
+              <span>Get Started with 14-Day Free Trial</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
       </section>
 
-      {/* 6. FAQ ACCORDION */}
-      <section id="faq" className="py-20 md:py-28 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest block mb-2">
-            Got Questions?
-          </span>
-          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Frequently Asked Questions</h2>
+      {/* 6. FAQ SECTION */}
+      <section className="py-20 px-4 sm:px-6 max-w-3xl mx-auto space-y-8">
+        <div className="text-center space-y-2">
+          <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900">Frequently Asked Questions</h2>
+          <p className="text-xs sm:text-sm text-zinc-500">Everything you need to know about RestoPulse.</p>
         </div>
 
         <div className="space-y-3">
           {faqs.map((faq, idx) => (
             <div
               key={idx}
-              className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs"
+              className="border border-zinc-200 rounded-2xl bg-white overflow-hidden transition"
             >
               <button
+                type="button"
                 onClick={() => toggleFaq(idx)}
-                className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-bold text-xs sm:text-sm text-slate-900 hover:text-indigo-600 transition cursor-pointer"
+                className="w-full p-4 text-left flex items-center justify-between text-xs font-bold text-zinc-900 cursor-pointer"
               >
                 <span>{faq.q}</span>
                 <ChevronDown
-                  className={`w-4 h-4 shrink-0 transition-transform ${
-                    openFaq === idx ? "rotate-180 text-indigo-600" : "text-slate-400"
+                  className={`w-4 h-4 text-zinc-400 transition-transform ${
+                    openFaq === idx ? "rotate-180" : ""
                   }`}
                 />
               </button>
+
               {openFaq === idx && (
-                <div className="px-4 pb-5 sm:px-5 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-3">
+                <div className="px-4 pb-4 text-xs text-zinc-500 leading-relaxed border-t border-zinc-100 pt-3">
                   {faq.a}
                 </div>
               )}
@@ -598,21 +522,15 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 7. FOOTER */}
-      <footer className="border-t border-slate-200 bg-white py-10 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-indigo-600 text-white font-black text-xs flex items-center justify-center">
-              R
-            </div>
-            <span className="font-bold text-slate-900">RestoPulse</span>
-            <span>• Restaurant Shift Operations & Waste Management</span>
+      {/* 7. MINIMALIST FOOTER */}
+      <footer className="border-t border-zinc-100 py-8 px-4 sm:px-6 text-center text-xs text-zinc-400 space-y-2">
+        <div className="flex items-center justify-center gap-2 font-bold text-zinc-900">
+          <div className="w-6 h-6 rounded-lg bg-zinc-900 text-white flex items-center justify-center text-[10px]">
+            RP
           </div>
-          <div className="flex items-center gap-6 font-medium">
-            <Link href="/login" className="hover:text-indigo-600 transition">Sign In</Link>
-            <Link href="/signup" className="hover:text-indigo-600 transition">Create Account</Link>
-          </div>
+          <span>RestoPulse</span>
         </div>
+        <p>© {new Date().getFullYear()} RestoPulse. All rights reserved. Built for high-efficiency kitchen teams.</p>
       </footer>
     </div>
   );

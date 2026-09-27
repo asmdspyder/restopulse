@@ -150,11 +150,11 @@ export default function QuickRecordModal({
   };
 
   const resetForm = () => {
-    setSelectedItem(null);
     setSearchItem("");
+    setSelectedItem(null);
     setQuantity("1");
-    setUnitCost("");
     setUnit("kg");
+    setUnitCost("");
     setUpdateCatalogPrice(true);
     setSelectedReasonId("");
     setShowDetails(false);
@@ -162,20 +162,18 @@ export default function QuickRecordModal({
     setResponsibleArea("");
     setNotes("");
     setCapturedPhoto(null);
-    setError(null);
+    setViewingPhotoUrl(null);
+    setSaving(false);
     setSuccessMessage(null);
+    setError(null);
   };
 
-  const filteredItems = items.filter((i) =>
-    i.name.toLowerCase().includes(searchItem.toLowerCase())
-  );
+  const adjustQty = (amount: number) => {
+    const current = parseFloat(quantity) || 0;
+    const next = Math.max(0.1, current + amount);
+    setQuantity(String(Math.round(next * 100) / 100));
+  };
 
-  const cleanSearch = searchItem.trim();
-  const exactMatchExists = items.some(
-    (i) => i.name.toLowerCase() === cleanSearch.toLowerCase()
-  );
-
-  // Auto-calculated Wastage Value Preview
   const numQty = parseFloat(quantity) || 0;
   const activeRate = parseFloat(unitCost) || (selectedItem?.costPerUnit ? parseFloat(selectedItem.costPerUnit) : 0);
   const computedValue = numQty * activeRate;
@@ -203,36 +201,46 @@ export default function QuickRecordModal({
 
     setSaving(true);
     try {
-      // 1. Upload captured photo to Cloudflare R2 if available
       let imageUrl: string | undefined = undefined;
-      if (capturedPhoto?.blob) {
-        const formData = new FormData();
-        formData.append("file", capturedPhoto.blob, `wastage_${Date.now()}.webp`);
-        formData.append("itemName", selectedItem.name);
-        const uploadRes = await fetch("/api/wastage/images", {
-          method: "POST",
-          body: formData,
-        });
-        if (uploadRes.ok) {
-          const uploadData = await uploadRes.json();
-          imageUrl = uploadData.url;
+
+      // 1. Upload captured photo to Cloudflare R2 if attached
+      if (capturedPhoto) {
+        try {
+          const formData = new FormData();
+          formData.append("file", capturedPhoto.blob, `wastage-${Date.now()}.jpg`);
+          formData.append("itemName", selectedItem.name);
+
+          const uploadRes = await fetch("/api/wastage/images", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json();
+            if (uploadData.imageUrl) {
+              imageUrl = uploadData.imageUrl;
+            }
+          }
+        } catch (uploadErr) {
+          console.error("Camera photo upload error:", uploadErr);
         }
       }
 
+      // 2. Submit Wastage Entry
       const payload: any = {
-        reasonId: selectedReasonId,
-        quantity: numQty,
+        quantity: Number(quantity),
         unit,
-        ratePerUnit: activeRate,
-        updateItemCost: updateCatalogPrice,
-        shift: shift || undefined,
-        responsibleArea: responsibleArea || undefined,
-        notes: notes || undefined,
+        unitCost: Number(unitCost),
+        reasonId: selectedReasonId,
+        updateCatalogPrice: Boolean(updateCatalogPrice),
+        shift: shift.trim() || undefined,
+        responsibleArea: responsibleArea.trim() || undefined,
+        notes: notes.trim() || undefined,
         imageUrl,
       };
 
       if (selectedItem.isNew) {
-        payload.newItemName = selectedItem.name;
+        payload.itemName = selectedItem.name;
       } else {
         payload.itemId = selectedItem.id;
       }
@@ -244,449 +252,375 @@ export default function QuickRecordModal({
       });
 
       const data = await res.json();
+
       if (!res.ok) {
-        throw new Error(data.error || "Failed to record wastage");
+        setError(data.error || "Failed to log wastage");
+        return;
       }
 
       setSuccessMessage(
-        `${selectedItem.name} — ${numQty} ${unit} (${formatCurrency(computedValue)}) recorded!`
+        `Logged ${quantity} ${unit} of ${selectedItem.name} (${formatCurrency(computedValue)})`
       );
 
+      if (onSuccess) {
+        onSuccess();
+      }
+
       setTimeout(() => {
-        if (onSuccess) onSuccess();
         onClose();
-      }, 1000);
+      }, 1200);
     } catch (err: any) {
-      setError(err.message || "Failed to save record");
+      setError(err.message || "An unexpected error occurred");
+    } finally {
       setSaving(false);
     }
   };
 
   if (!isOpen) return null;
 
+  const filteredItems = items.filter((i) =>
+    i.name.toLowerCase().includes(searchItem.toLowerCase())
+  );
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-slate-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 overflow-y-auto">
+      <div className="relative w-full max-w-lg rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border border-zinc-200 animate-in fade-in zoom-in-95 space-y-4">
         {/* Header */}
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-md z-10">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">
-              <Plus className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-base">Record Wastage</h3>
-              <span className="text-[11px] text-slate-500">Fast 10-second logging</span>
-            </div>
+        <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+          <div>
+            <h2 className="text-base font-bold text-zinc-900">Quick Record Wastage</h2>
+            <p className="text-[11px] text-zinc-500">Log food waste in seconds with live rate calculations</p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-700 transition cursor-pointer"
+            className="p-1.5 text-zinc-400 hover:text-zinc-700 rounded-lg cursor-pointer"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Modal Body */}
-        <div className="p-6">
-          {successMessage ? (
-            <div className="py-8 text-center">
-              <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-3">
-                <CheckCircle2 className="w-8 h-8" />
-              </div>
-              <h4 className="text-xl font-bold text-slate-900">Wastage Recorded</h4>
-              <p className="text-emerald-700 font-medium text-sm mt-1">{successMessage}</p>
+        {/* Success Message */}
+        {successMessage ? (
+          <div className="py-8 text-center space-y-2 animate-in fade-in">
+            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-6 h-6" />
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {error && (
-                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
-
-              {/* STEP 1: SELECT OR CREATE ITEM */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                  1. What was wasted? *
-                </label>
-
-                {selectedItem ? (
-                  <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900 text-base block">{selectedItem.name}</span>
-                        {selectedItem.isNew && (
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 text-[10px] font-extrabold uppercase">
-                            ✨ New Item
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-xs text-emerald-800 font-medium">
-                        Unit: {unit}
-                        {selectedItem.categoryName && ` • ${selectedItem.categoryName}`}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedItem(null);
-                        setCapturedPhoto(null);
-                      }}
-                      className="text-xs font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-100 hover:bg-emerald-200 px-3 py-1.5 rounded-xl transition cursor-pointer"
-                    >
-                      Change
-                    </button>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <div className="relative">
-                      <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-                      <input
-                        type="text"
-                        value={searchItem}
-                        onChange={(e) => setSearchItem(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && cleanSearch) {
-                            e.preventDefault();
-                            if (filteredItems.length === 1 && filteredItems[0].name.toLowerCase() === cleanSearch.toLowerCase()) {
-                              handleSelectItem(filteredItems[0]);
-                            } else {
-                              handleCreateNewItem(cleanSearch);
-                            }
-                          }
-                        }}
-                        placeholder="Search item or type to create new..."
-                        className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-hidden"
-                      />
-                    </div>
-
-                    {/* Suggestions List */}
-                    <div className="mt-2 max-h-48 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100 bg-slate-50/50">
-                      {cleanSearch && !exactMatchExists && (
-                        <button
-                          type="button"
-                          onClick={() => handleCreateNewItem(cleanSearch)}
-                          className="w-full text-left p-2.5 bg-emerald-50 hover:bg-emerald-100/80 border-b border-emerald-200 transition flex items-center justify-between text-xs font-bold text-emerald-900 cursor-pointer"
-                        >
-                          <div className="flex items-center gap-1.5">
-                            <Plus className="w-4 h-4 text-emerald-600" />
-                            <span>Create &quot;{cleanSearch}&quot;</span>
-                          </div>
-                          <span className="text-[10px] font-extrabold text-emerald-700 px-2 py-0.5 rounded bg-emerald-200/70">
-                            + Add & Set Price
-                          </span>
-                        </button>
-                      )}
-
-                      {filteredItems.length === 0 && !cleanSearch && (
-                        <div className="p-4 text-center text-xs text-slate-400">
-                          <p>No catalog items found.</p>
-                          <p className="text-[11px] text-slate-400 mt-0.5">Type an item name above to add on the fly.</p>
-                        </div>
-                      )}
-
-                      {filteredItems.map((item) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => handleSelectItem(item)}
-                          className="w-full text-left p-2.5 hover:bg-emerald-50/60 transition flex items-center justify-between cursor-pointer text-xs"
-                        >
-                          <span className="font-semibold text-slate-900">{item.name}</span>
-                          <span className="font-bold text-slate-600">
-                            {formatCurrency(item.costPerUnit)} / {item.defaultUnit}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+            <h3 className="text-sm font-bold text-zinc-900">Wastage Logged Successfully</h3>
+            <p className="text-xs text-zinc-600">{successMessage}</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-medium flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{error}</span>
               </div>
+            )}
 
-              {/* STEP 2: QUANTITY, UNIT & RATE */}
-              {selectedItem && (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                        Quantity & Unit *
-                      </label>
-                      <div className="flex gap-1.5">
-                        <input
-                          type="number"
-                          step="any"
-                          required
-                          value={quantity}
-                          onChange={(e) => setQuantity(e.target.value)}
-                          placeholder="e.g. 1.5"
-                          className="block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-base font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
-                        />
-                        <select
-                          value={unit}
-                          onChange={(e) => setUnit(e.target.value)}
-                          className="px-2.5 py-2.5 rounded-xl bg-slate-100 border border-slate-300 font-bold text-xs text-slate-800 focus:border-emerald-500 focus:outline-hidden cursor-pointer"
-                        >
-                          {STANDARD_UNITS.map((u) => (
-                            <option key={u} value={u}>
-                              {u}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                        Rate / {unit} (₹) *
-                      </label>
-                      <input
-                        type="number"
-                        step="any"
-                        required
-                        value={unitCost}
-                        onChange={(e) => setUnitCost(e.target.value)}
-                        placeholder="Cost per unit"
-                        className="block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-base font-bold text-slate-900 focus:border-emerald-500 focus:outline-hidden"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Auto-update catalog price checkbox */}
-                  <div className="flex items-center gap-2 text-xs text-slate-600">
-                    <input
-                      type="checkbox"
-                      id="updateCatalogCost"
-                      checked={updateCatalogPrice}
-                      onChange={(e) => setUpdateCatalogPrice(e.target.checked)}
-                      className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                    />
-                    <label htmlFor="updateCatalogCost" className="cursor-pointer font-medium text-[11px]">
-                      {selectedItem.isNew
-                        ? `Save "${selectedItem.name}" to Item Catalog for future logs`
-                        : `Update default rate (₹${activeRate.toFixed(2)}) in Item Catalog`}
-                    </label>
-                  </div>
-
-                  {/* Instant Value Badge */}
-                  {numQty > 0 && (
-                    <div className="p-2.5 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-between text-xs">
-                      <span className="text-slate-600 font-medium">
-                        {numQty} {unit} × {formatCurrency(activeRate)} =
-                      </span>
-                      <span className="font-extrabold text-slate-900 text-sm">
-                        {formatCurrency(computedValue)} Wastage
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* STEP 3: REASON */}
-              {selectedItem && (
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                    2. Why was it wasted? *
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {reasons.map((r) => (
-                      <button
-                        key={r.id}
-                        type="button"
-                        onClick={() => setSelectedReasonId(r.id)}
-                        className={`p-2.5 rounded-xl text-xs font-bold transition text-center border cursor-pointer ${
-                          selectedReasonId === r.id
-                            ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
-                            : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                        }`}
-                      >
-                        {r.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 4: PHOTO PROOF (OPTIONAL) */}
-              {selectedItem && (
-                <div className="pt-2 border-t border-slate-100">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                    3. Photo Proof (Optional)
-                  </label>
-
-                  {capturedPhoto ? (
-                    <div className="p-3 rounded-2xl bg-indigo-50/60 border border-indigo-200 flex items-center justify-between gap-3 animate-in fade-in">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="relative w-14 h-11 rounded-xl overflow-hidden bg-slate-900 border border-indigo-300 shadow-xs cursor-pointer group shrink-0"
-                          onClick={() => setViewingPhotoUrl(capturedPhoto.previewUrl)}
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={capturedPhoto.previewUrl}
-                            alt="Captured preview"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                          />
-                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                            <ZoomIn className="w-3 h-3" />
-                          </div>
-                        </div>
-                        <div>
-                          <span className="text-xs font-bold text-slate-900 block">
-                            Photo Attached
-                          </span>
-                          <span className="text-[10px] text-indigo-700 font-mono">
-                            {(capturedPhoto.sizeBytes / 1024).toFixed(0)} KB • Ready
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setIsCameraModalOpen(true)}
-                          className="p-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-900 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
-                          title="Retake or re-upload photo"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">Retake / Re-upload</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setCapturedPhoto(null)}
-                          className="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-xl text-xs font-bold transition cursor-pointer"
-                          title="Remove photo"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setIsCameraModalOpen(true)}
-                      className="w-full py-2.5 px-3 rounded-2xl border-2 border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/40 text-slate-600 hover:text-indigo-900 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer group"
-                    >
-                      <div className="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs">
-                        <Camera className="w-4 h-4" />
-                      </div>
-                      <span>Snap Photo with Live Camera (Optional)</span>
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* OPTIONAL: MORE DETAILS ACCORDION */}
-              {selectedItem && (
-                <div className="pt-2 border-t border-slate-100">
+            {/* STEP 1: ITEM SELECTION */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-600">
+                  1. Item *
+                </label>
+                {selectedItem && (
                   <button
                     type="button"
-                    onClick={() => setShowDetails(!showDetails)}
-                    className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1.5 cursor-pointer"
+                    onClick={() => setSelectedItem(null)}
+                    className="text-[11px] font-semibold text-zinc-400 hover:text-zinc-700 cursor-pointer"
                   >
-                    <span>More details (Shift, Area, Notes)</span>
-                    <ChevronDown
-                      className={`w-3.5 h-3.5 transition-transform ${showDetails ? "rotate-180" : ""}`}
-                    />
+                    Change
                   </button>
+                )}
+              </div>
 
-                  {showDetails && (
-                    <div className="mt-3 space-y-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="block font-semibold text-slate-600 mb-1">Shift (Optional)</label>
-                          <input
-                            type="text"
-                            value={shift}
-                            onChange={(e) => setShift(e.target.value)}
-                            placeholder="Morning / Lunch / Dinner"
-                            className="w-full p-2 rounded-lg border border-slate-300 text-slate-900 bg-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="block font-semibold text-slate-600 mb-1">Responsible Area</label>
-                          <input
-                            type="text"
-                            value={responsibleArea}
-                            onChange={(e) => setResponsibleArea(e.target.value)}
-                            placeholder="Kitchen / Bar / Bakery"
-                            className="w-full p-2 rounded-lg border border-slate-300 text-slate-900 bg-white"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block font-semibold text-slate-600 mb-1">Observation / Notes</label>
-                        <input
-                          type="text"
-                          value={notes}
-                          onChange={(e) => setNotes(e.target.value)}
-                          placeholder="e.g. Fridge temperature was high overnight"
-                          className="w-full p-2 rounded-lg border border-slate-300 text-slate-900 bg-white"
-                        />
-                      </div>
+              {selectedItem ? (
+                <div className="p-2.5 rounded-xl bg-zinc-50 border border-zinc-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <UtensilsCrossed className="w-4 h-4 text-zinc-700" />
+                    <div>
+                      <span className="text-xs font-bold text-zinc-900 block">{selectedItem.name}</span>
+                      <span className="text-[10px] text-zinc-500 font-mono">
+                        ₹{parseFloat(selectedItem.costPerUnit || "0").toFixed(2)}/{selectedItem.defaultUnit || "kg"}
+                      </span>
                     </div>
-                  )}
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold">
+                    Selected
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-3" />
+                    <input
+                      type="text"
+                      placeholder="Search or enter item name..."
+                      value={searchItem}
+                      onChange={(e) => setSearchItem(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && searchItem.trim()) {
+                          e.preventDefault();
+                          handleCreateNewItem(searchItem);
+                        }
+                      }}
+                      className="w-full pl-8 pr-3 py-2 text-xs font-medium rounded-xl border border-zinc-200 bg-zinc-50/50 focus:bg-white focus:outline-none focus:border-zinc-400"
+                    />
+                  </div>
+
+                  {/* Filtered suggestions */}
+                  <div className="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto">
+                    {filteredItems.slice(0, 8).map((it) => (
+                      <button
+                        key={it.id}
+                        type="button"
+                        onClick={() => handleSelectItem(it)}
+                        className="p-2 rounded-xl text-left bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 transition cursor-pointer"
+                      >
+                        <span className="text-xs font-semibold text-zinc-900 block truncate">{it.name}</span>
+                        <span className="text-[10px] text-zinc-400 font-mono">
+                          ₹{parseFloat(it.costPerUnit || "0").toFixed(0)}/{it.defaultUnit || "kg"}
+                        </span>
+                      </button>
+                    ))}
+
+                    {searchItem.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => handleCreateNewItem(searchItem)}
+                        className="p-2 rounded-xl text-left bg-zinc-900 text-white hover:bg-zinc-800 transition cursor-pointer col-span-2 flex items-center justify-between"
+                      >
+                        <span className="text-xs font-semibold truncate">+ Add &quot;{searchItem}&quot;</span>
+                        <span className="text-[10px] text-zinc-300">Custom Item</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
+            </div>
 
-              {/* SUBMIT BUTTON */}
-              <button
-                type="submit"
-                disabled={saving || !selectedItem || !selectedReasonId || !quantity}
-                className="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-500/20 transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Saving Wastage & Photo...</span>
-                  </>
+            {/* STEP 2: QUANTITY, UNIT & RATE */}
+            {selectedItem && (
+              <div className="space-y-3 pt-3 border-t border-zinc-100">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-600">
+                    2. Quantity & Rate *
+                  </label>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => adjustQty(-1)}
+                      className="px-1.5 py-0.5 rounded-md bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-[10px] font-semibold cursor-pointer"
+                    >
+                      -1
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => adjustQty(0.5)}
+                      className="px-1.5 py-0.5 rounded-md bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-[10px] font-semibold cursor-pointer"
+                    >
+                      +0.5
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => adjustQty(1)}
+                      className="px-1.5 py-0.5 rounded-md bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-[10px] font-semibold cursor-pointer"
+                    >
+                      +1
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">
+                      Qty
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0.01"
+                      required
+                      value={quantity}
+                      onChange={(e) => setQuantity(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50/50 text-xs font-bold text-zinc-900 focus:bg-white focus:outline-none focus:border-zinc-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">
+                      Unit
+                    </label>
+                    <select
+                      value={unit}
+                      onChange={(e) => setUnit(e.target.value)}
+                      className="w-full px-2 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50/50 text-xs font-semibold text-zinc-900 focus:bg-white focus:outline-none focus:border-zinc-400 cursor-pointer"
+                    >
+                      {STANDARD_UNITS.map((u) => (
+                        <option key={u} value={u}>
+                          {u}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">
+                      Rate (₹)
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      required
+                      value={unitCost}
+                      onChange={(e) => setUnitCost(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded-xl border border-zinc-200 bg-zinc-50/50 text-xs font-bold text-zinc-900 focus:bg-white focus:outline-none focus:border-zinc-400"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-zinc-50 border border-zinc-200 flex items-center justify-between text-xs">
+                  <span className="text-[11px] text-zinc-500">Calculated Cost:</span>
+                  <span className="font-bold text-zinc-900">{formatCurrency(computedValue)}</span>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 3: REASON PILLS */}
+            {selectedItem && (
+              <div className="pt-3 border-t border-zinc-100">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-600 mb-1.5">
+                  3. Reason *
+                </label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {reasons.map((r) => (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => setSelectedReasonId(r.id)}
+                      className={`py-1.5 px-2 rounded-xl text-xs font-semibold transition text-center border cursor-pointer truncate ${
+                        selectedReasonId === r.id
+                          ? "bg-zinc-900 text-white border-zinc-900 shadow-xs"
+                          : "bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-50"
+                      }`}
+                    >
+                      {r.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* STEP 4: PHOTO PROOF (OPTIONAL) */}
+            {selectedItem && (
+              <div className="pt-3 border-t border-zinc-100">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-600 mb-1.5">
+                  4. Photo Proof (Optional)
+                </label>
+
+                {capturedPhoto ? (
+                  <div className="p-2.5 rounded-xl bg-zinc-50 border border-zinc-200 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-10 h-8 rounded-lg overflow-hidden bg-zinc-900 border border-zinc-300 cursor-pointer shrink-0"
+                        onClick={() => setViewingPhotoUrl(capturedPhoto.previewUrl)}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={capturedPhoto.previewUrl}
+                          alt="Captured preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <span className="text-xs font-semibold text-zinc-900">Photo Attached</span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsCameraModalOpen(true)}
+                        className="p-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-lg text-xs font-medium cursor-pointer"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCapturedPhoto(null)}
+                        className="p-1 text-zinc-400 hover:text-rose-600 rounded-lg cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
                 ) : (
-                  <>
-                    <Plus className="w-4 h-4" />
-                    <span>Save Wastage {computedValue > 0 ? `(${formatCurrency(computedValue)})` : ""}</span>
-                  </>
+                  <button
+                    type="button"
+                    onClick={() => setIsCameraModalOpen(true)}
+                    className="w-full py-2 px-3 rounded-xl border border-dashed border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 text-zinc-600 text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Camera className="w-3.5 h-3.5 text-zinc-500" />
+                    <span>Attach Camera Photo</span>
+                  </button>
                 )}
-              </button>
-            </form>
-          )}
-        </div>
+              </div>
+            )}
+
+            {/* STEP 5: SUBMIT BUTTON */}
+            {selectedItem && (
+              <div className="pt-3 border-t border-zinc-100">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="w-full py-2.5 px-4 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      <span>Save Record ({formatCurrency(computedValue)})</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </form>
+        )}
       </div>
 
-      {/* Camera Capture Modal */}
-      {isCameraModalOpen && (
-        <WastageCameraModal
-          isOpen={isCameraModalOpen}
-          onClose={() => setIsCameraModalOpen(false)}
-          itemName={selectedItem?.name || "Wastage Item"}
-          onPhotoCaptured={(data) => {
-            setCapturedPhoto(data);
-            setIsCameraModalOpen(false);
-          }}
-        />
-      )}
+      {/* CAMERA MODAL */}
+      <WastageCameraModal
+        isOpen={isCameraModalOpen}
+        onClose={() => setIsCameraModalOpen(false)}
+        onPhotoCaptured={(photo) => setCapturedPhoto(photo)}
+      />
 
-      {/* Photo Lightbox */}
+      {/* PHOTO PREVIEW MODAL */}
       {viewingPhotoUrl && (
         <div
-          className="fixed inset-0 z-60 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in"
+          className="fixed inset-0 z-60 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4"
           onClick={() => setViewingPhotoUrl(null)}
         >
-          <div className="absolute top-4 right-4 z-10">
+          <div className="relative max-w-sm max-h-[80vh] rounded-2xl overflow-hidden bg-zinc-900">
             <button
+              type="button"
               onClick={() => setViewingPhotoUrl(null)}
-              className="p-2 text-white/80 hover:text-white bg-black/40 hover:bg-black/60 rounded-full transition cursor-pointer"
+              className="absolute top-2 right-2 p-1.5 bg-black/60 text-white rounded-full"
             >
-              <X className="w-6 h-6" />
+              <X className="w-4 h-4" />
             </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={viewingPhotoUrl}
+              alt="Photo preview"
+              className="w-full h-full object-contain max-h-[75vh]"
+            />
           </div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={viewingPhotoUrl}
-            alt="Wastage photo proof"
-            className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          />
         </div>
       )}
     </div>
