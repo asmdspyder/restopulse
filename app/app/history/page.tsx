@@ -17,8 +17,12 @@ import {
   ArrowLeft,
   Camera,
   Image as ImageIcon,
+  RotateCcw,
+  Trash2,
+  Plus,
 } from "lucide-react";
 import { formatCurrency, formatDateTime, formatDate } from "@/lib/utils";
+import WastageCameraModal from "@/components/app/wastage-camera-modal";
 
 export default function WastageHistoryPage() {
   const [records, setRecords] = useState<any[]>([]);
@@ -26,6 +30,12 @@ export default function WastageHistoryPage() {
   const [reasons, setReasons] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
+
+  // Re-upload Camera State
+  const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
+  const [reuploadTarget, setReuploadTarget] = useState<{ id: string; itemName: string } | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -36,6 +46,25 @@ export default function WastageHistoryPage() {
   const limit = 25;
 
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
+
+  const handleRemovePhoto = async (recordId: string) => {
+    if (!confirm("Are you sure you want to remove this photo proof?")) return;
+    try {
+      const res = await fetch(`/api/wastage/images?recordId=${recordId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to remove photo");
+      setRecords((prev) =>
+        prev.map((r) => (r.id === recordId ? { ...r, imageUrl: null } : r))
+      );
+      if (selectedRecord && selectedRecord.id === recordId) {
+        setSelectedRecord((prev: any) => ({ ...prev, imageUrl: null }));
+      }
+      setActionSuccess("Photo proof removed successfully");
+    } catch (err: any) {
+      setActionError(err.message || "Failed to remove photo");
+    }
+  };
 
   useEffect(() => {
     fetchReasons();
@@ -243,6 +272,24 @@ export default function WastageHistoryPage() {
         </div>
       </div>
 
+      {/* Feedback Alerts */}
+      {actionSuccess && (
+        <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center justify-between">
+          <span>{actionSuccess}</span>
+          <button onClick={() => setActionSuccess(null)} className="p-1 hover:bg-emerald-100 rounded-lg">
+            <X className="w-4 h-4 text-emerald-700" />
+          </button>
+        </div>
+      )}
+      {actionError && (
+        <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-bold flex items-center justify-between">
+          <span>{actionError}</span>
+          <button onClick={() => setActionError(null)} className="p-1 hover:bg-rose-100 rounded-lg">
+            <X className="w-4 h-4 text-rose-700" />
+          </button>
+        </div>
+      )}
+
       {/* Main Table / Mobile Cards */}
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
         {loading ? (
@@ -265,7 +312,7 @@ export default function WastageHistoryPage() {
                   <tr>
                     <th className="py-3.5 px-4">Date & Time</th>
                     <th className="py-3.5 px-4">Item</th>
-                    <th className="py-3.5 px-4">Proof</th>
+                    <th className="py-3.5 px-4">Photo Proof</th>
                     <th className="py-3.5 px-4">Category</th>
                     <th className="py-3.5 px-4">Quantity</th>
                     <th className="py-3.5 px-4">Rate Snapshot</th>
@@ -286,21 +333,45 @@ export default function WastageHistoryPage() {
                       <td className="py-3.5 px-4 font-bold text-slate-900">{r.itemName}</td>
                       <td className="py-3.5 px-4">
                         {r.imageUrl ? (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setViewingPhoto(r.imageUrl)}
+                              className="group relative flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200/80 text-emerald-800 hover:bg-emerald-100 transition shadow-2xs cursor-pointer"
+                              title="Click to view photo proof"
+                            >
+                              <img
+                                src={r.imageUrl}
+                                alt="Proof"
+                                className="w-5 h-5 rounded object-cover border border-emerald-300"
+                              />
+                              <span className="text-[10px] font-bold">Photo</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setReuploadTarget({ id: r.id, itemName: r.itemName });
+                                setIsCameraModalOpen(true);
+                              }}
+                              className="p-1 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-md transition cursor-pointer"
+                              title="Re-upload or replace photo"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
                           <button
                             type="button"
-                            onClick={() => setViewingPhoto(r.imageUrl)}
-                            className="group relative flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200/80 text-emerald-800 hover:bg-emerald-100 transition shadow-2xs cursor-pointer"
-                            title="Click to view photo proof"
+                            onClick={() => {
+                              setReuploadTarget({ id: r.id, itemName: r.itemName });
+                              setIsCameraModalOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-dashed border-slate-300 hover:border-amber-400 hover:bg-amber-50/50 text-slate-500 hover:text-amber-800 text-[10px] font-bold transition cursor-pointer"
+                            title="Add live camera photo"
                           >
-                            <img
-                              src={r.imageUrl}
-                              alt="Proof"
-                              className="w-5 h-5 rounded object-cover border border-emerald-300"
-                            />
-                            <span className="text-[10px] font-bold">Photo</span>
+                            <Camera className="w-3 h-3 text-amber-600" />
+                            <span>+ Add</span>
                           </button>
-                        ) : (
-                          <span className="text-slate-300 text-[11px]">—</span>
                         )}
                       </td>
                       <td className="py-3.5 px-4 text-slate-500">{r.categoryName || "General"}</td>
@@ -332,7 +403,7 @@ export default function WastageHistoryPage() {
                       <td className="py-3.5 px-4 text-right">
                         <button
                           onClick={() => setSelectedRecord(r)}
-                          className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-900 transition"
+                          className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-900 transition cursor-pointer"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
@@ -350,14 +421,39 @@ export default function WastageHistoryPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-sm text-slate-900">{r.itemName}</span>
-                      {r.imageUrl && (
+                      {r.imageUrl ? (
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setViewingPhoto(r.imageUrl)}
+                            className="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            <Camera className="w-3 h-3" />
+                            <span>Photo</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReuploadTarget({ id: r.id, itemName: r.itemName });
+                              setIsCameraModalOpen(true);
+                            }}
+                            className="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-bold flex items-center gap-0.5 cursor-pointer"
+                          >
+                            <RotateCcw className="w-2.5 h-2.5" />
+                            <span>Re-upload</span>
+                          </button>
+                        </div>
+                      ) : (
                         <button
                           type="button"
-                          onClick={() => setViewingPhoto(r.imageUrl)}
-                          className="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold flex items-center gap-1"
+                          onClick={() => {
+                            setReuploadTarget({ id: r.id, itemName: r.itemName });
+                            setIsCameraModalOpen(true);
+                          }}
+                          className="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
                         >
                           <Camera className="w-3 h-3" />
-                          <span>Photo</span>
+                          <span>+ Add Photo</span>
                         </button>
                       )}
                     </div>
@@ -464,27 +560,63 @@ export default function WastageHistoryPage() {
                 </div>
               )}
 
-              {/* Photo Proof */}
-              {selectedRecord.imageUrl && (
-                <div className="pt-2 border-t border-slate-100">
-                  <span className="text-slate-500 font-bold block mb-1.5">Photo Proof:</span>
+              {/* Photo Proof Section */}
+              <div className="pt-2 border-t border-slate-100 space-y-2">
+                <span className="text-slate-500 font-bold block mb-1">Live Photo Proof:</span>
+                {selectedRecord.imageUrl ? (
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => setViewingPhoto(selectedRecord.imageUrl)}
+                      className="relative w-full h-40 rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 group cursor-pointer block"
+                    >
+                      <img
+                        src={selectedRecord.imageUrl}
+                        alt="Wastage proof"
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-bold text-xs">
+                        <Eye className="w-4 h-4" />
+                        <span>Click to view full photo</span>
+                      </div>
+                    </button>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReuploadTarget({ id: selectedRecord.id, itemName: selectedRecord.itemName });
+                          setIsCameraModalOpen(true);
+                        }}
+                        className="py-2 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-amber-700" />
+                        <span>Re-upload Photo</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePhoto(selectedRecord.id)}
+                        className="py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                        <span>Remove Photo</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
                   <button
                     type="button"
-                    onClick={() => setViewingPhoto(selectedRecord.imageUrl)}
-                    className="relative w-full h-40 rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 group cursor-pointer"
+                    onClick={() => {
+                      setReuploadTarget({ id: selectedRecord.id, itemName: selectedRecord.itemName });
+                      setIsCameraModalOpen(true);
+                    }}
+                    className="w-full py-3 px-4 rounded-2xl border-2 border-dashed border-slate-200 hover:border-amber-400 hover:bg-amber-50/40 text-slate-700 hover:text-amber-900 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
                   >
-                    <img
-                      src={selectedRecord.imageUrl}
-                      alt="Wastage proof"
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-bold text-xs">
-                      <Eye className="w-4 h-4" />
-                      <span>Click to view full photo</span>
-                    </div>
+                    <Camera className="w-4 h-4 text-amber-700" />
+                    <span>Open Camera & Add Live Photo Proof</span>
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             <button
@@ -496,6 +628,49 @@ export default function WastageHistoryPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Camera Capture Modal for Re-upload / Add Photo */}
+      {isCameraModalOpen && (
+        <WastageCameraModal
+          isOpen={isCameraModalOpen}
+          onClose={() => {
+            setIsCameraModalOpen(false);
+            setReuploadTarget(null);
+          }}
+          itemName={reuploadTarget?.itemName || "Wastage Item"}
+          onPhotoCaptured={async (data) => {
+            if (!reuploadTarget) return;
+            try {
+              const formData = new FormData();
+              formData.append("file", data.blob, `wastage_${reuploadTarget.id}_${Date.now()}.webp`);
+              formData.append("itemName", reuploadTarget.itemName);
+              formData.append("recordId", reuploadTarget.id);
+              const res = await fetch("/api/wastage/images", {
+                method: "POST",
+                body: formData,
+              });
+              if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || "Failed to update photo");
+              }
+              const resData = await res.json();
+              const newUrl = resData.url;
+              setRecords((prev) =>
+                prev.map((r) => (r.id === reuploadTarget.id ? { ...r, imageUrl: newUrl } : r))
+              );
+              if (selectedRecord && selectedRecord.id === reuploadTarget.id) {
+                setSelectedRecord((prev: any) => ({ ...prev, imageUrl: newUrl }));
+              }
+              setActionSuccess(`Photo proof for ${reuploadTarget.itemName} updated successfully!`);
+            } catch (err: any) {
+              setActionError(err.message || "Failed to update photo proof");
+            } finally {
+              setReuploadTarget(null);
+              setIsCameraModalOpen(false);
+            }
+          }}
+        />
       )}
 
       {/* Full Photo Lightbox Modal */}

@@ -492,3 +492,5 @@ export function WastageCameraModal({
     </div>
   );
 }
+
+export default WastageCameraModal;

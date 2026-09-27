@@ -301,3 +301,23 @@ export async function getWastageHistory(options: WastageFilterOptions) {
     offset,
   };
 }
+
+export async function updateWastageImage(
+  restaurantId: string,
+  recordId: string,
+  imageUrl: string | null
+) {
+  const [updated] = await db
+    .update(wastageRecords)
+    .set({ imageUrl })
+    .where(
+      and(
+        eq(wastageRecords.id, recordId),
+        eq(wastageRecords.restaurantId, restaurantId)
+      )
+    )
+    .returning();
+
+  return updated;
+}
+

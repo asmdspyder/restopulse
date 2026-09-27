@@ -546,10 +546,10 @@ export default function QuickRecordModal({
                           type="button"
                           onClick={() => setIsCameraModalOpen(true)}
                           className="p-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
-                          title="Retake photo"
+                          title="Retake or re-upload photo"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">Retake</span>
+                          <span className="hidden sm:inline">Retake / Re-upload</span>
                         </button>
                         <button
                           type="button"

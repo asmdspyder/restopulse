@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/auth/session";
-import { recordWastage, getWastageHistory } from "@/lib/services/wastage";
+import { recordWastage, getWastageHistory, updateWastageImage } from "@/lib/services/wastage";
 
 export async function GET(req: NextRequest) {
   try {
@@ -82,5 +82,34 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error("POST /api/wastage error:", error);
     return NextResponse.json({ error: error.message || "We couldn't save this wastage record. Please try again." }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const auth = await getAuthContext();
+    if (!auth || !auth.restaurant) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (!auth.canAccessApp) {
+      return NextResponse.json({ error: "Access blocked", blockReason: auth.blockReason }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const { id, imageUrl } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: "Record ID is required" }, { status: 400 });
+    }
+
+    const updated = await updateWastageImage(auth.restaurant.id, id, imageUrl || null);
+    if (!updated) {
+      return NextResponse.json({ error: "Wastage record not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, record: updated });
+  } catch (error: any) {
+    console.error("PATCH /api/wastage error:", error);
+    return NextResponse.json({ error: error.message || "Failed to update wastage record" }, { status: 500 });
   }
 }

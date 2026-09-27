@@ -18,6 +18,7 @@ import {
   ZoomIn,
   X,
   Clock,
+  Eye,
 } from "lucide-react";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { WastageCameraModal } from "@/components/app/wastage-camera-modal";
@@ -47,6 +48,7 @@ export default function RecordWastagePage() {
 
   // Camera Photo State
   const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
+  const [reuploadTarget, setReuploadTarget] = useState<{ id: string; itemName: string } | null>(null);
   const [capturedPhoto, setCapturedPhoto] = useState<{
     blob: Blob;
     previewUrl: string;
@@ -520,12 +522,15 @@ export default function RecordWastagePage() {
                     <div className="flex items-center gap-1.5">
                       <button
                         type="button"
-                        onClick={() => setIsCameraModalOpen(true)}
+                        onClick={() => {
+                          setReuploadTarget(null);
+                          setIsCameraModalOpen(true);
+                        }}
                         className="p-2 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
-                        title="Retake photo"
+                        title="Retake or re-upload photo"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Retake</span>
+                        <span className="hidden sm:inline">Retake / Re-upload</span>
                       </button>
                       <button
                         type="button"
@@ -540,7 +545,10 @@ export default function RecordWastagePage() {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => setIsCameraModalOpen(true)}
+                    onClick={() => {
+                      setReuploadTarget(null);
+                      setIsCameraModalOpen(true);
+                    }}
                     className="w-full py-2.5 px-3 rounded-2xl border-2 border-dashed border-slate-200 hover:border-amber-400 hover:bg-amber-50/40 text-slate-600 hover:text-amber-900 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer group"
                   >
                     <div className="w-7 h-7 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center group-hover:scale-105 transition-transform shadow-2xs">
@@ -654,19 +662,45 @@ export default function RecordWastagePage() {
                     <span className="text-[10px] text-slate-400">{formatDateTime(rec.recordedAt)}</span>
                   </div>
 
-                  {/* Photo Proof Thumbnail if available */}
-                  {rec.imageUrl && (
-                    <div className="pt-1 flex items-center justify-between">
+                  {/* Photo Proof Actions: View, Re-upload / Change, Add */}
+                  <div className="pt-1 flex items-center justify-between gap-2 flex-wrap">
+                    {rec.imageUrl ? (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setViewingPhotoUrl(rec.imageUrl)}
+                          className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-100/80 border border-emerald-200/80 px-2 py-0.5 rounded-lg hover:bg-emerald-200/90 transition cursor-pointer"
+                        >
+                          <Eye className="w-3 h-3 text-emerald-700" />
+                          <span>View Photo</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReuploadTarget({ id: rec.id, itemName: rec.itemName });
+                            setIsCameraModalOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded-lg hover:bg-slate-100 hover:text-slate-900 transition cursor-pointer"
+                          title="Re-upload or update photo for this log"
+                        >
+                          <RotateCcw className="w-3 h-3 text-slate-500" />
+                          <span>Re-upload</span>
+                        </button>
+                      </div>
+                    ) : (
                       <button
                         type="button"
-                        onClick={() => setViewingPhotoUrl(rec.imageUrl)}
-                        className="inline-flex items-center gap-1.5 text-[10px] font-bold text-amber-800 bg-amber-100/80 border border-amber-200/80 px-2 py-0.5 rounded-lg hover:bg-amber-200/90 transition cursor-pointer"
+                        onClick={() => {
+                          setReuploadTarget({ id: rec.id, itemName: rec.itemName });
+                          setIsCameraModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-lg hover:bg-amber-100 transition cursor-pointer"
                       >
                         <Camera className="w-3 h-3 text-amber-700" />
-                        <span>View Photo Proof</span>
+                        <span>+ Add Live Photo</span>
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
                   {rec.notes && (
                     <p className="text-[10px] text-slate-600 bg-amber-50/70 border border-amber-200/60 p-1.5 rounded-lg italic">
@@ -684,11 +718,39 @@ export default function RecordWastagePage() {
       {isCameraModalOpen && (
         <WastageCameraModal
           isOpen={isCameraModalOpen}
-          onClose={() => setIsCameraModalOpen(false)}
-          itemName={selectedItem?.name || "Wastage Item"}
-          onPhotoCaptured={(data) => {
-            setCapturedPhoto(data);
+          onClose={() => {
             setIsCameraModalOpen(false);
+            setReuploadTarget(null);
+          }}
+          itemName={reuploadTarget ? reuploadTarget.itemName : selectedItem?.name || "Wastage Item"}
+          onPhotoCaptured={async (data) => {
+            if (reuploadTarget) {
+              // Direct upload & update for existing record
+              try {
+                const formData = new FormData();
+                formData.append("file", data.blob, `wastage_${reuploadTarget.id}_${Date.now()}.webp`);
+                formData.append("itemName", reuploadTarget.itemName);
+                formData.append("recordId", reuploadTarget.id);
+                const res = await fetch("/api/wastage/images", {
+                  method: "POST",
+                  body: formData,
+                });
+                if (!res.ok) {
+                  const errData = await res.json();
+                  throw new Error(errData.error || "Failed to update photo");
+                }
+                setSuccessBanner(`Photo proof for ${reuploadTarget.itemName} updated successfully!`);
+                loadData();
+              } catch (err: any) {
+                setError(err.message || "Failed to update photo proof");
+              } finally {
+                setReuploadTarget(null);
+                setIsCameraModalOpen(false);
+              }
+            } else {
+              setCapturedPhoto(data);
+              setIsCameraModalOpen(false);
+            }
           }}
         />
       )}
