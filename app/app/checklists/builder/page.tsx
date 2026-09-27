@@ -420,7 +420,7 @@ export default function ChecklistBuilderPage() {
       )}
 
       {/* 2. TOP HEADER & ACTION BAR */}
-      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#bed6c2] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white p-4 sm:p-5 rounded-3xl border-2 border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
             href="/app/checklists"
@@ -433,7 +433,7 @@ export default function ChecklistBuilderPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
-                SOP Template Customizer
+                Customize Checklist
               </h1>
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold border border-emerald-300">
                 {sections.length} Categories • {totalItemsCount} Tasks
@@ -488,7 +488,7 @@ export default function ChecklistBuilderPage() {
             placeholder="Search tasks or categories..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-xl bg-white border border-[#bed6c2] text-xs text-slate-800 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-hidden shadow-xs"
+            className="w-full pl-9 pr-4 py-2 rounded-xl bg-white border border-slate-200/90 text-xs text-slate-800 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-hidden shadow-xs"
           />
         </div>
 
@@ -527,7 +527,7 @@ export default function ChecklistBuilderPage() {
           return (
             <div
               key={secIdx}
-              className="bg-white rounded-3xl border border-[#bed6c2] shadow-xs overflow-hidden transition-all duration-200 hover:border-emerald-300"
+              className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-xs overflow-hidden transition-all duration-200 hover:border-emerald-400"
             >
               {/* Category Header */}
               <div className="p-3.5 sm:p-4 bg-slate-50/90 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">

@@ -19,6 +19,7 @@ import {
   X,
   Clock,
   Eye,
+  User,
 } from "lucide-react";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { WastageCameraModal } from "@/components/app/wastage-camera-modal";
@@ -237,7 +238,7 @@ export default function RecordWastagePage() {
         <div className="flex items-center gap-3">
           <Link
             href="/app"
-            className="p-2 rounded-xl bg-white border border-[#bed6c2] hover:bg-emerald-50 text-slate-700 shadow-xs transition group"
+            className="p-2 rounded-xl bg-white border-2 border-slate-200 hover:bg-emerald-50 text-slate-700 shadow-xs transition group"
             title="Back to Operations Hub"
           >
             <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
@@ -649,7 +650,7 @@ export default function RecordWastagePage() {
               <p className="text-xs text-slate-400 py-6 text-center">No logs recorded yet today.</p>
             ) : (
               recentRecords.map((rec) => (
-                <div key={rec.id} className="p-3 rounded-2xl bg-slate-50 border border-slate-100 text-xs space-y-1.5">
+                <div key={rec.id} className="p-3 rounded-2xl bg-slate-50 border-2 border-slate-200 text-xs space-y-2 shadow-2xs">
                   <div className="flex items-center justify-between font-bold text-slate-900">
                     <span className="truncate mr-2">{rec.itemName}</span>
                     <span className="text-emerald-800 shrink-0">{formatCurrency(rec.wastageValue)}</span>
@@ -660,6 +661,14 @@ export default function RecordWastagePage() {
                       {rec.quantity} {rec.unit} • {rec.reasonName}
                     </span>
                     <span className="text-[10px] text-slate-400">{formatDateTime(rec.recordedAt)}</span>
+                  </div>
+
+                  {/* Staff Name Badge */}
+                  <div className="flex items-center justify-between pt-0.5">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded-md">
+                      <User className="w-3 h-3 text-slate-500" />
+                      <span>Logged by: {rec.userName || "Staff"}</span>
+                    </span>
                   </div>
 
                   {/* Photo Proof Actions: View, Re-upload / Change, Add */}

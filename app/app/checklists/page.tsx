@@ -732,9 +732,9 @@ export default function DailyChecklistPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <Link
+              <Link
               href="/app"
-              className="p-2 rounded-xl bg-white border border-[#bed6c2] hover:bg-emerald-50 text-slate-700 shadow-xs transition group flex items-center justify-center shrink-0"
+              className="p-2 rounded-xl bg-white border-2 border-slate-200 hover:bg-emerald-50 text-slate-700 shadow-xs transition group flex items-center justify-center shrink-0"
               title="Back to Operations Hub"
             >
               <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
@@ -758,7 +758,7 @@ export default function DailyChecklistPage() {
             <button
               type="button"
               onClick={() => setIsCalendarOpen(!isCalendarOpen)}
-              className="px-3.5 py-2 rounded-2xl bg-white border border-[#bed6c2] hover:border-emerald-600 text-slate-800 text-xs font-bold shadow-xs flex items-center gap-2 transition cursor-pointer"
+              className="px-3.5 py-2 rounded-2xl bg-white border-2 border-slate-200 hover:border-emerald-600 text-slate-800 text-xs font-bold shadow-xs flex items-center gap-2 transition cursor-pointer"
             >
               <CalendarIcon className="w-4 h-4 text-emerald-700" />
               <span>{isToday ? `Today (${dateFormatted})` : dateFormatted}</span>
@@ -845,11 +845,11 @@ export default function DailyChecklistPage() {
 
           <Link
             href="/app/checklists/builder"
-            className="p-2.5 rounded-2xl bg-white border border-[#bed6c2] hover:bg-emerald-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+            className="p-2.5 rounded-2xl bg-white border-2 border-slate-200 hover:bg-emerald-50 hover:border-emerald-400 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
             title="Customize Checklist & SOP Template"
           >
             <Sliders className="w-4 h-4 text-emerald-700" />
-            <span className="hidden sm:inline">Edit Template</span>
+            <span className="hidden sm:inline">Customize Checklist</span>
           </Link>
 
           <button
@@ -857,7 +857,7 @@ export default function DailyChecklistPage() {
               setIsAuditDrawerOpen(true);
               fetchAuditLogs();
             }}
-            className="p-2.5 rounded-2xl bg-white border border-[#bed6c2] hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+            className="p-2.5 rounded-2xl bg-white border-2 border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
             title="View Audit Log"
           >
             <History className="w-4 h-4 text-slate-600" />
@@ -867,7 +867,7 @@ export default function DailyChecklistPage() {
       </div>
 
       {/* 2. PROGRESS SUMMARY STRIP */}
-      <div className="bg-white rounded-3xl border border-[#bed6c2] p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white rounded-3xl border-2 border-slate-200 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex-1 space-y-1.5">
           <div className="flex items-center justify-between text-xs font-bold">
             <span className="text-slate-700">Checklist Completion</span>
@@ -918,11 +918,11 @@ export default function DailyChecklistPage() {
           return (
             <div
               key={section.id || sIdx}
-              className="bg-white rounded-3xl border border-[#bed6c2] p-4 sm:p-5 shadow-xs"
+              className="bg-white rounded-3xl border-2 border-slate-200/90 p-4 sm:p-5 shadow-xs"
             >
-              <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-900 font-extrabold text-xs flex items-center justify-center">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3.5">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-900 font-extrabold text-xs flex items-center justify-center border border-emerald-300/80">
                     {section.sectionCode || sIdx + 1}
                   </span>
                   <div>
@@ -930,14 +930,14 @@ export default function DailyChecklistPage() {
                       {section.title}
                     </h2>
                     {section.description && (
-                      <p className="text-[10px] text-slate-500">{section.description}</p>
+                      <p className="text-[11px] text-slate-500">{section.description}</p>
                     )}
                   </div>
                 </div>
               </div>
 
               {/* 2 to 3 Columns Grid for Checklist Items */}
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {(section.items || []).map((item: any) => {
                   const itemKey = item.id || item.label;
                   const val = getItemValue(item);
@@ -958,10 +958,10 @@ export default function DailyChecklistPage() {
                   return (
                     <div
                       key={itemKey}
-                      className={`p-2.5 sm:p-3 rounded-2xl border transition flex flex-col justify-between ${
+                      className={`p-3 rounded-2xl border-2 transition flex flex-col justify-between ${
                         isChecked
-                          ? "bg-emerald-50/80 border-emerald-300 text-emerald-950"
-                          : "bg-slate-50/70 border-slate-200/80 text-slate-800 hover:border-slate-300 hover:bg-slate-50"
+                          ? "bg-emerald-50/90 border-emerald-400/90 text-emerald-950 shadow-2xs"
+                          : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50 text-slate-800 shadow-2xs"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -976,7 +976,7 @@ export default function DailyChecklistPage() {
                             className={`text-xs leading-snug ${
                               isChecked
                                 ? "font-semibold text-slate-900 line-through opacity-85"
-                                : "font-medium text-slate-800"
+                                : "font-semibold text-slate-800"
                             }`}
                           >
                             {item.label}
@@ -1000,7 +1000,7 @@ export default function DailyChecklistPage() {
                             className={`px-1.5 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 ${
                               photoCount > 0
                                 ? "bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-xs"
-                                : "text-slate-400 hover:text-emerald-700 hover:bg-slate-200/60"
+                                : "text-slate-400 hover:text-emerald-700 hover:bg-slate-100"
                             }`}
                             title={
                               photoCount > 0
@@ -1037,10 +1037,10 @@ export default function DailyChecklistPage() {
 
                       {/* Staff Name Badge if Checked */}
                       {isChecked && markedByName && (
-                        <div className="mt-1.5 flex items-center justify-between">
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-900 bg-emerald-100/90 border border-emerald-300/80 px-2 py-0.5 rounded-md">
+                        <div className="mt-2 pt-1.5 border-t border-emerald-200/60 flex items-center justify-between">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-900 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-md">
                             <Check className="w-3 h-3 text-emerald-700" />
-                            <span>{markedByName}</span>
+                            <span>Logged by: {markedByName}</span>
                           </span>
                           {photoCount > 0 && (
                             <span className="text-[10px] text-emerald-700 font-semibold">

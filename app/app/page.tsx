@@ -96,20 +96,20 @@ export default function RestaurantOperationsHub() {
   const isCompleted = checklistRecord?.status === "completed";
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-6 pb-12">
       {/* 1. TOP WELCOME HERO BANNER */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white p-5 sm:p-6 rounded-3xl shadow-md border border-slate-700/50">
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
+      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-700/50">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold uppercase tracking-wider border border-emerald-500/30">
+              <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold uppercase tracking-wider border border-emerald-500/30">
                 Operations Hub
               </span>
               <span className="text-slate-500 text-xs">•</span>
               <span className="text-xs text-slate-300 font-medium">{todayFormatted}</span>
             </div>
             <div className="flex items-baseline gap-2">
-              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">
+              <h1 className="text-lg sm:text-xl font-extrabold tracking-tight">
                 {getGreeting()}, {userName.split(" ")[0]} 👋
               </h1>
               <span className="text-xs text-slate-400 font-medium hidden md:inline">
@@ -118,17 +118,17 @@ export default function RestaurantOperationsHub() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <Link
               href="/app/checklists"
-              className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/10 transition flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/10 transition flex items-center gap-1.5 cursor-pointer"
             >
               <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" />
               <span>Daily Checklist</span>
             </Link>
             <Link
               href="/app/wastage"
-              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/30 flex items-center gap-1.5 transition cursor-pointer"
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm shadow-emerald-600/30 flex items-center gap-1.5 transition cursor-pointer"
             >
               <PlusCircle className="w-3.5 h-3.5" />
               <span>Record Wastage</span>
@@ -136,39 +136,37 @@ export default function RestaurantOperationsHub() {
           </div>
         </div>
 
-        {/* Subtle decorative background circles */}
-        <div className="absolute -right-10 -bottom-10 w-36 h-36 rounded-full bg-emerald-600/10 blur-xl pointer-events-none" />
+        {/* Decorative background blur */}
+        <div className="absolute -right-10 -bottom-10 w-32 h-32 rounded-full bg-emerald-600/10 blur-xl pointer-events-none" />
       </div>
 
-      {/* 2. THE PRIMARY MODULE CARDS */}
+      {/* 2. THE PRIMARY MODULE CARDS - COMPACT, SIMPLE & EASY TO UNDERSTAND */}
       <div>
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-              {isStaff ? "Shift Tasks" : "Operations Modules"}
-            </h2>
-            <p className="text-xs text-slate-600">
-              {isStaff ? "Complete your daily checklist and record kitchen wastage" : "Select any operational module to open directly"}
-            </p>
-          </div>
+        <div className="mb-4">
+          <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">
+            {isStaff ? "Shift Tasks" : "Operations Modules"}
+          </h2>
+          <p className="text-xs text-slate-500">
+            {isStaff ? "Complete your daily checklist and record kitchen wastage" : "Quick access to daily restaurant tools"}
+          </p>
         </div>
 
-        <div className={`grid gap-6 ${isStaff ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
-          {/* CARD 1: SOP & CHECKLIST */}
+        <div className={`grid gap-4 sm:gap-5 ${isStaff ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
+          {/* CARD 1: DAILY CHECKLISTS */}
           <Link
             href="/app/checklists"
-            className="group bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs hover:shadow-xl hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between relative overflow-hidden hover:-translate-y-1 cursor-pointer"
+            className="group bg-white rounded-2xl border-2 border-slate-200/90 hover:border-emerald-600 p-4 sm:p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden cursor-pointer"
           >
-            {/* Top Accent Strip */}
-            <div className="absolute top-0 inset-x-0 h-1.5 bg-emerald-600 group-hover:h-2 transition-all" />
+            {/* Top accent line */}
+            <div className="absolute top-0 inset-x-0 h-1 bg-emerald-600" />
 
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-800 flex items-center justify-center font-bold shadow-xs border border-emerald-200/80 group-hover:scale-110 group-hover:bg-emerald-700 group-hover:text-white transition duration-300">
-                  <CheckSquare className="w-7 h-7" />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center font-bold border border-emerald-200/80 group-hover:scale-105 transition">
+                  <CheckSquare className="w-5 h-5" />
                 </div>
                 <span
-                  className={`text-[11px] font-extrabold px-3 py-1 rounded-full border ${
+                  className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
                     isCompleted
                       ? "bg-emerald-100 text-emerald-900 border-emerald-300"
                       : completedCount > 0
@@ -176,154 +174,126 @@ export default function RestaurantOperationsHub() {
                       : "bg-slate-100 text-slate-600 border-slate-200"
                   }`}
                 >
-                  {isCompleted ? "✓ Completed" : completedCount > 0 ? `In Progress (${completionPercent}%)` : "Not Started"}
+                  {isCompleted ? "✓ Completed" : completedCount > 0 ? `${completionPercent}% Done` : "Not Started"}
                 </span>
               </div>
 
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
-                  Module 01
-                </span>
+              <div>
+                <h3 className="text-base font-bold text-slate-900 group-hover:text-emerald-800 transition">
+                  Daily Checklists
+                </h3>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  Morning opening tasks, equipment checks, cash float, and manager sign-off.
+                </p>
               </div>
 
-              <h3 className="text-xl font-extrabold text-slate-900 group-hover:text-emerald-800 transition">
-                SOP & Checklists
-              </h3>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed min-h-[40px]">
-                Daily opening audits, station verification tasks, purchase & expense logs, and manager digital sign-off.
-              </p>
-
-              {/* Progress metric card */}
-              <div className="mt-5 p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-slate-700">Today&apos;s Audit Progress</span>
-                  <span className="text-emerald-900 font-extrabold text-sm">{completionPercent}%</span>
+              {/* Progress Summary Pill */}
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70 space-y-1.5">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                  <span>Today&apos;s Progress</span>
+                  <span className="text-emerald-800">{completedCount} / {totalRequired} tasks</span>
                 </div>
-                <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                   <div
-                    className="bg-emerald-700 h-full rounded-full transition-all duration-500"
+                    className="bg-emerald-600 h-full rounded-full transition-all duration-300"
                     style={{ width: `${completionPercent}%` }}
                   />
                 </div>
-                <span className="text-[11px] text-slate-500 block font-medium">
-                  {completedCount} of {totalRequired} required inspection tasks completed
-                </span>
               </div>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-slate-100">
-              <div className="w-full py-3 px-4 rounded-2xl bg-emerald-700 group-hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 flex items-center justify-center gap-2 transition">
-                <span>Open SOP & Checklists</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
-              </div>
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-emerald-800 group-hover:text-emerald-900">
+              <span>Open Daily Checklist</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>
 
-          {/* CARD 2: WASTAGE RECORDING */}
+          {/* CARD 2: KITCHEN WASTAGE */}
           <Link
             href="/app/wastage"
-            className="group bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs hover:shadow-xl hover:border-teal-600 transition-all duration-300 flex flex-col justify-between relative overflow-hidden hover:-translate-y-1 cursor-pointer"
+            className="group bg-white rounded-2xl border-2 border-slate-200/90 hover:border-teal-600 p-4 sm:p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden cursor-pointer"
           >
-            {/* Top Accent Strip */}
-            <div className="absolute top-0 inset-x-0 h-1.5 bg-teal-600 group-hover:h-2 transition-all" />
+            {/* Top accent line */}
+            <div className="absolute top-0 inset-x-0 h-1 bg-teal-600" />
 
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-14 h-14 rounded-2xl bg-teal-50 text-teal-800 flex items-center justify-center font-bold shadow-xs border border-teal-200/80 group-hover:scale-110 group-hover:bg-teal-700 group-hover:text-white transition duration-300">
-                  <BarChart3 className="w-7 h-7" />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-800 flex items-center justify-center font-bold border border-teal-200/80 group-hover:scale-105 transition">
+                  <BarChart3 className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] font-extrabold px-3 py-1 rounded-full bg-teal-50 text-teal-900 border border-teal-300">
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-900 border border-teal-300">
                   {wastageMetrics?.recordCount || 0} logs this month
                 </span>
               </div>
 
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200/60">
-                  Module 02
-                </span>
+              <div>
+                <h3 className="text-base font-bold text-slate-900 group-hover:text-teal-800 transition">
+                  Kitchen Wastage
+                </h3>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  Log thrown-away food in 10 seconds with live camera photos and loss tracking.
+                </p>
               </div>
 
-              <h3 className="text-xl font-extrabold text-slate-900 group-hover:text-teal-800 transition">
-                Wastage Recording
-              </h3>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed min-h-[40px]">
-                Fast 10-second food waste entry, root-cause Pareto analytics, cost rankings, and items price catalog.
-              </p>
-
-              {/* Loss metric card */}
-              <div className="mt-5 p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
-                <span className="text-[10px] font-extrabold text-teal-800 uppercase tracking-wider block">
-                  This Month&apos;s Wastage Loss
+              {/* Loss Metric Pill */}
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70 space-y-0.5">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                  This Month&apos;s Loss
                 </span>
-                <div className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                <div className="text-lg font-extrabold text-slate-900">
                   {formatCurrency(wastageMetrics?.totalWastage || 0)}
                 </div>
-                <span className="text-[11px] text-slate-500 block font-medium truncate">
-                  Top Cause: <strong className="text-slate-800">{wastageMetrics?.topWasteReason?.name || "None recorded"}</strong>
-                </span>
               </div>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-slate-100">
-              <div className="w-full py-3 px-4 rounded-2xl bg-teal-700 group-hover:bg-teal-800 text-white font-bold text-xs shadow-md shadow-teal-700/20 flex items-center justify-center gap-2 transition">
-                <span>Open Wastage Recording</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
-              </div>
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-teal-800 group-hover:text-teal-900">
+              <span>Record Waste Item</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>
 
-          {/* CARD 3: ACCOUNT & ADMIN (Managers/Owners Only) */}
+          {/* CARD 3: RESTAURANT SETTINGS (Managers & Owners Only) */}
           {!isStaff && (
             <Link
               href="/app/account"
-              className="group bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs hover:shadow-xl hover:border-blue-600 transition-all duration-300 flex flex-col justify-between relative overflow-hidden hover:-translate-y-1 cursor-pointer"
+              className="group bg-white rounded-2xl border-2 border-slate-200/90 hover:border-blue-600 p-4 sm:p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden cursor-pointer"
             >
-              {/* Top Accent Strip */}
-              <div className="absolute top-0 inset-x-0 h-1.5 bg-blue-600 group-hover:h-2 transition-all" />
+              {/* Top accent line */}
+              <div className="absolute top-0 inset-x-0 h-1 bg-blue-600" />
 
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-800 flex items-center justify-center font-bold shadow-xs border border-blue-200/80 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition duration-300">
-                    <Building2 className="w-7 h-7" />
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-800 flex items-center justify-center font-bold border border-blue-200/80 group-hover:scale-105 transition">
+                    <Building2 className="w-5 h-5" />
                   </div>
-                  <span className="text-[11px] font-extrabold text-emerald-900 bg-emerald-50 px-3 py-1 rounded-full flex items-center gap-1.5 border border-emerald-300">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    Active Workspace
+                  <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+                    {usersCount} {usersCount === 1 ? "User" : "Users"}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-800 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200/60">
-                    Module 03
-                  </span>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-800 transition">
+                    Restaurant Settings
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    Manage staff team logins, permissions, and restaurant profile details.
+                  </p>
                 </div>
 
-                <h3 className="text-xl font-extrabold text-slate-900 group-hover:text-blue-800 transition">
-                  Account & Admin
-                </h3>
-                <p className="text-xs text-slate-600 mt-2 leading-relaxed min-h-[40px]">
-                  Restaurant outlet profile, team members, SOP editor permissions, operational shifts, and station zones.
-                </p>
-
-                {/* Team metric card */}
-                <div className="mt-5 p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
-                  <span className="text-[10px] font-extrabold text-blue-800 uppercase tracking-wider block">
-                    Workspace Team
+                {/* Team Pill */}
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70 space-y-0.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                    Staff Team
                   </span>
-                  <div className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                    {usersCount} {usersCount === 1 ? "Staff Member" : "Staff Members"}
+                  <div className="text-lg font-extrabold text-slate-900">
+                    {usersCount} Active Member{usersCount === 1 ? "" : "s"}
                   </div>
-                  <span className="text-[11px] text-slate-500 block font-medium">
-                    Configured shifts & station permissions
-                  </span>
                 </div>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-slate-100">
-                <div className="w-full py-3 px-4 rounded-2xl bg-blue-600 group-hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 flex items-center justify-center gap-2 transition">
-                  <span>Open Account & Admin</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
-                </div>
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-blue-700 group-hover:text-blue-800">
+                <span>Manage Settings</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
             </Link>
           )}

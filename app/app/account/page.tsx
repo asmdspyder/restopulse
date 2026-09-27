@@ -320,7 +320,7 @@ function AccountManagementContent() {
           <div className="flex items-center gap-2.5">
             <Link
               href="/app"
-              className="p-2 rounded-xl bg-white border border-[#bed6c2] hover:bg-emerald-50 text-slate-700 shadow-xs transition group flex items-center justify-center shrink-0"
+              className="p-2 rounded-xl bg-white border border-slate-200/90 hover:bg-emerald-50 text-slate-700 shadow-xs transition group flex items-center justify-center shrink-0"
               title="Back to Operations Hub"
             >
               <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
@@ -339,7 +339,7 @@ function AccountManagementContent() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-1.5 bg-white/80 p-1.5 rounded-2xl border border-[#bed6c2] self-start sm:self-auto shadow-xs">
+        <div className="flex items-center gap-1.5 bg-white/80 p-1.5 rounded-2xl border border-slate-200/90 self-start sm:self-auto shadow-xs">
           <button
             onClick={() => {
               setActiveTab("users");
@@ -409,7 +409,7 @@ function AccountManagementContent() {
             )}
           </div>
 
-          <div className="bg-white rounded-3xl border border-[#bed6c2] shadow-xs overflow-hidden">
+          <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
@@ -526,7 +526,7 @@ function AccountManagementContent() {
 
       {/* 3. TAB: RESTAURANT PROFILE DETAILS */}
       {activeTab === "restaurant" && (
-        <form onSubmit={handleSaveRestaurantDetails} className="bg-white rounded-3xl border border-[#bed6c2] p-6 sm:p-8 shadow-xs space-y-6">
+        <form onSubmit={handleSaveRestaurantDetails} className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs space-y-6">
           <div>
             <h2 className="text-lg font-bold text-slate-900">Restaurant & Outlet Information</h2>
             <p className="text-xs text-slate-500">Core business info that displays on reports and daily checklists.</p>
@@ -624,7 +624,7 @@ function AccountManagementContent() {
       {/* 4. TAB: OPERATIONAL CONFIG */}
       {activeTab === "operations" && (
         <div className="space-y-6">
-          <div className="bg-white rounded-3xl border border-[#bed6c2] p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs space-y-6">
             <div>
               <h2 className="text-lg font-bold text-slate-900">Operational Shifts & Work Areas</h2>
               <p className="text-xs text-slate-500">Configure shifts and stations across your restaurant operations.</p>

@@ -135,7 +135,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     : [
         { name: "Daily Checklist", href: "/app/checklists", icon: CheckSquare, exact: true },
         { name: "Checklist History", href: "/app/checklists/history", icon: ClipboardList },
-        { name: "SOP Template Builder", href: "/app/checklists/builder", icon: Layers },
+        { name: "Customize Checklist", href: "/app/checklists/builder", icon: Layers },
       ];
 
   const wastageNavItems = isStaff
@@ -398,41 +398,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </>
             )}
           </nav>
-
-          {/* Module Switcher Quick Shortcuts at Footer */}
-          {!isStaff && (
-            <div className="p-3 border-t border-slate-100 bg-slate-50/50 space-y-1">
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-1">
-                Switch Module
-              </div>
-              <div className="grid grid-cols-2 gap-1.5">
-                {currentModule !== "sop" && (
-                  <Link
-                    href="/app/checklists"
-                    className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-emerald-50 text-[10px] font-bold text-slate-700 hover:text-emerald-900 text-center transition"
-                  >
-                    📋 SOP
-                  </Link>
-                )}
-                {currentModule !== "wastage" && (
-                  <Link
-                    href="/app/wastage"
-                    className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-teal-50 text-[10px] font-bold text-slate-700 hover:text-teal-900 text-center transition"
-                  >
-                    📉 Wastage
-                  </Link>
-                )}
-                {currentModule !== "account" && (
-                  <Link
-                    href="/app/account"
-                    className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-blue-50 text-[10px] font-bold text-slate-700 hover:text-blue-900 text-center transition"
-                  >
-                    🏢 Admin
-                  </Link>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* User Profile Footer */}
           <div className="p-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/60">

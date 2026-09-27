@@ -57,7 +57,7 @@ export default function ChecklistHistoryPage() {
           <div className="flex items-center gap-2.5">
             <Link
               href="/app"
-              className="p-2 rounded-xl bg-white border border-[#bed6c2] hover:bg-emerald-50 text-slate-700 shadow-xs transition group flex items-center justify-center shrink-0"
+              className="p-2 rounded-xl bg-white border-2 border-slate-200 hover:bg-emerald-50 text-slate-700 shadow-xs transition group flex items-center justify-center shrink-0"
               title="Back to Operations Hub"
             >
               <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />

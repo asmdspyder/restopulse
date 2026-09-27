@@ -265,7 +265,7 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-3 gap-6">
             {/* Feature 1: Wastage Tracker */}
-            <div className="p-6 rounded-3xl bg-white border border-[#bed6c2] shadow-xs hover:shadow-md hover:border-emerald-500 transition space-y-3">
+            <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md hover:border-emerald-500 transition space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
                 <Trash2 className="w-6 h-6" />
               </div>
@@ -276,7 +276,7 @@ export default function LandingPage() {
             </div>
 
             {/* Feature 2: Daily Checklists */}
-            <div className="p-6 rounded-3xl bg-white border border-[#bed6c2] shadow-xs hover:shadow-md hover:border-emerald-500 transition space-y-3">
+            <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md hover:border-emerald-500 transition space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-teal-100 text-teal-800 flex items-center justify-center font-bold">
                 <ClipboardCheck className="w-6 h-6" />
               </div>
@@ -287,7 +287,7 @@ export default function LandingPage() {
             </div>
 
             {/* Feature 3: SOP Customizer */}
-            <div className="p-6 rounded-3xl bg-white border border-[#bed6c2] shadow-xs hover:shadow-md hover:border-emerald-500 transition space-y-3">
+            <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md hover:border-emerald-500 transition space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
                 <Sliders className="w-6 h-6" />
               </div>
@@ -298,7 +298,7 @@ export default function LandingPage() {
             </div>
 
             {/* Feature 4: Waste Analytics */}
-            <div className="p-6 rounded-3xl bg-white border border-[#bed6c2] shadow-xs hover:shadow-md hover:border-emerald-500 transition space-y-3">
+            <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md hover:border-emerald-500 transition space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-800 flex items-center justify-center font-bold">
                 <BarChart3 className="w-6 h-6" />
               </div>
@@ -309,7 +309,7 @@ export default function LandingPage() {
             </div>
 
             {/* Feature 5: Staff Logins */}
-            <div className="p-6 rounded-3xl bg-white border border-[#bed6c2] shadow-xs hover:shadow-md hover:border-emerald-500 transition space-y-3">
+            <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md hover:border-emerald-500 transition space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-800 flex items-center justify-center font-bold">
                 <Users className="w-6 h-6" />
               </div>
@@ -320,7 +320,7 @@ export default function LandingPage() {
             </div>
 
             {/* Feature 6: Mobile Friendly */}
-            <div className="p-6 rounded-3xl bg-white border border-[#bed6c2] shadow-xs hover:shadow-md hover:border-emerald-500 transition space-y-3">
+            <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md hover:border-emerald-500 transition space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-800 flex items-center justify-center font-bold">
                 <Smartphone className="w-6 h-6" />
               </div>
