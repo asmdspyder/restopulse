@@ -15,6 +15,7 @@ export interface RecordWastageInput {
   shift?: string;
   responsibleArea?: string;
   notes?: string;
+  imageUrl?: string;
   recordedAt?: Date;
   createdBy?: string;
 }
@@ -30,6 +31,7 @@ export async function recordWastage(input: RecordWastageInput) {
     shift,
     responsibleArea,
     notes,
+    imageUrl,
     recordedAt = new Date(),
     createdBy,
   } = input;
@@ -203,6 +205,7 @@ export async function recordWastage(input: RecordWastageInput) {
       shift: shift || null,
       responsibleArea: assignedArea,
       notes: notes || null,
+      imageUrl: imageUrl || null,
       recordedAt,
       createdBy: createdBy || null,
     })
@@ -274,6 +277,7 @@ export async function getWastageHistory(options: WastageFilterOptions) {
         shift: wastageRecords.shift,
         responsibleArea: wastageRecords.responsibleArea,
         notes: wastageRecords.notes,
+        imageUrl: wastageRecords.imageUrl,
         recordedAt: wastageRecords.recordedAt,
         userName: users.name,
       })

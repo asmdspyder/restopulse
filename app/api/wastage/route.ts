@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { itemId, newItemName, reasonId, quantity, unit, ratePerUnit, updateItemCost = true, shift, responsibleArea, notes, recordedAt } = body;
+    const { itemId, newItemName, reasonId, quantity, unit, ratePerUnit, updateItemCost = true, shift, responsibleArea, notes, imageUrl, recordedAt } = body;
 
     if ((!itemId && !newItemName) || !reasonId || quantity === undefined || isNaN(Number(quantity)) || Number(quantity) <= 0) {
       return NextResponse.json(
@@ -73,6 +73,7 @@ export async function POST(req: NextRequest) {
       shift,
       responsibleArea,
       notes,
+      imageUrl: imageUrl || undefined,
       recordedAt: recordedAt ? new Date(recordedAt) : new Date(),
       createdBy: auth.user.id,
     });

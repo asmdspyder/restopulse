@@ -213,6 +213,7 @@ export const wastageRecords = pgTable(
     shift: varchar("shift", { length: 50 }),
     responsibleArea: varchar("responsible_area", { length: 100 }),
     notes: text("notes"),
+    imageUrl: text("image_url"),
     createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
     recordedAt: timestamp("recorded_at", { withTimezone: true }).defaultNow().notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

@@ -12,8 +12,13 @@ import {
   ChevronDown,
   Sparkles,
   UtensilsCrossed,
+  Camera,
+  RotateCcw,
+  Trash2,
+  ZoomIn,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { WastageCameraModal } from "@/components/app/wastage-camera-modal";
 
 const STANDARD_UNITS = ["kg", "g", "L", "ml", "pcs", "portion", "pack", "bottle", "tray"];
 
@@ -63,6 +68,15 @@ export default function QuickRecordModal({
   const [shift, setShift] = useState<string>("");
   const [responsibleArea, setResponsibleArea] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
+
+  // Camera Photo Proof State
+  const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
+  const [capturedPhoto, setCapturedPhoto] = useState<{
+    blob: Blob;
+    previewUrl: string;
+    sizeBytes: number;
+  } | null>(null);
+  const [viewingPhotoUrl, setViewingPhotoUrl] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -147,6 +161,7 @@ export default function QuickRecordModal({
     setShift("");
     setResponsibleArea("");
     setNotes("");
+    setCapturedPhoto(null);
     setError(null);
     setSuccessMessage(null);
   };
@@ -188,6 +203,22 @@ export default function QuickRecordModal({
 
     setSaving(true);
     try {
+      // 1. Upload captured photo to Cloudflare R2 if available
+      let imageUrl: string | undefined = undefined;
+      if (capturedPhoto?.blob) {
+        const formData = new FormData();
+        formData.append("file", capturedPhoto.blob, `wastage_${Date.now()}.webp`);
+        formData.append("itemName", selectedItem.name);
+        const uploadRes = await fetch("/api/wastage/images", {
+          method: "POST",
+          body: formData,
+        });
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          imageUrl = uploadData.url;
+        }
+      }
+
       const payload: any = {
         reasonId: selectedReasonId,
         quantity: numQty,
@@ -197,6 +228,7 @@ export default function QuickRecordModal({
         shift: shift || undefined,
         responsibleArea: responsibleArea || undefined,
         notes: notes || undefined,
+        imageUrl,
       };
 
       if (selectedItem.isNew) {
@@ -297,16 +329,19 @@ export default function QuickRecordModal({
                     </div>
                     <button
                       type="button"
-                      onClick={() => setSelectedItem(null)}
+                      onClick={() => {
+                        setSelectedItem(null);
+                        setCapturedPhoto(null);
+                      }}
                       className="text-xs font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-100 hover:bg-emerald-200 px-3 py-1.5 rounded-xl transition cursor-pointer"
                     >
-                      Change Item
+                      Change
                     </button>
                   </div>
                 ) : (
-                  <div>
-                    <div className="relative mb-2">
-                      <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+                  <div className="relative">
+                    <div className="relative">
+                      <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
                       <input
                         type="text"
                         value={searchItem}
@@ -321,33 +356,33 @@ export default function QuickRecordModal({
                             }
                           }
                         }}
-                        placeholder="Type or search item name (e.g. Cooked Rice, Paneer, Milk)..."
-                        className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-hidden"
+                        placeholder="Search item or type to create new..."
+                        className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-hidden"
                       />
                     </div>
 
-                    <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100 bg-slate-50/50 p-1">
-                      {/* Create New Item prompt */}
+                    {/* Suggestions List */}
+                    <div className="mt-2 max-h-48 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100 bg-slate-50/50">
                       {cleanSearch && !exactMatchExists && (
                         <button
                           type="button"
                           onClick={() => handleCreateNewItem(cleanSearch)}
-                          className="w-full text-left p-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition flex items-center justify-between text-xs font-bold text-emerald-900 cursor-pointer mb-1"
+                          className="w-full text-left p-2.5 bg-emerald-50 hover:bg-emerald-100/80 border-b border-emerald-200 transition flex items-center justify-between text-xs font-bold text-emerald-900 cursor-pointer"
                         >
-                          <div className="flex items-center gap-2">
-                            <Plus className="w-4 h-4 text-emerald-700 shrink-0" />
-                            <span>Create new item &quot;{cleanSearch}&quot;</span>
+                          <div className="flex items-center gap-1.5">
+                            <Plus className="w-4 h-4 text-emerald-600" />
+                            <span>Create &quot;{cleanSearch}&quot;</span>
                           </div>
-                          <span className="text-[10px] font-extrabold text-emerald-800 px-2 py-0.5 rounded bg-emerald-200">
-                            + Add & Log
+                          <span className="text-[10px] font-extrabold text-emerald-700 px-2 py-0.5 rounded bg-emerald-200/70">
+                            + Add & Set Price
                           </span>
                         </button>
                       )}
 
                       {filteredItems.length === 0 && !cleanSearch && (
-                        <div className="p-4 text-center text-xs text-slate-500 space-y-1">
-                          <p className="font-semibold text-slate-700">No items configured yet.</p>
-                          <p className="text-slate-400">Type any item name above to create it on the spot!</p>
+                        <div className="p-4 text-center text-xs text-slate-400">
+                          <p>No catalog items found.</p>
+                          <p className="text-[11px] text-slate-400 mt-0.5">Type an item name above to add on the fly.</p>
                         </div>
                       )}
 
@@ -356,17 +391,10 @@ export default function QuickRecordModal({
                           key={item.id}
                           type="button"
                           onClick={() => handleSelectItem(item)}
-                          className="w-full text-left p-2.5 hover:bg-emerald-50/70 transition flex items-center justify-between group rounded-lg cursor-pointer"
+                          className="w-full text-left p-2.5 hover:bg-emerald-50/60 transition flex items-center justify-between cursor-pointer text-xs"
                         >
-                          <div>
-                            <span className="font-semibold text-slate-900 text-sm group-hover:text-emerald-800">
-                              {item.name}
-                            </span>
-                            {item.categoryName && (
-                              <span className="text-[11px] text-slate-500 ml-2">({item.categoryName})</span>
-                            )}
-                          </div>
-                          <span className="text-xs font-bold text-slate-700 group-hover:text-emerald-700">
+                          <span className="font-semibold text-slate-900">{item.name}</span>
+                          <span className="font-bold text-slate-600">
                             {formatCurrency(item.costPerUnit)} / {item.defaultUnit}
                           </span>
                         </button>
@@ -376,7 +404,7 @@ export default function QuickRecordModal({
                 )}
               </div>
 
-              {/* STEP 2: QUANTITY & EDITABLE UNIT PRICE */}
+              {/* STEP 2: QUANTITY, UNIT & RATE */}
               {selectedItem && (
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
@@ -433,7 +461,7 @@ export default function QuickRecordModal({
                       onChange={(e) => setUpdateCatalogPrice(e.target.checked)}
                       className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                     />
-                    <label htmlFor="updateCatalogCost" className="cursor-pointer font-medium">
+                    <label htmlFor="updateCatalogCost" className="cursor-pointer font-medium text-[11px]">
                       {selectedItem.isNew
                         ? `Save "${selectedItem.name}" to Item Catalog for future logs`
                         : `Update default rate (₹${activeRate.toFixed(2)}) in Item Catalog`}
@@ -454,11 +482,11 @@ export default function QuickRecordModal({
                 </div>
               )}
 
-              {/* STEP 3: REASON (BIG TAP BUTTONS) */}
+              {/* STEP 3: REASON */}
               {selectedItem && (
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                    3. Why was it wasted? *
+                    2. Why was it wasted? *
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {reasons.map((r) => (
@@ -476,6 +504,75 @@ export default function QuickRecordModal({
                       </button>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* STEP 4: PHOTO PROOF (OPTIONAL) */}
+              {selectedItem && (
+                <div className="pt-2 border-t border-slate-100">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                    3. Photo Proof (Optional)
+                  </label>
+
+                  {capturedPhoto ? (
+                    <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200 flex items-center justify-between gap-3 animate-in fade-in">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="relative w-14 h-11 rounded-xl overflow-hidden bg-slate-900 border border-amber-300 shadow-xs cursor-pointer group shrink-0"
+                          onClick={() => setViewingPhotoUrl(capturedPhoto.previewUrl)}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={capturedPhoto.previewUrl}
+                            alt="Captured preview"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          />
+                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                            <ZoomIn className="w-3 h-3" />
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-slate-900 block">
+                            Photo Attached
+                          </span>
+                          <span className="text-[10px] text-amber-800 font-mono">
+                            {(capturedPhoto.sizeBytes / 1024).toFixed(0)} KB • Ready
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setIsCameraModalOpen(true)}
+                          className="p-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                          title="Retake photo"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Retake</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCapturedPhoto(null)}
+                          className="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-xl text-xs font-bold transition cursor-pointer"
+                          title="Remove photo"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIsCameraModalOpen(true)}
+                      className="w-full py-2.5 px-3 rounded-2xl border-2 border-dashed border-slate-200 hover:border-amber-400 hover:bg-amber-50/40 text-slate-600 hover:text-amber-900 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer group"
+                    >
+                      <div className="w-7 h-7 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center group-hover:scale-105 transition-transform shadow-2xs">
+                        <Camera className="w-4 h-4" />
+                      </div>
+                      <span>Snap Photo with Live Camera (Optional)</span>
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -519,12 +616,12 @@ export default function QuickRecordModal({
                       </div>
 
                       <div>
-                        <label className="block font-semibold text-slate-600 mb-1">Incident Notes</label>
+                        <label className="block font-semibold text-slate-600 mb-1">Observation / Notes</label>
                         <input
                           type="text"
                           value={notes}
                           onChange={(e) => setNotes(e.target.value)}
-                          placeholder="e.g. Over-prepped for lunch rush"
+                          placeholder="e.g. Fridge temperature was high overnight"
                           className="w-full p-2 rounded-lg border border-slate-300 text-slate-900 bg-white"
                         />
                       </div>
@@ -533,23 +630,21 @@ export default function QuickRecordModal({
                 </div>
               )}
 
-              {/* ACTION BUTTON */}
+              {/* SUBMIT BUTTON */}
               <button
                 type="submit"
                 disabled={saving || !selectedItem || !selectedReasonId || !quantity}
-                className="w-full py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                className="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
               >
                 {saving ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Recording...</span>
+                    <span>Saving Wastage & Photo...</span>
                   </>
                 ) : (
                   <>
                     <Plus className="w-4 h-4" />
-                    <span>
-                      Save Wastage Record {computedValue > 0 ? `(${formatCurrency(computedValue)})` : ""}
-                    </span>
+                    <span>Save Wastage {computedValue > 0 ? `(${formatCurrency(computedValue)})` : ""}</span>
                   </>
                 )}
               </button>
@@ -557,6 +652,43 @@ export default function QuickRecordModal({
           )}
         </div>
       </div>
+
+      {/* Camera Capture Modal */}
+      {isCameraModalOpen && (
+        <WastageCameraModal
+          isOpen={isCameraModalOpen}
+          onClose={() => setIsCameraModalOpen(false)}
+          itemName={selectedItem?.name || "Wastage Item"}
+          onPhotoCaptured={(data) => {
+            setCapturedPhoto(data);
+            setIsCameraModalOpen(false);
+          }}
+        />
+      )}
+
+      {/* Photo Lightbox */}
+      {viewingPhotoUrl && (
+        <div
+          className="fixed inset-0 z-60 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in"
+          onClick={() => setViewingPhotoUrl(null)}
+        >
+          <div className="absolute top-4 right-4 z-10">
+            <button
+              onClick={() => setViewingPhotoUrl(null)}
+              className="p-2 text-white/80 hover:text-white bg-black/40 hover:bg-black/60 rounded-full transition cursor-pointer"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={viewingPhotoUrl}
+            alt="Wastage photo proof"
+            className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }

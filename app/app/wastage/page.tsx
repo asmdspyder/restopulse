@@ -12,8 +12,15 @@ import {
   History,
   ArrowLeft,
   UtensilsCrossed,
+  Camera,
+  RotateCcw,
+  Trash2,
+  ZoomIn,
+  X,
+  Clock,
 } from "lucide-react";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { WastageCameraModal } from "@/components/app/wastage-camera-modal";
 
 const STANDARD_UNITS = ["kg", "g", "L", "ml", "pcs", "portion", "pack", "bottle", "tray"];
 
@@ -37,6 +44,15 @@ export default function RecordWastagePage() {
   const [shift, setShift] = useState<string>("");
   const [responsibleArea, setResponsibleArea] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
+
+  // Camera Photo State
+  const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
+  const [capturedPhoto, setCapturedPhoto] = useState<{
+    blob: Blob;
+    previewUrl: string;
+    sizeBytes: number;
+  } | null>(null);
+  const [viewingPhotoUrl, setViewingPhotoUrl] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
@@ -128,6 +144,22 @@ export default function RecordWastagePage() {
 
     setSaving(true);
     try {
+      // 1. Upload captured photo to Cloudflare R2 if available
+      let imageUrl: string | undefined = undefined;
+      if (capturedPhoto?.blob) {
+        const formData = new FormData();
+        formData.append("file", capturedPhoto.blob, `wastage_${Date.now()}.webp`);
+        formData.append("itemName", selectedItem.name);
+        const uploadRes = await fetch("/api/wastage/images", {
+          method: "POST",
+          body: formData,
+        });
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          imageUrl = uploadData.url;
+        }
+      }
+
       const payload: any = {
         reasonId: selectedReasonId,
         quantity: numQty,
@@ -137,6 +169,7 @@ export default function RecordWastagePage() {
         shift: shift || undefined,
         responsibleArea: responsibleArea || undefined,
         notes: notes || undefined,
+        imageUrl,
       };
 
       if (selectedItem.isNew) {
@@ -167,6 +200,7 @@ export default function RecordWastagePage() {
       setSelectedReasonId("");
       setShowDetails(false);
       setNotes("");
+      setCapturedPhoto(null);
 
       loadData();
     } catch (err: any) {
@@ -211,7 +245,7 @@ export default function RecordWastagePage() {
               Record Wastage
             </h1>
             <p className="text-xs text-slate-500">
-              Quick 10-second kitchen logging & price tracking
+              Quick kitchen logging, camera photo verification & price tracking
             </p>
           </div>
         </div>
@@ -269,7 +303,10 @@ export default function RecordWastagePage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setSelectedItem(null)}
+                    onClick={() => {
+                      setSelectedItem(null);
+                      setCapturedPhoto(null);
+                    }}
                     className="text-xs font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-100 hover:bg-emerald-200 px-2.5 py-1 rounded-lg transition cursor-pointer shrink-0"
                   >
                     Change
@@ -421,7 +458,7 @@ export default function RecordWastagePage() {
               </div>
             )}
 
-            {/* STEP 3: REASON BUTTONS (COMPACT) */}
+            {/* STEP 3: REASON BUTTONS */}
             {selectedItem && (
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
@@ -443,6 +480,75 @@ export default function RecordWastagePage() {
                     </button>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* STEP 4: CAMERA PHOTO PROOF (OPTIONAL) */}
+            {selectedItem && (
+              <div className="pt-2 border-t border-slate-100">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                  3. Photo Proof (Optional)
+                </label>
+
+                {capturedPhoto ? (
+                  <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200 flex items-center justify-between gap-3 animate-in fade-in">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="relative w-16 h-12 rounded-xl overflow-hidden bg-slate-900 border border-amber-300 shadow-xs cursor-pointer group shrink-0"
+                        onClick={() => setViewingPhotoUrl(capturedPhoto.previewUrl)}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={capturedPhoto.previewUrl}
+                          alt="Captured preview"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                          <ZoomIn className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-900 block">
+                          Camera Photo Attached
+                        </span>
+                        <span className="text-[10px] text-amber-800 font-mono">
+                          {(capturedPhoto.sizeBytes / 1024).toFixed(0)} KB • Ready to save
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setIsCameraModalOpen(true)}
+                        className="p-2 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                        title="Retake photo"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Retake</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCapturedPhoto(null)}
+                        className="p-2 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-xl text-xs font-bold transition cursor-pointer"
+                        title="Remove photo"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsCameraModalOpen(true)}
+                    className="w-full py-2.5 px-3 rounded-2xl border-2 border-dashed border-slate-200 hover:border-amber-400 hover:bg-amber-50/40 text-slate-600 hover:text-amber-900 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer group"
+                  >
+                    <div className="w-7 h-7 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center group-hover:scale-105 transition-transform shadow-2xs">
+                      <Camera className="w-4 h-4" />
+                    </div>
+                    <span>Open Camera & Snap Photo (Optional)</span>
+                  </button>
+                )}
               </div>
             )}
 
@@ -509,7 +615,7 @@ export default function RecordWastagePage() {
               {saving ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Saving...</span>
+                  <span>Saving Wastage & Photo...</span>
                 </>
               ) : (
                 <>
@@ -530,24 +636,40 @@ export default function RecordWastagePage() {
             <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">Recent Logs</h3>
           </div>
 
-          <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+          <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
             {recentRecords.length === 0 ? (
               <p className="text-xs text-slate-400 py-6 text-center">No logs recorded yet today.</p>
             ) : (
               recentRecords.map((rec) => (
-                <div key={rec.id} className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+                <div key={rec.id} className="p-3 rounded-2xl bg-slate-50 border border-slate-100 text-xs space-y-1.5">
                   <div className="flex items-center justify-between font-bold text-slate-900">
                     <span className="truncate mr-2">{rec.itemName}</span>
                     <span className="text-emerald-800 shrink-0">{formatCurrency(rec.wastageValue)}</span>
                   </div>
-                  <div className="flex items-center justify-between text-slate-500 mt-1 text-[11px]">
+
+                  <div className="flex items-center justify-between text-slate-500 text-[11px]">
                     <span>
                       {rec.quantity} {rec.unit} • {rec.reasonName}
                     </span>
                     <span className="text-[10px] text-slate-400">{formatDateTime(rec.recordedAt)}</span>
                   </div>
+
+                  {/* Photo Proof Thumbnail if available */}
+                  {rec.imageUrl && (
+                    <div className="pt-1 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setViewingPhotoUrl(rec.imageUrl)}
+                        className="inline-flex items-center gap-1.5 text-[10px] font-bold text-amber-800 bg-amber-100/80 border border-amber-200/80 px-2 py-0.5 rounded-lg hover:bg-amber-200/90 transition cursor-pointer"
+                      >
+                        <Camera className="w-3 h-3 text-amber-700" />
+                        <span>View Photo Proof</span>
+                      </button>
+                    </div>
+                  )}
+
                   {rec.notes && (
-                    <p className="text-[10px] text-slate-600 bg-amber-50/70 border border-amber-200/60 p-1.5 rounded-lg mt-1.5 italic">
+                    <p className="text-[10px] text-slate-600 bg-amber-50/70 border border-amber-200/60 p-1.5 rounded-lg italic">
                       "{rec.notes}"
                     </p>
                   )}
@@ -557,6 +679,43 @@ export default function RecordWastagePage() {
           </div>
         </div>
       </div>
+
+      {/* Camera Capture Modal */}
+      {isCameraModalOpen && (
+        <WastageCameraModal
+          isOpen={isCameraModalOpen}
+          onClose={() => setIsCameraModalOpen(false)}
+          itemName={selectedItem?.name || "Wastage Item"}
+          onPhotoCaptured={(data) => {
+            setCapturedPhoto(data);
+            setIsCameraModalOpen(false);
+          }}
+        />
+      )}
+
+      {/* Photo Lightbox Preview */}
+      {viewingPhotoUrl && (
+        <div
+          className="fixed inset-0 z-60 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in"
+          onClick={() => setViewingPhotoUrl(null)}
+        >
+          <div className="absolute top-4 right-4 z-10">
+            <button
+              onClick={() => setViewingPhotoUrl(null)}
+              className="p-2 text-white/80 hover:text-white bg-black/40 hover:bg-black/60 rounded-full transition cursor-pointer"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={viewingPhotoUrl}
+            alt="Wastage photo proof"
+            className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }

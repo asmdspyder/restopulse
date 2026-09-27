@@ -67,7 +67,9 @@ export function ChecklistCameraModal({
   // Live Camera Stream State
   const [isStartingCamera, setIsStartingCamera] = useState(false);
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
-  const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
+  const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedDeviceIndex, setSelectedDeviceIndex] = useState<number>(0);
+  const [hasMultipleCameras, setHasMultipleCameras] = useState(true);
 
   // Preview & Upload State
   const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
@@ -88,11 +90,18 @@ export function ChecklistCameraModal({
   // Clean up stream helper
   const stopCameraStream = useCallback(() => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch (e) {}
+      });
       streamRef.current = null;
     }
     if (videoRef.current) {
       videoRef.current.srcObject = null;
+      try {
+        videoRef.current.load();
+      } catch (e) {}
     }
     setIsStartingCamera(false);
   }, []);
@@ -100,79 +109,123 @@ export function ChecklistCameraModal({
   // Check if device has multiple cameras (front/rear)
   useEffect(() => {
     if (navigator.mediaDevices?.enumerateDevices) {
-      navigator.mediaDevices.enumerateDevices().then((devices) => {
-        const videoDevices = devices.filter((d) => d.kind === "videoinput");
-        setHasMultipleCameras(videoDevices.length > 1);
-      }).catch(() => {});
+      navigator.mediaDevices
+        .enumerateDevices()
+        .then((devices) => {
+          const vList = devices.filter((d) => d.kind === "videoinput");
+          setVideoDevices(vList);
+          setHasMultipleCameras(vList.length > 1);
+        })
+        .catch(() => {});
     }
   }, []);
 
-  // Start Camera Stream
-  const startCamera = useCallback(async (slotNumber?: number, chosenFacing: "environment" | "user" = facingMode) => {
-    setError(null);
+  // Start Camera Stream with 3-tier fallback for 100% switching reliability
+  const startCamera = useCallback(
+    async (
+      slotNumber?: number,
+      chosenFacing: "environment" | "user" = facingMode,
+      targetDeviceId?: string
+    ) => {
+      setError(null);
 
-    // Determine target slot
-    if (slotNumber) {
-      setCapturingSlot(slotNumber);
-    } else {
-      const usedSlots = new Set(images.map((img) => img.slot));
-      let freeSlot = 1;
-      for (let s = 1; s <= 5; s++) {
-        if (!usedSlots.has(s)) {
-          freeSlot = s;
-          break;
+      // Determine target slot
+      if (slotNumber) {
+        setCapturingSlot(slotNumber);
+      } else {
+        const usedSlots = new Set(images.map((img) => img.slot));
+        let freeSlot = 1;
+        for (let s = 1; s <= 5; s++) {
+          if (!usedSlots.has(s)) {
+            freeSlot = s;
+            break;
+          }
+        }
+        setCapturingSlot(freeSlot);
+      }
+
+      setViewMode("camera");
+      setIsStartingCamera(true);
+
+      // 1. Release previous stream and wait a brief tick for OS hardware unlock
+      stopCameraStream();
+      await new Promise((r) => setTimeout(r, 60));
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setIsStartingCamera(false);
+        setError("Live camera is not supported or permission denied in this browser.");
+        return;
+      }
+
+      let stream: MediaStream | null = null;
+
+      // Tier 1: Try exact deviceId if available
+      if (targetDeviceId) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              deviceId: { exact: targetDeviceId },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+            },
+            audio: false,
+          });
+        } catch (e) {
+          console.warn("Exact deviceId camera failed, attempting facingMode:", e);
         }
       }
-      setCapturingSlot(freeSlot);
-    }
 
-    setViewMode("camera");
-    setIsStartingCamera(true);
-
-    // Stop existing stream if any
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-
-    try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("Live camera is not supported or permission denied in this browser.");
+      // Tier 2: Try facingMode ideal
+      if (!stream) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: { ideal: chosenFacing },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+            },
+            audio: false,
+          });
+        } catch (e) {
+          console.warn("FacingMode camera failed, attempting basic video:", e);
+        }
       }
 
-      const constraints: MediaStreamConstraints = {
-        video: {
-          facingMode: chosenFacing,
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-        },
-        audio: false,
-      };
-
-      let stream: MediaStream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia(constraints);
-      } catch (e: any) {
-        // Fallback to basic video constraint
-        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      // Tier 3: Basic generic video constraint
+      if (!stream) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false,
+          });
+        } catch (err: any) {
+          console.error("Camera access error:", err);
+          setIsStartingCamera(false);
+          setError(
+            err.name === "NotAllowedError" || err.name === "PermissionDeniedError"
+              ? "Camera permission was denied. Please allow camera access in your browser settings."
+              : err.message || "Failed to access live device camera"
+          );
+          return;
+        }
       }
 
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play().catch((err) => console.warn("Video play error:", err));
+      if (stream) {
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          try {
+            await videoRef.current.play();
+          } catch (playErr) {
+            console.warn("Video play exception:", playErr);
+          }
+        }
       }
-    } catch (err: any) {
-      console.error("Camera access error:", err);
-      setError(
-        err.name === "NotAllowedError" || err.name === "PermissionDeniedError"
-          ? "Camera permission was denied. Please allow camera permissions in your browser settings."
-          : (err.message || "Failed to access live device camera")
-      );
-    } finally {
+
       setIsStartingCamera(false);
-    }
-  }, [facingMode, images]);
+    },
+    [facingMode, images, stopCameraStream]
+  );
 
   // Initial camera start on mount if in camera mode
   useEffect(() => {
@@ -188,10 +241,18 @@ export function ChecklistCameraModal({
   if (!isOpen) return null;
 
   // Toggle Front / Back Camera
-  const handleToggleFacingMode = () => {
+  const handleToggleFacingMode = async () => {
     const nextFacing = facingMode === "environment" ? "user" : "environment";
     setFacingMode(nextFacing);
-    startCamera(capturingSlot, nextFacing);
+
+    if (videoDevices.length > 1) {
+      const nextIdx = (selectedDeviceIndex + 1) % videoDevices.length;
+      setSelectedDeviceIndex(nextIdx);
+      const nextDevId = videoDevices[nextIdx]?.deviceId;
+      await startCamera(capturingSlot, nextFacing, nextDevId);
+    } else {
+      await startCamera(capturingSlot, nextFacing);
+    }
   };
 
   // 1. Instant Camera Shutter Capture

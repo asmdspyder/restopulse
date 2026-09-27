@@ -15,6 +15,8 @@ import {
   X,
   FileSpreadsheet,
   ArrowLeft,
+  Camera,
+  Image as ImageIcon,
 } from "lucide-react";
 import { formatCurrency, formatDateTime, formatDate } from "@/lib/utils";
 
@@ -23,6 +25,7 @@ export default function WastageHistoryPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [reasons, setReasons] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -95,6 +98,7 @@ export default function WastageHistoryPage() {
       "Shift",
       "Logged By",
       "Notes",
+      "Photo Proof URL",
     ];
 
     const rows = records.map((r) => [
@@ -110,6 +114,7 @@ export default function WastageHistoryPage() {
       `"${r.shift || ""}"`,
       `"${r.userName || ""}"`,
       `"${(r.notes || "").replace(/"/g, '""')}"`,
+      r.imageUrl ? `"${typeof window !== "undefined" ? window.location.origin : ""}${r.imageUrl}"` : `""`,
     ]);
 
     const csvContent =
@@ -260,6 +265,7 @@ export default function WastageHistoryPage() {
                   <tr>
                     <th className="py-3.5 px-4">Date & Time</th>
                     <th className="py-3.5 px-4">Item</th>
+                    <th className="py-3.5 px-4">Proof</th>
                     <th className="py-3.5 px-4">Category</th>
                     <th className="py-3.5 px-4">Quantity</th>
                     <th className="py-3.5 px-4">Rate Snapshot</th>
@@ -278,6 +284,25 @@ export default function WastageHistoryPage() {
                         {formatDateTime(r.recordedAt)}
                       </td>
                       <td className="py-3.5 px-4 font-bold text-slate-900">{r.itemName}</td>
+                      <td className="py-3.5 px-4">
+                        {r.imageUrl ? (
+                          <button
+                            type="button"
+                            onClick={() => setViewingPhoto(r.imageUrl)}
+                            className="group relative flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200/80 text-emerald-800 hover:bg-emerald-100 transition shadow-2xs cursor-pointer"
+                            title="Click to view photo proof"
+                          >
+                            <img
+                              src={r.imageUrl}
+                              alt="Proof"
+                              className="w-5 h-5 rounded object-cover border border-emerald-300"
+                            />
+                            <span className="text-[10px] font-bold">Photo</span>
+                          </button>
+                        ) : (
+                          <span className="text-slate-300 text-[11px]">—</span>
+                        )}
+                      </td>
                       <td className="py-3.5 px-4 text-slate-500">{r.categoryName || "General"}</td>
                       <td className="py-3.5 px-4 font-semibold text-slate-800">
                         {r.quantity} {r.unit}
@@ -323,7 +348,19 @@ export default function WastageHistoryPage() {
               {records.map((r) => (
                 <div key={r.id} className="p-4 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm text-slate-900">{r.itemName}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-slate-900">{r.itemName}</span>
+                      {r.imageUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setViewingPhoto(r.imageUrl)}
+                          className="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold flex items-center gap-1"
+                        >
+                          <Camera className="w-3 h-3" />
+                          <span>Photo</span>
+                        </button>
+                      )}
+                    </div>
                     <span className="font-extrabold text-sm text-slate-900">{formatCurrency(r.wastageValue)}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-500">
@@ -369,7 +406,7 @@ export default function WastageHistoryPage() {
       {/* Record Detail Modal */}
       {selectedRecord && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl space-y-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-slate-900 text-base">Wastage Record Details</h3>
               <button onClick={() => setSelectedRecord(null)}>
@@ -426,15 +463,83 @@ export default function WastageHistoryPage() {
                   <p className="p-2.5 rounded-xl bg-slate-50 text-slate-700 italic">"{selectedRecord.notes}"</p>
                 </div>
               )}
+
+              {/* Photo Proof */}
+              {selectedRecord.imageUrl && (
+                <div className="pt-2 border-t border-slate-100">
+                  <span className="text-slate-500 font-bold block mb-1.5">Photo Proof:</span>
+                  <button
+                    type="button"
+                    onClick={() => setViewingPhoto(selectedRecord.imageUrl)}
+                    className="relative w-full h-40 rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 group cursor-pointer"
+                  >
+                    <img
+                      src={selectedRecord.imageUrl}
+                      alt="Wastage proof"
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-bold text-xs">
+                      <Eye className="w-4 h-4" />
+                      <span>Click to view full photo</span>
+                    </div>
+                  </button>
+                </div>
+              )}
             </div>
 
             <button
               type="button"
               onClick={() => setSelectedRecord(null)}
-              className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition"
+              className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition cursor-pointer"
             >
               Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Full Photo Lightbox Modal */}
+      {viewingPhoto && (
+        <div
+          className="fixed inset-0 z-60 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setViewingPhoto(null)}
+        >
+          <div
+            className="relative max-w-2xl w-full bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-white/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 flex items-center justify-between border-b border-white/10 text-white">
+              <div className="flex items-center gap-2">
+                <Camera className="w-4 h-4 text-emerald-400" />
+                <span className="font-bold text-sm">Wastage Live Photo Proof</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewingPhoto(null)}
+                className="p-1.5 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-2 bg-black/40 flex items-center justify-center min-h-[300px] max-h-[75vh]">
+              <img
+                src={viewingPhoto}
+                alt="Wastage Proof Full"
+                className="max-h-[70vh] w-auto max-w-full rounded-xl object-contain mx-auto"
+              />
+            </div>
+            <div className="p-3 bg-slate-900/90 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
+              <span>Captured live on site</span>
+              <a
+                href={viewingPhoto}
+                target="_blank"
+                rel="noreferrer"
+                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition flex items-center gap-1.5 text-xs"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                Open original
+              </a>
+            </div>
           </div>
         </div>
       )}
