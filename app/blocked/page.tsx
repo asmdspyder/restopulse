@@ -139,7 +139,7 @@ function BlockedContent() {
                   }`}
                 >
                   <span className="font-bold text-slate-900 block">Monthly</span>
-                  <span className="text-slate-700 font-extrabold text-sm">₹199 / mo</span>
+                  <span className="text-slate-700 font-extrabold text-sm">₹399 / mo</span>
                 </button>
 
                 <button
@@ -152,7 +152,7 @@ function BlockedContent() {
                   }`}
                 >
                   <span className="font-bold text-slate-900 block">Annual</span>
-                  <span className="text-emerald-700 font-extrabold text-sm">₹1,999 / yr</span>
+                  <span className="text-emerald-700 font-extrabold text-sm">₹3,999 / yr</span>
                   <span className="text-[9px] uppercase font-bold text-emerald-800">Save 17%</span>
                 </button>
               </div>
@@ -171,7 +171,7 @@ function BlockedContent() {
                   ) : (
                     <>
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>Renew Subscription ({plan === "yearly" ? "₹1,999/yr" : "₹199/mo"})</span>
+                      <span>Renew Subscription ({plan === "yearly" ? "₹3,999/yr" : "₹399/mo"})</span>
                     </>
                   )}
                 </button>

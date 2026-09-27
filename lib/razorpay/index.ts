@@ -3,24 +3,24 @@ import Razorpay from "razorpay";
 
 export const PRICING_PLANS = {
   monthly: {
-    id: "plan_monthly_199",
+    id: "plan_monthly_399",
     name: "Monthly Plan",
-    amount: 199,
-    amountInPaise: 19900,
+    amount: 399,
+    amountInPaise: 39900,
     interval: "month",
     periodMonths: 1,
-    formattedPrice: "₹199 / month",
+    formattedPrice: "₹399 / month",
     savingsLabel: null,
   },
   yearly: {
-    id: "plan_yearly_1999",
+    id: "plan_yearly_3999",
     name: "Annual Plan",
-    amount: 1999,
-    amountInPaise: 199900,
+    amount: 3999,
+    amountInPaise: 399900,
     interval: "year",
     periodMonths: 12,
-    formattedPrice: "₹1,999 / year",
-    savingsLabel: "Save ₹389 (17% off)",
+    formattedPrice: "₹3,999 / year",
+    savingsLabel: "Save ₹789 (2 Months Free)",
   },
 } as const;
 

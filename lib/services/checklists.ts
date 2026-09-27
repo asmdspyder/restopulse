@@ -477,26 +477,24 @@ export async function getOrCreateDailyChecklist(
     // Repeatable rows are populated by user entry without inserting blank dummy records on initial view
   }
 
-  // Fetch current values
-  const values = await db
-    .select()
-    .from(dailyChecklistValues)
-    .where(eq(dailyChecklistValues.dailyRecordId, dailyRecord.id));
-
-  // Fetch repeatable rows
-  const repeatableRows = await db
-    .select()
-    .from(dailyRepeatableRows)
-    .where(eq(dailyRepeatableRows.dailyRecordId, dailyRecord.id))
-    .orderBy(asc(dailyRepeatableRows.rowIndex));
-
-  // Fetch recent audit logs (last 30)
-  const auditLogs = await db
-    .select()
-    .from(checklistAuditLogs)
-    .where(eq(checklistAuditLogs.dailyRecordId, dailyRecord.id))
-    .orderBy(desc(checklistAuditLogs.createdAt))
-    .limit(30);
+  // Fetch current values, repeatable rows, and audit logs in parallel (1 round-trip)
+  const [values, repeatableRows, auditLogs] = await Promise.all([
+    db
+      .select()
+      .from(dailyChecklistValues)
+      .where(eq(dailyChecklistValues.dailyRecordId, dailyRecord.id)),
+    db
+      .select()
+      .from(dailyRepeatableRows)
+      .where(eq(dailyRepeatableRows.dailyRecordId, dailyRecord.id))
+      .orderBy(asc(dailyRepeatableRows.rowIndex)),
+    db
+      .select()
+      .from(checklistAuditLogs)
+      .where(eq(checklistAuditLogs.dailyRecordId, dailyRecord.id))
+      .orderBy(desc(checklistAuditLogs.createdAt))
+      .limit(30),
+  ]);
 
   // Return full structure snapshot (or live structure if snapshot not yet populated or template updated)
   let structure = dailyRecord.structureSnapshot;
@@ -515,10 +513,70 @@ export async function getOrCreateDailyChecklist(
     }
   }
 
-  // Recalculate metrics to ensure live record is always synced with values
-  const recalculated = await recalculateDailyRecordMetrics(dailyRecord.id);
-  if (recalculated?.dailyRecord) {
-    dailyRecord = recalculated.dailyRecord;
+  // Fast in-memory metric calculation without duplicate round-trips
+  let totalRequired = 0;
+  let completedRequired = 0;
+
+  structure?.sections?.forEach((sec: any) => {
+    sec.items?.forEach((item: any) => {
+      const val = values.find(
+        (v) =>
+          (v.itemId && v.itemId === item.id) ||
+          (v.itemKey && v.itemKey === item.id) ||
+          (v.itemKey && item.label && v.itemKey.toLowerCase().trim() === item.label.toLowerCase().trim())
+      );
+
+      let isCompleted = false;
+      if (item.fieldType === "checkbox" || item.field_type === "checkbox") {
+        isCompleted = val?.valueBoolean === true;
+      } else if (item.fieldType === "currency" || item.field_type === "currency" || item.fieldType === "number" || item.field_type === "number") {
+        isCompleted = val !== undefined && val.valueNumber !== null && String(val.valueNumber).trim() !== "";
+      } else if (item.fieldType === "signature" || item.field_type === "signature") {
+        isCompleted = (val !== undefined && !!val.valueText?.trim()) || Boolean(dailyRecord.managerSignature?.trim());
+      } else if (item.label === "Opening Manager Name") {
+        isCompleted = (val !== undefined && !!val.valueText?.trim()) || Boolean(dailyRecord.openingManagerName?.trim());
+      } else {
+        isCompleted = val !== undefined && (
+          val.valueBoolean === true ||
+          (typeof val.valueText === "string" && val.valueText.trim() !== "") ||
+          (val.valueNumber !== null && String(val.valueNumber).trim() !== "")
+        );
+      }
+
+      if (item.isRequired || item.is_required) {
+        totalRequired++;
+        if (isCompleted) completedRequired++;
+      }
+    });
+  });
+
+  const percent = totalRequired > 0 ? (completedRequired / totalRequired) * 100 : 100;
+  const computedStatus =
+    completedRequired === 0
+      ? "not_started"
+      : completedRequired >= totalRequired
+      ? "completed"
+      : "in_progress";
+
+  if (
+    dailyRecord.completionPercent !== String(percent.toFixed(2)) ||
+    dailyRecord.completedItemsCount !== String(completedRequired) ||
+    dailyRecord.status !== computedStatus
+  ) {
+    const [updatedRec] = await db
+      .update(dailyChecklistRecords)
+      .set({
+        completionPercent: String(percent.toFixed(2)),
+        completedItemsCount: String(completedRequired),
+        totalRequiredItemsCount: String(totalRequired),
+        status: computedStatus,
+        updatedAt: new Date(),
+      })
+      .where(eq(dailyChecklistRecords.id, dailyRecord.id))
+      .returning();
+    if (updatedRec) {
+      dailyRecord = updatedRec;
+    }
   }
 
   return {

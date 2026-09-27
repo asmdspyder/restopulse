@@ -115,29 +115,25 @@ export async function getAuthContext(): Promise<AuthContext | null> {
       };
     }
 
-    // Fetch full live user state
-    const [userRecord] = await db
-      .select()
+    // Fetch full live user state joined with restaurant in a single round-trip
+    const [userWithRestaurant] = await db
+      .select({
+        user: users,
+        restaurant: restaurants,
+      })
       .from(users)
+      .leftJoin(restaurants, eq(users.restaurantId, restaurants.id))
       .where(eq(users.id, session.userId))
       .limit(1);
 
-    if (!userRecord || userRecord.status !== "active" || !userRecord.restaurantId) {
+    if (!userWithRestaurant || !userWithRestaurant.user || userWithRestaurant.user.status !== "active" || !userWithRestaurant.restaurant) {
       return null;
     }
 
-    // Fetch restaurant details
-    const [restaurantRecord] = await db
-      .select()
-      .from(restaurants)
-      .where(eq(restaurants.id, userRecord.restaurantId))
-      .limit(1);
+    const userRecord = userWithRestaurant.user;
+    const restaurantRecord = userWithRestaurant.restaurant;
 
-    if (!restaurantRecord) {
-      return null;
-    }
-
-    // Fetch active subscription
+    // Fetch active subscription in 1 query
     const [latestSub] = await db
       .select()
       .from(subscriptions)

@@ -237,7 +237,7 @@ export default function RecordWastagePage() {
         <div className="flex items-center gap-3">
           <Link
             href="/app"
-            className="p-2 rounded-xl bg-white border border-[#bed6c2] hover:bg-emerald-50 text-slate-700 shadow-xs transition group"
+            className="p-2 rounded-xl bg-white border border-[slate-200] hover:bg-emerald-50 text-slate-700 shadow-xs transition group"
             title="Back to Operations Hub"
           >
             <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />

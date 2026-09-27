@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutGrid,
   CheckSquare,
   History,
   UtensilsCrossed,
@@ -13,7 +12,6 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronRight,
   Loader2,
   PlusCircle,
   ClipboardList,
@@ -22,6 +20,8 @@ import {
   TrendingDown,
   ArrowLeft,
   Sliders,
+  Sparkles,
+  Shield,
 } from "lucide-react";
 import QuickRecordModal from "@/components/app/quick-record-modal";
 
@@ -54,6 +54,25 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       }
 
       setAuthContext(data);
+
+      // Staff Role Protection: Staff are strictly restricted to checklists and recording wastage
+      if (data?.user?.role === "staff") {
+        const staffRestrictedPaths = [
+          "/app/checklists/builder",
+          "/app/checklists/history",
+          "/app/history",
+          "/app/items",
+          "/app/dashboard",
+          "/app/analytics",
+          "/app/account",
+          "/app/users",
+          "/app/settings",
+        ];
+        if (staffRestrictedPaths.some((p) => pathname.startsWith(p))) {
+          router.replace("/app/checklists");
+          return;
+        }
+      }
     } catch (err) {
       router.push("/login");
     } finally {
@@ -83,6 +102,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const isStaff = authContext?.user?.role === "staff";
   const isHub = pathname === "/app";
 
   // Determine current active module context
@@ -108,61 +128,64 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     currentModule = "hub";
   }
 
-  // Define module-specific navigation items
-  const sopNavItems = [
-    { name: "Daily Checklist", href: "/app/checklists", icon: CheckSquare, exact: true },
-    { name: "Checklist History", href: "/app/checklists/history", icon: ClipboardList },
-    { name: "SOP Template Builder", href: "/app/checklists/builder", icon: Layers },
-  ];
+  // Define module-specific navigation items (Staff only sees allowed items)
+  const sopNavItems = isStaff
+    ? [{ name: "Daily Checklist", href: "/app/checklists", icon: CheckSquare, exact: true }]
+    : [
+        { name: "Daily Checklist", href: "/app/checklists", icon: CheckSquare, exact: true },
+        { name: "Checklist History", href: "/app/checklists/history", icon: ClipboardList },
+        { name: "Checklist Builder", href: "/app/checklists/builder", icon: Layers },
+      ];
 
-  // Wastage Nav items: 1. Record Wastage, 2. Wastage History, 3. Items Catalog, 4. Dashboard, 5. Analytics
-  const wastageNavItems = [
-    { name: "Record Wastage", href: "/app/wastage", icon: PlusCircle, exact: true },
-    { name: "Wastage History", href: "/app/history", icon: History },
-    { name: "Items Catalog", href: "/app/items", icon: UtensilsCrossed },
-    { name: "Wastage Dashboard", href: "/app/dashboard", icon: BarChart3 },
-    { name: "Wastage Analytics", href: "/app/analytics", icon: TrendingDown },
-  ];
+  const wastageNavItems = isStaff
+    ? [{ name: "Record Wastage", href: "/app/wastage", icon: PlusCircle, exact: true }]
+    : [
+        { name: "Record Wastage", href: "/app/wastage", icon: PlusCircle, exact: true },
+        { name: "Wastage History", href: "/app/history", icon: History },
+        { name: "Items & Prices", href: "/app/items", icon: UtensilsCrossed },
+        { name: "Overview Summary", href: "/app/dashboard", icon: BarChart3 },
+        { name: "Cost Reports", href: "/app/analytics", icon: TrendingDown },
+      ];
 
   const accountNavItems = [
-    { name: "Team & Permissions", href: "/app/account?tab=users", icon: Users },
+    { name: "Team Members", href: "/app/account?tab=users", icon: Users },
     { name: "Restaurant Profile", href: "/app/account?tab=restaurant", icon: Building2 },
-    { name: "Operational Config", href: "/app/account?tab=operations", icon: Sliders },
+    { name: "Shifts & Areas", href: "/app/account?tab=operations", icon: Sliders },
   ];
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#dcece1] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-700 flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-emerald-700/20">
-            W
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center text-slate-950 font-black text-2xl shadow-xl shadow-amber-500/20 animate-pulse">
+            R
           </div>
-          <Loader2 className="w-6 h-6 animate-spin text-emerald-700 mt-2" />
-          <span className="text-xs font-semibold text-slate-600">Loading restaurant operations...</span>
+          <Loader2 className="w-5 h-5 animate-spin text-amber-400" />
+          <span className="text-xs font-semibold text-slate-400 tracking-wide">Loading workspace...</span>
         </div>
       </div>
     );
   }
 
-  // A. IF USER IS ON THE OPERATIONS HUB (/app) -> FULL-WIDTH HEADER + CLEAN CENTERED CONTENT (NO SIDEBAR)
+  // A. OPERATIONS HUB VIEW (/app) -> CLEAN FULL-WIDTH HEADER + CENTERED WORKSPACE
   if (isHub) {
     return (
-      <div className="min-h-screen bg-[#dcece1] flex flex-col pb-16 md:pb-0">
+      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col pb-16 md:pb-0 font-sans selection:bg-amber-500 selection:text-slate-950">
         {/* Superadmin Impersonation Notice Bar */}
         {authContext?.isImpersonating && (
-          <div className="bg-amber-500 text-slate-950 px-4 sm:px-8 py-2.5 text-xs font-bold flex flex-wrap items-center justify-between gap-3 shadow-md border-b border-amber-600 sticky top-0 z-40">
+          <div className="bg-amber-400 text-slate-950 px-4 sm:px-8 py-2.5 text-xs font-bold flex flex-wrap items-center justify-between gap-3 shadow-md border-b border-amber-500 sticky top-0 z-50">
             <div className="flex items-center gap-2.5 min-w-0">
-              <span className="bg-amber-950 text-amber-200 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shrink-0 animate-pulse">
-                Superadmin Impersonation Mode
+              <span className="bg-slate-950 text-amber-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shrink-0 animate-pulse">
+                Admin Impersonation
               </span>
               <span className="truncate">
-                Logged in as <strong>{authContext?.restaurant?.businessName}</strong> ({authContext?.user?.name} &lt;{authContext?.user?.email}&gt;)
+                Managing <strong>{authContext?.restaurant?.businessName}</strong> ({authContext?.user?.name})
               </span>
             </div>
             <button
               onClick={handleExitImpersonation}
               disabled={isExitingImpersonation}
-              className="bg-slate-950 hover:bg-slate-900 text-amber-400 font-bold px-3.5 py-1.5 rounded-xl text-xs transition flex items-center gap-2 cursor-pointer shadow-xs disabled:opacity-50 shrink-0"
+              className="bg-slate-950 hover:bg-slate-900 text-amber-300 font-bold px-3.5 py-1.5 rounded-xl text-xs transition flex items-center gap-2 cursor-pointer shadow-xs disabled:opacity-50 shrink-0"
             >
               {isExitingImpersonation ? (
                 <>
@@ -172,7 +195,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               ) : (
                 <>
                   <LogOut className="w-3.5 h-3.5" />
-                  <span>Exit Impersonation & Return to Admin</span>
+                  <span>Exit Impersonation</span>
                 </>
               )}
             </button>
@@ -180,17 +203,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Top Header */}
-        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-[#c2dac7] px-4 sm:px-8 h-16 flex items-center justify-between shadow-xs w-full">
+        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 h-16 flex items-center justify-between shadow-2xs w-full">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-700 text-white font-bold flex items-center justify-center text-xl shadow-md shadow-emerald-700/20">
-              W
+            <div className="w-10 h-10 rounded-2xl bg-slate-900 text-amber-400 font-black flex items-center justify-center text-xl shadow-md border border-slate-800">
+              R
             </div>
             <div>
               <span className="font-extrabold text-sm sm:text-base text-slate-900 block leading-tight">
-                {authContext?.restaurant?.businessName || "WasteFlow"}
+                {authContext?.restaurant?.businessName || "RestoPulse"}
               </span>
-              <span className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider block">
-                Restaurant Operations Platform
+              <span className="text-[10px] text-slate-500 font-semibold tracking-wider block">
+                {isStaff ? "Staff Operations" : "Restaurant Manager Hub"}
               </span>
             </div>
           </div>
@@ -198,10 +221,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsQuickRecordOpen(true)}
-              className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-md shadow-emerald-700/20 flex items-center gap-1.5 cursor-pointer transition"
+              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer transition"
             >
-              <PlusCircle className="w-4 h-4" />
-              <span>+ Quick Wastage</span>
+              <PlusCircle className="w-4 h-4 text-amber-400" />
+              <span>Log Wastage</span>
             </button>
             <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-slate-200">
               <div className="text-right">
@@ -219,7 +242,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        {/* Full-width Main Hub Content */}
+        {/* Main Workspace Content */}
         <main className="flex-1 w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
           {children}
         </main>
@@ -234,46 +257,46 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // B. IF INSIDE A MODULE (SOP, WASTAGE, ACCOUNT) -> MODULE SIDEBAR ON DESKTOP & TOP BAR
+  // B. INSIDE OPERATIONAL MODULE (CHECKLISTS, WASTAGE, ACCOUNT) -> SLEEK MODERN SIDEBAR ON DESKTOP & TOP BAR
   return (
-    <div className="min-h-screen bg-[#dcece1] flex flex-col md:flex-row pb-16 md:pb-0">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col md:flex-row pb-16 md:pb-0 font-sans selection:bg-amber-500 selection:text-slate-950">
       {/* 1. DESKTOP SIDEBAR */}
-      <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-white border-r border-[#c2dac7] z-30 shadow-xs">
+      <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-white border-r border-slate-200/80 z-30 shadow-2xs">
         <div className="flex flex-col flex-1 min-h-0">
           {/* Logo & Restaurant Name */}
           <div className="flex items-center gap-3 px-5 h-16 border-b border-slate-100">
-            <div className="w-9 h-9 rounded-xl bg-emerald-700 flex items-center justify-center text-white font-bold text-lg shadow-sm shadow-emerald-700/20">
-              W
+            <div className="w-9 h-9 rounded-xl bg-slate-900 text-amber-400 flex items-center justify-center font-black text-lg shadow-2xs border border-slate-800">
+              R
             </div>
             <div className="min-w-0 flex-1">
               <span className="font-extrabold text-sm text-slate-900 block truncate">
                 {authContext?.restaurant?.businessName || "Restaurant"}
               </span>
-              <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
+              <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                Operations Platform
+                {isStaff ? "Staff Portal" : "RestoPulse Hub"}
               </span>
             </div>
           </div>
 
-          {/* Custom Back Button to Operations Hub */}
+          {/* Back Button to Operations Hub */}
           <div className="px-3 pt-3 pb-1">
             <Link
               href="/app"
-              className="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 font-bold text-xs flex items-center gap-2 border border-slate-200/80 transition group"
-              title="Back to Operations Hub"
+              className="w-full py-2 px-3 rounded-xl bg-slate-100/80 hover:bg-slate-200/80 text-slate-700 hover:text-slate-950 font-bold text-xs flex items-center gap-2 border border-slate-200/60 transition group"
+              title="Back to Hub"
             >
               <ArrowLeft className="w-4 h-4 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
               <span>Operations Hub</span>
             </Link>
           </div>
 
-          {/* Module Header Banner */}
+          {/* Module Header Title */}
           <div className="px-4 py-2 mt-1">
             <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
-              {currentModule === "sop" && "SOP / Checklist Module"}
-              {currentModule === "wastage" && "Wastage Recording Module"}
-              {currentModule === "account" && "Account & Admin Module"}
+              {currentModule === "sop" && "Shift Checklists"}
+              {currentModule === "wastage" && "Food Waste Tracking"}
+              {currentModule === "account" && "Settings & Team"}
             </div>
           </div>
 
@@ -282,17 +305,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="px-3 pb-2">
               <button
                 onClick={() => setIsQuickRecordOpen(true)}
-                className="w-full py-2.5 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 transition flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm shadow-slate-900/10 transition flex items-center justify-center gap-2 cursor-pointer"
               >
-                <PlusCircle className="w-4 h-4" />
-                <span>+ Quick Wastage</span>
+                <PlusCircle className="w-4 h-4 text-amber-400" />
+                <span>+ Log Wastage</span>
               </button>
             </div>
           )}
 
           {/* Navigation Links */}
-          <nav className="flex-1 px-3 space-y-1 overflow-y-auto pt-2">
-            {/* A. SOP MODULE NAVIGATION */}
+          <nav className="flex-1 px-3 space-y-1 overflow-y-auto pt-1">
+            {/* A. CHECKLISTS MODULE NAVIGATION */}
             {currentModule === "sop" && (
               <>
                 {sopNavItems.map((item) => {
@@ -307,13 +330,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       href={item.href}
                       className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition ${
                         isActive
-                          ? "bg-emerald-50 text-emerald-900 font-bold border border-emerald-200"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                          ? "bg-slate-900 text-white font-bold shadow-xs"
+                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                       }`}
                     >
                       <Icon
                         className={`w-4 h-4 shrink-0 ${
-                          isActive ? "text-emerald-700" : "text-slate-400"
+                          isActive ? "text-amber-400" : "text-slate-400"
                         }`}
                       />
                       <span>{item.name}</span>
@@ -338,13 +361,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       href={item.href}
                       className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition ${
                         isActive
-                          ? "bg-teal-50 text-teal-900 font-bold border border-teal-200"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                          ? "bg-slate-900 text-white font-bold shadow-xs"
+                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                       }`}
                     >
                       <Icon
                         className={`w-4 h-4 shrink-0 ${
-                          isActive ? "text-teal-700" : "text-slate-400"
+                          isActive ? "text-amber-400" : "text-slate-400"
                         }`}
                       />
                       <span>{item.name}</span>
@@ -354,8 +377,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </>
             )}
 
-            {/* C. ACCOUNT MODULE NAVIGATION */}
-            {currentModule === "account" && (
+            {/* C. ACCOUNT MODULE NAVIGATION (Admins Only) */}
+            {currentModule === "account" && !isStaff && (
               <>
                 {accountNavItems.map((item) => {
                   const Icon = item.icon;
@@ -364,7 +387,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <Link
                       key={item.name}
                       href={item.href}
-                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                     >
                       <Icon className="w-4 h-4 shrink-0 text-slate-400" />
                       <span>{item.name}</span>
@@ -375,47 +398,49 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             )}
           </nav>
 
-          {/* Module Switcher Quick Shortcuts at Footer */}
-          <div className="p-3 border-t border-slate-100 bg-slate-50/50 space-y-1">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-1">
-              Switch Module
+          {/* Module Switcher Shortcuts (Hidden for Staff) */}
+          {!isStaff && (
+            <div className="p-3 border-t border-slate-100 bg-slate-50/70 space-y-1">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1 mb-1">
+                Quick Switch
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {currentModule !== "sop" && (
+                  <Link
+                    href="/app/checklists"
+                    className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-[10px] font-bold text-slate-700 text-center transition"
+                  >
+                    📋 Checklists
+                  </Link>
+                )}
+                {currentModule !== "wastage" && (
+                  <Link
+                    href="/app/wastage"
+                    className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-[10px] font-bold text-slate-700 text-center transition"
+                  >
+                    🗑️ Wastage
+                  </Link>
+                )}
+                {currentModule !== "account" && (
+                  <Link
+                    href="/app/account"
+                    className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-[10px] font-bold text-slate-700 text-center transition"
+                  >
+                    ⚙️ Settings
+                  </Link>
+                )}
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              {currentModule !== "sop" && (
-                <Link
-                  href="/app/checklists"
-                  className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-emerald-50 text-[10px] font-bold text-slate-700 hover:text-emerald-900 text-center transition"
-                >
-                  📋 SOP
-                </Link>
-              )}
-              {currentModule !== "wastage" && (
-                <Link
-                  href="/app/wastage"
-                  className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-teal-50 text-[10px] font-bold text-slate-700 hover:text-teal-900 text-center transition"
-                >
-                  📉 Wastage
-                </Link>
-              )}
-              {currentModule !== "account" && (
-                <Link
-                  href="/app/account"
-                  className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-blue-50 text-[10px] font-bold text-slate-700 hover:text-blue-900 text-center transition"
-                >
-                  🏢 Admin
-                </Link>
-              )}
-            </div>
-          </div>
+          )}
 
           {/* User Profile Footer */}
-          <div className="p-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/60">
+          <div className="p-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/80">
             <div className="min-w-0 flex-1 mr-2">
-              <span className="font-semibold text-xs text-slate-900 block truncate">
-                {authContext?.user?.name || "Staff"}
+              <span className="font-bold text-xs text-slate-900 block truncate">
+                {authContext?.user?.name || "User"}
               </span>
               <span className="text-[10px] text-slate-500 block truncate capitalize">
-                {authContext?.user?.role} • {authContext?.user?.canManageChecklists ? "SOP Lead" : "Staff"}
+                {authContext?.user?.role}
               </span>
             </div>
             <button
@@ -429,19 +454,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* 2. MOBILE TOP HEADER (WHEN INSIDE A MODULE) */}
-      <header className="md:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-[#c2dac7] px-4 h-14 flex items-center justify-between">
+      {/* 2. MOBILE TOP HEADER */}
+      <header className="md:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 h-14 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <Link
             href="/app"
             className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition"
-            title="Back to Operations Hub"
+            title="Back to Hub"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div className="min-w-0">
-            <span className="font-bold text-xs text-slate-900 truncate block max-w-[130px]">
-              {authContext?.restaurant?.businessName || "WasteFlow"}
+            <span className="font-bold text-xs text-slate-900 truncate block max-w-[140px]">
+              {authContext?.restaurant?.businessName || "RestoPulse"}
             </span>
           </div>
         </div>
@@ -449,10 +474,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsQuickRecordOpen(true)}
-            className="px-2.5 py-1 rounded-lg bg-emerald-700 text-white text-xs font-bold shadow-xs flex items-center gap-1 cursor-pointer"
+            className="px-2.5 py-1 rounded-lg bg-slate-900 text-white text-xs font-bold shadow-xs flex items-center gap-1 cursor-pointer"
           >
-            <PlusCircle className="w-3.5 h-3.5" />
-            <span>Record</span>
+            <PlusCircle className="w-3.5 h-3.5 text-amber-400" />
+            <span>Log Waste</span>
           </button>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -465,7 +490,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xs flex flex-col justify-end">
+        <div className="md:hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex flex-col justify-end">
           <div className="bg-white rounded-t-3xl p-6 space-y-4 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
@@ -481,70 +506,66 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </button>
             </div>
 
-            {/* Quick module selection */}
-            <div className="grid grid-cols-4 gap-2 pb-2">
-              <Link
-                href="/app"
-                onClick={() => setMobileMenuOpen(false)}
-                className="p-2 rounded-xl text-center text-xs font-bold border bg-slate-50 text-slate-700"
-              >
-                🏠 Hub
-              </Link>
+            {/* Quick navigation for Mobile */}
+            <div className="space-y-1">
               <Link
                 href="/app/checklists"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`p-2 rounded-xl text-center text-xs font-bold border transition ${
-                  currentModule === "sop" ? "bg-emerald-700 text-white" : "bg-slate-50 text-slate-700"
-                }`}
+                className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 font-bold text-xs text-slate-800"
               >
-                📋 SOP
+                <CheckSquare className="w-4 h-4 text-emerald-600" />
+                <span>Daily Checklists</span>
               </Link>
               <Link
                 href="/app/wastage"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`p-2 rounded-xl text-center text-xs font-bold border transition ${
-                  currentModule === "wastage" ? "bg-teal-700 text-white" : "bg-slate-50 text-slate-700"
-                }`}
+                className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 font-bold text-xs text-slate-800"
               >
-                📉 Wastage
+                <PlusCircle className="w-4 h-4 text-amber-600" />
+                <span>Record Wastage</span>
               </Link>
-              <Link
-                href="/app/account"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`p-2 rounded-xl text-center text-xs font-bold border transition ${
-                  currentModule === "account" ? "bg-blue-600 text-white" : "bg-slate-50 text-slate-700"
-                }`}
-              >
-                🏢 Admin
-              </Link>
+              {!isStaff && (
+                <>
+                  <Link
+                    href="/app/history"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 font-bold text-xs text-slate-800"
+                  >
+                    <History className="w-4 h-4 text-slate-600" />
+                    <span>Wastage History</span>
+                  </Link>
+                  <Link
+                    href="/app/items"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 font-bold text-xs text-slate-800"
+                  >
+                    <UtensilsCrossed className="w-4 h-4 text-slate-600" />
+                    <span>Items & Prices</span>
+                  </Link>
+                  <Link
+                    href="/app/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 font-bold text-xs text-slate-800"
+                  >
+                    <BarChart3 className="w-4 h-4 text-slate-600" />
+                    <span>Reports Dashboard</span>
+                  </Link>
+                  <Link
+                    href="/app/account"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 font-bold text-xs text-slate-800"
+                  >
+                    <Sliders className="w-4 h-4 text-slate-600" />
+                    <span>Settings & Team</span>
+                  </Link>
+                </>
+              )}
             </div>
 
-            {/* Active Module Links */}
-            <div className="space-y-1">
-              <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
-                Navigation
-              </div>
-
-              {(currentModule === "sop" ? sopNavItems : currentModule === "wastage" ? wastageNavItems : currentModule === "account" ? accountNavItems : []).map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 text-slate-700 font-semibold text-xs"
-                >
-                  <div className="flex items-center gap-3">
-                    <item.icon className="w-4 h-4 text-emerald-700" />
-                    <span>{item.name}</span>
-                  </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-                </Link>
-              ))}
-            </div>
-
-            <div className="pt-3 border-t border-slate-100">
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
               <button
                 onClick={handleLogout}
-                className="w-full p-2.5 rounded-xl text-rose-600 font-bold text-xs hover:bg-rose-50 flex items-center gap-3 cursor-pointer"
+                className="w-full py-2.5 rounded-xl bg-rose-50 text-rose-700 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Sign Out</span>
@@ -554,99 +575,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      {/* 3. MAIN CONTENT AREA (WITH md:pl-64 FOR MODULE PAGES) */}
-      <div className="flex-1 flex flex-col md:pl-64 min-w-0">
-        {/* Superadmin Impersonation Notice Bar */}
-        {authContext?.isImpersonating && (
-          <div className="bg-amber-500 text-slate-950 px-4 sm:px-8 py-2.5 text-xs font-bold flex flex-wrap items-center justify-between gap-3 shadow-md border-b border-amber-600 sticky top-0 z-20">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <span className="bg-amber-950 text-amber-200 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shrink-0 animate-pulse">
-                Superadmin Impersonation Mode
-              </span>
-              <span className="truncate">
-                Logged in as <strong>{authContext?.restaurant?.businessName}</strong> ({authContext?.user?.name} &lt;{authContext?.user?.email}&gt;)
-              </span>
-            </div>
-            <button
-              onClick={handleExitImpersonation}
-              disabled={isExitingImpersonation}
-              className="bg-slate-950 hover:bg-slate-900 text-amber-400 font-bold px-3.5 py-1.5 rounded-xl text-xs transition flex items-center gap-2 cursor-pointer shadow-xs disabled:opacity-50 shrink-0"
-            >
-              {isExitingImpersonation ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Restoring Admin Session...</span>
-                </>
-              ) : (
-                <>
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Exit Impersonation & Return to Admin</span>
-                </>
-              )}
-            </button>
-          </div>
-        )}
-
-        <main className="flex-1 min-w-0 max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 w-full">
+      {/* 3. MAIN CONTENT CONTAINER */}
+      <div className="flex-1 md:pl-64 flex flex-col min-h-screen">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
           {children}
         </main>
       </div>
-
-      {/* 4. MOBILE BOTTOM ACTION BAR */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 z-30 flex items-center justify-around h-14 px-2">
-        <Link
-          href="/app"
-          className="flex flex-col items-center justify-center w-14 h-full text-[9px] font-medium text-slate-500"
-        >
-          <LayoutGrid className="w-4 h-4 mb-0.5" />
-          <span>Hub</span>
-        </Link>
-        <Link
-          href="/app/checklists"
-          className={`flex flex-col items-center justify-center w-14 h-full text-[9px] font-medium ${
-            pathname.startsWith("/app/checklists") ? "text-emerald-700 font-bold" : "text-slate-500"
-          }`}
-        >
-          <CheckSquare className="w-4 h-4 mb-0.5" />
-          <span>SOP</span>
-        </Link>
-        <button
-          onClick={() => setIsQuickRecordOpen(true)}
-          className="flex flex-col items-center justify-center -mt-5 w-12 h-12 rounded-full bg-emerald-700 text-white shadow-lg shadow-emerald-700/30 cursor-pointer"
-        >
-          <PlusCircle className="w-6 h-6" />
-        </button>
-        <Link
-          href="/app/wastage"
-          className={`flex flex-col items-center justify-center w-14 h-full text-[9px] font-medium ${
-            pathname.startsWith("/app/dashboard") || pathname.startsWith("/app/wastage") || pathname.startsWith("/app/history") || pathname.startsWith("/app/items") || pathname.startsWith("/app/analytics")
-              ? "text-teal-700 font-bold"
-              : "text-slate-500"
-          }`}
-        >
-          <BarChart3 className="w-4 h-4 mb-0.5" />
-          <span>Wastage</span>
-        </Link>
-        <Link
-          href="/app/account"
-          className={`flex flex-col items-center justify-center w-14 h-full text-[9px] font-medium ${
-            pathname.startsWith("/app/account") ? "text-blue-600 font-bold" : "text-slate-500"
-          }`}
-        >
-          <Building2 className="w-4 h-4 mb-0.5" />
-          <span>Admin</span>
-        </Link>
-      </nav>
 
       {/* Quick Record Modal */}
       <QuickRecordModal
         isOpen={isQuickRecordOpen}
         onClose={() => setIsQuickRecordOpen(false)}
-        onSuccess={() => {
-          if (pathname.includes("/dashboard") || pathname.includes("/history") || pathname.includes("/analytics") || pathname.includes("/wastage")) {
-            window.location.reload();
-          }
-        }}
+        onSuccess={() => window.location.reload()}
       />
     </div>
   );

@@ -62,7 +62,7 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       {/* 1. TOP HEADER & PERIOD SWITCHER */}
-      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#bed6c2] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[slate-200] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
             href="/app"
@@ -114,7 +114,7 @@ export default function AnalyticsPage() {
         <>
           {/* 2. SUMMARY STAT CARDS */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-5 rounded-3xl bg-white border border-[#bed6c2] shadow-xs">
+            <div className="p-5 rounded-3xl bg-white border border-[slate-200] shadow-xs">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
                 Total Wastage Loss
               </span>
@@ -126,7 +126,7 @@ export default function AnalyticsPage() {
               </p>
             </div>
 
-            <div className="p-5 rounded-3xl bg-white border border-[#bed6c2] shadow-xs">
+            <div className="p-5 rounded-3xl bg-white border border-[slate-200] shadow-xs">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
                 #1 Most Wasted Item
               </span>
@@ -140,7 +140,7 @@ export default function AnalyticsPage() {
               </p>
             </div>
 
-            <div className="p-5 rounded-3xl bg-white border border-[#bed6c2] shadow-xs">
+            <div className="p-5 rounded-3xl bg-white border border-[slate-200] shadow-xs">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
                 #1 Cause of Waste
               </span>
@@ -156,7 +156,7 @@ export default function AnalyticsPage() {
           </div>
 
           {recordCount === 0 ? (
-            <div className="p-12 rounded-3xl bg-white border border-[#bed6c2] text-center max-w-lg mx-auto space-y-3">
+            <div className="p-12 rounded-3xl bg-white border border-[slate-200] text-center max-w-lg mx-auto space-y-3">
               <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto">
                 <CheckCircle2 className="w-7 h-7" />
               </div>
@@ -174,7 +174,7 @@ export default function AnalyticsPage() {
           ) : (
             <>
               {/* 3. SIMPLE DAILY BAR CHART */}
-              <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#bed6c2] shadow-xs">
+              <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[slate-200] shadow-xs">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="font-extrabold text-slate-900 text-base">
@@ -219,7 +219,7 @@ export default function AnalyticsPage() {
               {/* 4. TWO-COLUMN BREAKDOWN: REASONS & INGREDIENTS */}
               <div className="grid md:grid-cols-2 gap-6">
                 {/* Loss by Reason */}
-                <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#bed6c2] shadow-xs space-y-4">
+                <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[slate-200] shadow-xs space-y-4">
                   <div>
                     <h3 className="font-extrabold text-slate-900 text-base">Why Did Food Get Wasted?</h3>
                     <p className="text-xs text-slate-500">Breakdown of reasons by cost</p>
@@ -246,7 +246,7 @@ export default function AnalyticsPage() {
                 </div>
 
                 {/* Loss by Category */}
-                <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#bed6c2] shadow-xs space-y-4">
+                <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[slate-200] shadow-xs space-y-4">
                   <div>
                     <h3 className="font-extrabold text-slate-900 text-base">Loss by Category</h3>
                     <p className="text-xs text-slate-500">Which section of inventory lost the most</p>
@@ -274,7 +274,7 @@ export default function AnalyticsPage() {
               </div>
 
               {/* 5. TOP WASTED ITEMS TABLE (SIMPLE & CLEAR) */}
-              <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#bed6c2] shadow-xs overflow-hidden">
+              <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[slate-200] shadow-xs overflow-hidden">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="font-extrabold text-slate-900 text-base">All Wasted Items Ranking</h3>

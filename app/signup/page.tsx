@@ -119,8 +119,8 @@ function SignupForm() {
                       Save 17%
                     </span>
                   </div>
-                  <div className="text-lg font-extrabold text-slate-900 mt-1">₹1,999<span className="text-xs font-normal text-slate-500">/year</span></div>
-                  <span className="text-[11px] text-emerald-700 font-medium block">₹166 / month billed yearly</span>
+                  <div className="text-lg font-extrabold text-slate-900 mt-1">₹3,999<span className="text-xs font-normal text-slate-500">/year</span></div>
+                  <span className="text-[11px] text-emerald-700 font-medium block">₹333 / month billed yearly</span>
                 </button>
 
                 <button
@@ -135,7 +135,7 @@ function SignupForm() {
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-sm text-slate-900">Monthly Plan</span>
                   </div>
-                  <div className="text-lg font-extrabold text-slate-900 mt-1">₹199<span className="text-xs font-normal text-slate-500">/month</span></div>
+                  <div className="text-lg font-extrabold text-slate-900 mt-1">₹399<span className="text-xs font-normal text-slate-500">/month</span></div>
                   <span className="text-[11px] text-slate-500 font-medium block">Flexible monthly billing</span>
                 </button>
               </div>
@@ -261,7 +261,7 @@ function SignupForm() {
                 </>
               ) : (
                 <>
-                  <span>Create Workspace ({plan === "yearly" ? "₹1,999/yr" : "₹199/mo"})</span>
+                  <span>Create Workspace ({plan === "yearly" ? "₹3,999/yr" : "₹399/mo"})</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
