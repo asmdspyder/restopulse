@@ -26,511 +26,528 @@ import {
   Layers,
   Clock,
   Trash2,
-  Camera,
-  Check,
-  Zap,
-  Play,
-  Star,
-  CheckCheck,
-  Shield,
-  ArrowUpRight,
 } from "lucide-react";
 
 export default function LandingPage() {
-  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const [activeTab, setActiveTab] = useState<"checklist" | "wastage" | "reports">("checklist");
-
-  // Interactive Simulator States
-  const [simChecklist, setSimChecklist] = useState([
-    { id: 1, text: "Fryer oil temp checked (175°C - 180°C)", done: true, hasPhoto: true, time: "09:15 AM", user: "Chef Rahul" },
-    { id: 2, text: "Walk-in chiller & deep freezer temps logged (3°C)", done: true, hasPhoto: true, time: "09:22 AM", user: "Chef Rahul" },
-    { id: 3, text: "Meat prep counters sanitized with food-grade spray", done: true, hasPhoto: false, time: "09:30 AM", user: "Vikram S." },
-    { id: 4, text: "Bar draught lines flushed and sanitized", done: false, hasPhoto: false, time: "", user: "" },
-    { id: 5, text: "POS cash float counted & verified (₹5,000)", done: false, hasPhoto: false, time: "", user: "" },
-  ]);
-
-  const [simWastages, setSimWastages] = useState([
-    { id: 1, item: "Fresh Paneer Cubes", qty: "1.2 kg", cost: "₹420", reason: "Expired / Sour", photo: true, time: "11:45 AM" },
-    { id: 2, item: "Tomato Gravy Base", qty: "3.5 L", cost: "₹385", reason: "Burnt batch", photo: true, time: "02:15 PM" },
-    { id: 3, item: "Burger Buns (Pack of 12)", qty: "2 packs", cost: "₹190", reason: "Damaged in transit", photo: false, time: "04:30 PM" },
-  ]);
-
-  const toggleChecklistItem = (id: number) => {
-    setSimChecklist((prev) =>
-      prev.map((item) => {
-        if (item.id === id) {
-          const nextDone = !item.done;
-          return {
-            ...item,
-            done: nextDone,
-            time: nextDone ? "Just now" : "",
-            user: nextDone ? "Staff" : "",
-          };
-        }
-        return item;
-      })
-    );
-  };
 
   const toggleFaq = (idx: number) => {
     setOpenFaq(openFaq === idx ? null : idx);
   };
 
-  const faqs = [
-    {
-      q: "How does live camera photo proof work?",
-      a: "When staff complete an opening or hygiene checklist, they can tap the camera icon to snap real-time photographic proof. Photos are captured live through their device camera (no pre-saved gallery uploads allowed) and uploaded directly to secure Cloudflare R2 storage with timestamps.",
-    },
-    {
-      q: "How fast is recording food wastage during a busy rush?",
-      a: "Staff can record a waste item in under 8 seconds. Tap the ingredient name, enter the quantity, select a reason (spoilage, overcooked, expired), and optional photo proof. The system instantly tallies financial loss based on your cost catalogue.",
-    },
-    {
-      q: "Can staff access this on any phone or tablet?",
-      a: "Yes! RestoPulse is a mobile-first web app that works seamlessly on any Android smartphone, iPhone, iPad, or POS terminal without downloading anything from an app store. Staff get an ultra-simple 2-button interface (Checklist & Wastage).",
-    },
-    {
-      q: "Can I customize the checklists for my restaurant?",
-      a: "Yes. Our visual Checklist Builder allows you to create custom sections (Kitchen Opening, Bar Prep, Housekeeping, Manager Handover), add checkboxes, number inputs, temperature checks, cash trackers, and digital signature pads.",
-    },
-    {
-      q: "What is included in the ₹399 monthly plan?",
-      a: "Everything is included! You get unlimited staff members, unlimited daily shift checklists, complete food waste tracking with financial rupee loss calculations, Cloudflare R2 photo storage, PDF exports, and WhatsApp support.",
-    },
-  ];
-
-  const simCompletedCount = simChecklist.filter((i) => i.done).length;
-  const simPercent = Math.round((simCompletedCount / simChecklist.length) * 100);
-
   return (
-    <div className="min-h-screen bg-white text-zinc-900 font-sans selection:bg-zinc-900 selection:text-white">
-      {/* 1. TOP NAVIGATION */}
-      <header className="border-b border-zinc-100 bg-white/80 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-zinc-900 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-              RP
+    <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-emerald-500 selection:text-white font-sans">
+      {/* 1. TOP NAVBAR */}
+      <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-700 flex items-center justify-center text-white shadow-md shadow-emerald-700/20 font-black text-xl">
+              R
             </div>
-            <span className="font-bold text-base tracking-tight text-zinc-900">RestoPulse</span>
+            <div>
+              <span className="font-extrabold text-xl tracking-tight text-slate-900">RestoPulse</span>
+              <span className="hidden sm:inline-block ml-2 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">
+                Restaurant Operations
+              </span>
+            </div>
           </div>
+
+          <nav className="hidden md:flex items-center gap-8 text-sm font-bold text-slate-600">
+            <a href="#features" className="hover:text-emerald-700 transition">Features</a>
+            <a href="#how-it-works" className="hover:text-emerald-700 transition">How It Works</a>
+            <a href="#pricing" className="hover:text-emerald-700 transition">Pricing</a>
+            <a href="#faq" className="hover:text-emerald-700 transition">FAQ</a>
+          </nav>
 
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="text-xs font-semibold text-zinc-600 hover:text-zinc-900 px-3 py-2 transition"
+              className="text-xs sm:text-sm font-bold text-slate-700 hover:text-slate-900 px-3.5 py-2 rounded-xl hover:bg-slate-100 transition"
             >
               Sign In
             </Link>
             <Link
               href="/signup"
-              className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold transition shadow-xs cursor-pointer"
+              className="text-xs sm:text-sm font-bold text-white bg-emerald-700 hover:bg-emerald-800 px-4 py-2 rounded-xl shadow-md shadow-emerald-700/20 transition flex items-center gap-1.5"
             >
-              Start 14-Day Trial
+              <span>Get Started</span>
+              <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
       </header>
 
       {/* 2. HERO SECTION */}
-      <section className="pt-16 pb-20 px-4 sm:px-6 text-center max-w-4xl mx-auto space-y-6">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-100 border border-zinc-200 text-zinc-700 text-xs font-semibold">
-          <Sparkles className="w-3.5 h-3.5 text-zinc-600" />
-          <span>The Modern Standard for Restaurant Operations</span>
-        </div>
-
-        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-zinc-900 leading-[1.1]">
-          Kitchen SOPs, daily audits, & food waste reduction.
-        </h1>
-
-        <p className="text-base sm:text-lg text-zinc-500 max-w-2xl mx-auto leading-relaxed">
-          Replace messy clipboards and lost inventory. RestoPulse empowers kitchen teams with
-          1-tap daily checklists, live camera audit proof, and instant food waste logging.
-        </p>
-
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-          <Link
-            href="/signup"
-            className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-bold shadow-md transition flex items-center justify-center gap-2"
-          >
-            <span>Start Free 14-Day Trial</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-          <a
-            href="#simulator"
-            className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-zinc-100 hover:bg-zinc-200/70 text-zinc-800 text-sm font-semibold transition flex items-center justify-center gap-2"
-          >
-            <span>Try Interactive Simulator</span>
-          </a>
-        </div>
-
-        <div className="pt-4 flex items-center justify-center gap-6 text-xs text-zinc-400 font-medium">
-          <span>✓ No credit card required</span>
-          <span>✓ 2-minute setup</span>
-          <span>✓ ₹399/month all-inclusive</span>
-        </div>
-      </section>
-
-      {/* 3. INTERACTIVE SIMULATOR SECTION */}
-      <section id="simulator" className="py-16 px-4 sm:px-6 bg-zinc-50/70 border-y border-zinc-200/80">
-        <div className="max-w-5xl mx-auto space-y-8">
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900">Experience RestoPulse in Action</h2>
-            <p className="text-xs sm:text-sm text-zinc-500">
-              Interactive preview: click tasks to mark them complete or view logged shift wastage.
-            </p>
+      <section className="relative pt-12 pb-16 md:pt-20 md:pb-24 overflow-hidden">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-bold mb-6 shadow-xs">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
+            <span>Built specifically for Restaurants, Cafes & Cloud Kitchens</span>
           </div>
 
-          {/* Simulator Tabs */}
-          <div className="flex items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => setActiveTab("checklist")}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                activeTab === "checklist"
-                  ? "bg-zinc-900 text-white shadow-xs"
-                  : "bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-50"
-              }`}
-            >
-              1. Opening Checklist & SOPs
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("wastage")}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                activeTab === "wastage"
-                  ? "bg-zinc-900 text-white shadow-xs"
-                  : "bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-50"
-              }`}
-            >
-              2. Rapid Wastage POS
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("reports")}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                activeTab === "reports"
-                  ? "bg-zinc-900 text-white shadow-xs"
-                  : "bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-50"
-              }`}
-            >
-              3. Cost Breakdown
-            </button>
-          </div>
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-slate-900 max-w-4xl mx-auto leading-tight sm:leading-tight">
+            Stop Food Waste in Your Kitchen.{" "}
+            <span className="text-emerald-700 underline decoration-emerald-300 decoration-wavy decoration-2">
+              Run Smooth Daily Shifts.
+            </span>
+          </h1>
 
-          {/* Simulator Window */}
-          <div className="bg-white border border-zinc-200 rounded-3xl p-5 sm:p-7 shadow-xl max-w-3xl mx-auto space-y-6">
-            {activeTab === "checklist" && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
-                  <div>
-                    <span className="text-xs font-bold text-zinc-900 block">Morning Kitchen Audit Checklist</span>
-                    <span className="text-[11px] text-zinc-400">{simCompletedCount} of {simChecklist.length} tasks marked</span>
-                  </div>
-                  <span className="text-xs font-bold text-zinc-900 bg-zinc-100 px-2.5 py-1 rounded-full">
-                    {simPercent}% Done
-                  </span>
-                </div>
-
-                <div className="space-y-2">
-                  {simChecklist.map((item) => (
-                    <div
-                      key={item.id}
-                      onClick={() => toggleChecklistItem(item.id)}
-                      className={`p-3.5 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-3 ${
-                        item.done
-                          ? "bg-emerald-50/30 border-emerald-200"
-                          : "bg-zinc-50/50 border-zinc-200 hover:bg-zinc-100/60"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 ${
-                            item.done ? "bg-emerald-600 text-white" : "border border-zinc-300 bg-white"
-                          }`}
-                        >
-                          {item.done && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
-                        </div>
-                        <span className={`text-xs font-semibold ${item.done ? "text-zinc-900" : "text-zinc-700"}`}>
-                          {item.text}
-                        </span>
-                      </div>
-
-                      {item.hasPhoto && (
-                        <span className="px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-600 text-[10px] font-medium flex items-center gap-1 shrink-0">
-                          <Camera className="w-3 h-3 text-emerald-600" />
-                          <span>Photo Verified</span>
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {activeTab === "wastage" && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
-                  <div>
-                    <span className="text-xs font-bold text-zinc-900 block">Live Shift Wastage Stream</span>
-                    <span className="text-[11px] text-zinc-400">Total Loss: ₹995 today</span>
-                  </div>
-                  <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                    Live Cloudflare R2 Sync
-                  </span>
-                </div>
-
-                <div className="divide-y divide-zinc-100">
-                  {simWastages.map((w) => (
-                    <div key={w.id} className="py-3 flex items-center justify-between gap-3">
-                      <div>
-                        <span className="text-xs font-bold text-zinc-900 block">{w.item}</span>
-                        <div className="flex items-center gap-2 text-[11px] text-zinc-500 mt-0.5">
-                          <span>{w.qty}</span>
-                          <span>•</span>
-                          <span className="text-zinc-700 font-medium">{w.reason}</span>
-                          {w.photo && (
-                            <span className="text-emerald-600 flex items-center gap-0.5 font-medium">
-                              <Camera className="w-3 h-3" /> Photo Attached
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <span className="text-xs font-bold text-zinc-900 font-mono">{w.cost}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {activeTab === "reports" && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
-                  <span className="text-xs font-bold text-zinc-900">Monthly Wastage & Spoilage Analysis</span>
-                  <span className="text-xs font-mono font-bold text-zinc-900">₹14,250 Total Loss</span>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-100">
-                    <span className="text-[10px] text-zinc-400 block font-semibold">Top Reason</span>
-                    <span className="text-xs font-bold text-zinc-900 block mt-1">Spoilage / Expiry</span>
-                    <span className="text-[10px] text-zinc-500">48% of total loss</span>
-                  </div>
-                  <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-100">
-                    <span className="text-[10px] text-zinc-400 block font-semibold">Highest Loss Item</span>
-                    <span className="text-xs font-bold text-zinc-900 block mt-1">Dairy & Paneer</span>
-                    <span className="text-[10px] text-zinc-500">₹5,400 monthly</span>
-                  </div>
-                  <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-100">
-                    <span className="text-[10px] text-zinc-400 block font-semibold">SOP Completion</span>
-                    <span className="text-xs font-bold text-emerald-600 block mt-1">94.2%</span>
-                    <span className="text-[10px] text-zinc-500">28 of 30 shifts signed</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* 4. KEY PILLARS GRID */}
-      <section className="py-20 px-4 sm:px-6 max-w-5xl mx-auto space-y-12">
-        <div className="text-center space-y-2 max-w-2xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900">Built specifically for busy restaurants</h2>
-          <p className="text-xs sm:text-sm text-zinc-500">
-            No bloated enterprise complexity. Zero training required for kitchen line staff.
+          <p className="mt-5 text-base sm:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed font-medium">
+            The simple daily app for restaurant owners and staff. Log kitchen waste in 10 seconds, tick daily opening checklists on phone, and protect ₹15,000 to ₹50,000 every month.
           </p>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="p-6 rounded-3xl bg-zinc-50/70 border border-zinc-200/80 space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center">
-              <Camera className="w-5 h-5" />
-            </div>
-            <h3 className="text-base font-bold text-zinc-900">Live Camera Audits (No Gallery Uploads)</h3>
-            <p className="text-xs text-zinc-500 leading-relaxed">
-              Staff can only snap live photos through their camera. Eliminates fake checklists and guarantees
-              oil temperatures, prep hygiene, and clean counters are verified in real time.
-            </p>
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+            <Link
+              href="/signup"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-emerald-700 text-white font-extrabold text-base shadow-lg shadow-emerald-700/30 hover:bg-emerald-800 transition flex items-center justify-center gap-2"
+            >
+              <span>Start 14-Day Free Trial</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <a
+              href="#features"
+              className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white border border-slate-200 text-slate-700 font-bold text-base hover:bg-slate-50 transition flex items-center justify-center shadow-xs"
+            >
+              See How It Works
+            </a>
           </div>
 
-          <div className="p-6 rounded-3xl bg-zinc-50/70 border border-zinc-200/80 space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center">
-              <TrendingDown className="w-5 h-5" />
-            </div>
-            <h3 className="text-base font-bold text-zinc-900">Sub-10s Food Wastage POS</h3>
-            <p className="text-xs text-zinc-500 leading-relaxed">
-              Kitchen staff tap the ingredient, select quick presets (+1kg, +0.5kg), pick a reason, and snap proof.
-              Instantly calculates rupee loss and alerts managers to food cost leaks.
-            </p>
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-5 text-xs text-slate-600 font-bold">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-700" /> Takes 2 mins to start
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-700" /> Works on any smartphone
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-700" /> Unlimited staff logins
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-700" /> Cancel anytime
+            </span>
           </div>
 
-          <div className="p-6 rounded-3xl bg-zinc-50/70 border border-zinc-200/80 space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5" />
+          {/* 3. HERO VISUAL PREVIEW CARD */}
+          <div className="mt-12 max-w-4xl mx-auto rounded-3xl border border-[#bed6c2] bg-white p-4 sm:p-6 shadow-xl shadow-slate-200/80 text-left">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-5">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-rose-400" />
+                <span className="w-3 h-3 rounded-full bg-amber-400" />
+                <span className="w-3 h-3 rounded-full bg-emerald-500" />
+                <span className="text-xs font-bold text-slate-600 ml-1.5">Live Shift Overview</span>
+              </div>
+              <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-900 font-extrabold text-[11px] border border-emerald-300">
+                Today's Summary
+              </span>
             </div>
-            <h3 className="text-base font-bold text-zinc-900">Digital Manager Sign-Off & Cash Float</h3>
-            <p className="text-xs text-zinc-500 leading-relaxed">
-              Duty managers sign off shift handovers directly on mobile touchscreens. Track opening cash float,
-              small change, and direct purchase expenses on a single unified audit ledger.
-            </p>
-          </div>
 
-          <div className="p-6 rounded-3xl bg-zinc-50/70 border border-zinc-200/80 space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center">
-              <Smartphone className="w-5 h-5" />
+            <div className="grid sm:grid-cols-2 gap-4">
+              {/* Box 1: Wastage Tracked */}
+              <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Trash2 className="w-4 h-4 text-emerald-800" />
+                    <span className="font-extrabold text-xs text-slate-900 uppercase tracking-wider">Kitchen Waste Logged</span>
+                  </div>
+                  <span className="text-xs font-bold text-rose-600 bg-white px-2 py-0.5 rounded-lg border border-rose-200">₹340 Loss</span>
+                </div>
+                <div className="space-y-1.5 text-xs text-slate-700 pt-1">
+                  <div className="flex justify-between bg-white p-2 rounded-xl border border-slate-200/80">
+                    <span>1.5 kg Paneer (Expiry)</span>
+                    <strong className="text-slate-900">₹240</strong>
+                  </div>
+                  <div className="flex justify-between bg-white p-2 rounded-xl border border-slate-200/80">
+                    <span>0.5 L Milk (Curdled)</span>
+                    <strong className="text-slate-900">₹35</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Box 2: Checklist Progress */}
+              <div className="p-4 rounded-2xl bg-teal-50/70 border border-teal-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ClipboardCheck className="w-4 h-4 text-teal-800" />
+                    <span className="font-extrabold text-xs text-slate-900 uppercase tracking-wider">Morning Opening SOP</span>
+                  </div>
+                  <span className="text-xs font-bold text-emerald-700 bg-white px-2 py-0.5 rounded-lg border border-emerald-200">92% Ready</span>
+                </div>
+                <div className="space-y-1.5 text-xs text-slate-700 pt-1">
+                  <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200/80 text-emerald-800 font-semibold">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>Deep freezer temperature at -18°C</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200/80 text-emerald-800 font-semibold">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>Cash counter opening float: ₹5,000 verified</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <h3 className="text-base font-bold text-zinc-900">Staff Mode: 2-Button Simplicity</h3>
-            <p className="text-xs text-zinc-500 leading-relaxed">
-              Kitchen staff are protected with an isolated 2-button interface (Checklist & Wastage).
-              Managers and owners retain complete control over pricing catalogs, reports, and templates.
-            </p>
           </div>
         </div>
       </section>
 
-      {/* 5. PRICING SECTION */}
-      <section className="py-20 px-4 sm:px-6 bg-zinc-50/70 border-t border-zinc-200/80">
-        <div className="max-w-4xl mx-auto space-y-8 text-center">
-          <div className="space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900">Simple, transparent pricing</h2>
-            <p className="text-xs sm:text-sm text-zinc-500">
-              One straightforward plan. Everything included. Unlimited staff.
+      {/* 4. THE 2 BIG RESTAURANT PROBLEMS WE SOLVE */}
+      <section className="py-16 bg-white border-y border-slate-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300">
+              Why Restaurants Lose Money
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 mt-3">
+              Paper Checklists & Untracked Waste Are Eating Your Profits
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* The Old Problem */}
+            <div className="p-6 sm:p-8 rounded-3xl bg-rose-50/60 border border-rose-200 space-y-4">
+              <div className="flex items-center gap-2 text-rose-800 font-extrabold text-sm uppercase tracking-wider">
+                <AlertCircle className="w-5 h-5 text-rose-600" />
+                <span>The Old Way (Without RestoPulse)</span>
+              </div>
+              <ul className="space-y-3 text-xs sm:text-sm text-slate-700 font-medium">
+                <li className="flex items-start gap-2">
+                  <span className="text-rose-600 font-black">✕</span>
+                  <span>Kitchen food waste gets tossed in the trash without anyone recording the cost.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-rose-600 font-black">✕</span>
+                  <span>Staff forgets cleaning or fridge checks because paper sheets get lost or dirty.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-rose-600 font-black">✕</span>
+                  <span>You only find out you lost money at the end of the month when bills arrive.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* The RestoPulse Solution */}
+            <div className="p-6 sm:p-8 rounded-3xl bg-emerald-50/70 border border-emerald-300 space-y-4 shadow-sm">
+              <div className="flex items-center gap-2 text-emerald-900 font-extrabold text-sm uppercase tracking-wider">
+                <CheckCircle2 className="w-5 h-5 text-emerald-700" />
+                <span>The RestoPulse Way</span>
+              </div>
+              <ul className="space-y-3 text-xs sm:text-sm text-slate-800 font-semibold">
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-700 font-black">✓</span>
+                  <span>Staff logs thrown food on phone in 10 seconds with exact money loss calculated.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-700 font-black">✓</span>
+                  <span>Interactive opening checklists ensure spotless hygiene and zero missed prep tasks.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-700 font-black">✓</span>
+                  <span>You see real-time daily reports and save ₹15,000–₹50,000 every single month.</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. CORE FEATURES (SIMPLE ENGLISH) */}
+      <section id="features" className="py-20 bg-slate-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300">
+              Simple Features
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 mt-3">
+              Everything You Need to Run Your Restaurant Easily
+            </h2>
+            <p className="text-slate-600 mt-2 text-sm sm:text-base">
+              No complex training or complicated software. Just clean tools for everyday cafe and restaurant shifts.
             </p>
           </div>
 
-          {/* Billing Switcher */}
-          <div className="inline-flex items-center gap-1.5 p-1 rounded-2xl bg-zinc-200/80">
-            <button
-              type="button"
-              onClick={() => setBillingPeriod("monthly")}
-              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                billingPeriod === "monthly" ? "bg-white text-zinc-900 shadow-xs" : "text-zinc-600"
-              }`}
-            >
-              Monthly Billing
-            </button>
-            <button
-              type="button"
-              onClick={() => setBillingPeriod("yearly")}
-              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
-                billingPeriod === "yearly" ? "bg-white text-zinc-900 shadow-xs" : "text-zinc-600"
-              }`}
-            >
-              <span>Annual Billing</span>
-              <span className="px-1.5 py-0.2 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                Save 17%
-              </span>
-            </button>
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Feature 1: Wastage Tracker */}
+            <div className="p-6 rounded-3xl bg-white border border-[#bed6c2] shadow-xs hover:shadow-md hover:border-emerald-500 transition space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-extrabold text-slate-900">10-Second Food Waste Log</h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                When milk curdles, veggies spoil, or orders get burnt, staff log it in 2 taps. You instantly see how much money was lost and why.
+              </p>
+            </div>
+
+            {/* Feature 2: Daily Checklists */}
+            <div className="p-6 rounded-3xl bg-white border border-[#bed6c2] shadow-xs hover:shadow-md hover:border-emerald-500 transition space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-teal-100 text-teal-800 flex items-center justify-center font-bold">
+                <ClipboardCheck className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-extrabold text-slate-900">Daily Opening SOP Checklists</h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Staff check off kitchen hygiene, fridge temperature, prep readiness, and cash drawer counting before customers walk in.
+              </p>
+            </div>
+
+            {/* Feature 3: SOP Customizer */}
+            <div className="p-6 rounded-3xl bg-white border border-[#bed6c2] shadow-xs hover:shadow-md hover:border-emerald-500 transition space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                <Sliders className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-extrabold text-slate-900">Easy Checklist Customizer</h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Add, rename, or reorder categories (Kitchen, Dining, Bar, Storage) and tasks in seconds to match your exact restaurant workflow.
+              </p>
+            </div>
+
+            {/* Feature 4: Waste Analytics */}
+            <div className="p-6 rounded-3xl bg-white border border-[#bed6c2] shadow-xs hover:shadow-md hover:border-emerald-500 transition space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-800 flex items-center justify-center font-bold">
+                <BarChart3 className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-extrabold text-slate-900">Clear Loss Reports</h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                See top wasted ingredients, weekly cost graphs, and food loss trends without needing an accountant.
+              </p>
+            </div>
+
+            {/* Feature 5: Staff Logins */}
+            <div className="p-6 rounded-3xl bg-white border border-[#bed6c2] shadow-xs hover:shadow-md hover:border-emerald-500 transition space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-800 flex items-center justify-center font-bold">
+                <Users className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-extrabold text-slate-900">Staff & Manager Logins</h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Create separate logins for your chefs and supervisors. Staff can tick checklists and log waste; only you control prices and settings.
+              </p>
+            </div>
+
+            {/* Feature 6: Mobile Friendly */}
+            <div className="p-6 rounded-3xl bg-white border border-[#bed6c2] shadow-xs hover:shadow-md hover:border-emerald-500 transition space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-800 flex items-center justify-center font-bold">
+                <Smartphone className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-extrabold text-slate-900">Works on Any Phone</h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                No expensive hardware or tablet needed. Open RestoPulse on any Android phone or iPhone and your kitchen is ready to go.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. HOW IT WORKS (3 SIMPLE STEPS) */}
+      <section id="how-it-works" className="py-20 bg-white border-y border-slate-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300">
+              Quick Setup
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 mt-3">
+              How RestoPulse Works in 3 Easy Steps
+            </h2>
           </div>
 
-          {/* Pricing Card */}
-          <div className="max-w-md mx-auto bg-white border border-zinc-200 rounded-3xl p-6 sm:p-8 shadow-xl text-left space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-zinc-900">Pro Restaurant License</h3>
-                <p className="text-xs text-zinc-500">All features & unlimited team members</p>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200 relative">
+              <div className="w-10 h-10 rounded-xl bg-emerald-700 text-white font-black text-base flex items-center justify-center mb-4 shadow-sm">
+                1
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-700 text-xs font-bold">
-                14-Day Free Trial
-              </span>
+              <h3 className="text-base font-extrabold text-slate-900 mb-2">Create Your Restaurant</h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Sign up in 1 minute. Add your common raw materials (milk, cheese, chicken, veggies) and daily checklist tasks.
+              </p>
             </div>
 
-            <div className="space-y-1">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-4xl sm:text-5xl font-extrabold text-zinc-900">
-                  {billingPeriod === "monthly" ? "₹399" : "₹3,999"}
-                </span>
-                <span className="text-xs text-zinc-500 font-medium">
-                  {billingPeriod === "monthly" ? "/ month" : "/ year (₹333/mo)"}
-                </span>
+            <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200 relative">
+              <div className="w-10 h-10 rounded-xl bg-emerald-700 text-white font-black text-base flex items-center justify-center mb-4 shadow-sm">
+                2
               </div>
-              <p className="text-[11px] text-zinc-400">All-inclusive pricing. No hidden fees.</p>
+              <h3 className="text-base font-extrabold text-slate-900 mb-2">Staff Checks & Logs Daily</h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Your kitchen team marks morning opening tasks on their phones and logs any thrown-away food in 10 seconds.
+              </p>
             </div>
 
-            <div className="space-y-2.5 pt-4 border-t border-zinc-100 text-xs text-zinc-700">
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Unlimited Staff & Kitchen Accounts</span>
+            <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200 relative">
+              <div className="w-10 h-10 rounded-xl bg-emerald-700 text-white font-black text-base flex items-center justify-center mb-4 shadow-sm">
+                3
               </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Unlimited Daily SOP & Hygiene Checklists</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Live Camera Photo Proofs on Cloudflare R2</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Sub-10s Food Wastage POS with Rupee Loss Tracking</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Digital Canvas Manager Signature Handover</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Visual Drag & Drop Checklist Builder</span>
-              </div>
+              <h3 className="text-base font-extrabold text-slate-900 mb-2">Save Money & Run Smooth Shifts</h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Cut monthly food losses by 30%–50%, ensure high kitchen hygiene standards, and sleep peacefully knowing your restaurant is running like clockwork.
+              </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. PRICING SECTION */}
+      <section id="pricing" className="py-20 bg-slate-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300">
+            Simple Pricing
+          </span>
+          <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 mt-3">
+            One Simple Plan. Full Access.
+          </h2>
+          <p className="text-slate-600 mt-2 text-sm sm:text-base max-w-xl mx-auto">
+            No hidden fees, no per-user charges, no expensive hardware. Everything your restaurant needs.
+          </p>
+
+          <div className="mt-10 max-w-md mx-auto bg-white rounded-3xl border-2 border-emerald-500 p-6 sm:p-8 shadow-xl relative text-left">
+            <div className="absolute -top-3.5 right-6 px-3 py-0.5 rounded-full bg-emerald-700 text-white text-[11px] font-black uppercase tracking-wider shadow-sm">
+              Most Popular
+            </div>
+
+            <h3 className="text-xl font-extrabold text-slate-900">RestoPulse Pro</h3>
+            <p className="text-xs text-slate-500 mt-1">Complete food waste control & SOP checklists</p>
+
+            <div className="mt-5 pb-5 border-b border-slate-100 flex items-baseline gap-2">
+              <span className="text-4xl sm:text-5xl font-black text-slate-900">₹399</span>
+              <span className="text-xs sm:text-sm font-bold text-slate-500">/ month</span>
+            </div>
+
+            <ul className="mt-6 space-y-3 text-xs sm:text-sm text-slate-700 font-semibold">
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Unlimited Kitchen Food Waste Logs</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Daily Opening & Closing SOP Checklists</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Live Camera Photo Proof on Cloudflare R2</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>SOP Checklist Template Customizer</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Unlimited Staff & Manager Logins</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Cost Analytics & Excel CSV Export</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Mobile-Optimized for any Smartphone</span>
+              </li>
+            </ul>
 
             <Link
               href="/signup"
-              className="w-full py-3 px-4 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold transition flex items-center justify-center gap-2 shadow-md"
+              className="mt-8 w-full py-3.5 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-sm flex items-center justify-center gap-2 transition shadow-md shadow-emerald-700/20"
             >
-              <span>Get Started with 14-Day Free Trial</span>
+              <span>Start 14-Day Free Trial</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+
+            <p className="text-center text-[11px] text-slate-500 mt-3 font-medium">
+              Instant activation • Cancel anytime with 1 click
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 8. FAQ SECTION */}
+      <section id="faq" className="py-20 bg-white border-y border-slate-200">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300">
+              Got Questions?
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2">
+              Frequently Asked Questions
+            </h2>
+          </div>
+
+          <div className="space-y-3">
+            {[
+              {
+                q: "Do my kitchen staff need to install an app from Play Store?",
+                a: "No! RestoPulse works directly in any mobile browser (Chrome, Safari, etc.). You simply open the link on your phone, log in, and it's ready to use.",
+              },
+              {
+                q: "Can I customize the checklist tasks for my cafe or cloud kitchen?",
+                a: "Yes, 100%! With our SOP Template Builder, you can easily add, rename, or delete categories (e.g. Kitchen Line, Barista Station, Dining, Storage) and create custom check items for your kitchen.",
+              },
+              {
+                q: "How does logging food waste save money?",
+                a: "Most restaurants lose 4% to 10% of their total raw material purchases to spoiled or discarded food. By logging waste daily, you immediately find out which items (e.g. excess milk, spoiled paneer, burnt cuts) are causing losses so you can adjust ordering and save ₹15,000 to ₹50,000/month.",
+              },
+              {
+                q: "Can multiple staff members log in at the same time?",
+                a: "Yes! You can create individual logins for your cooks, baristas, and shift managers. Staff can check tasks and log waste simultaneously without overwriting each other.",
+              },
+            ].map((faq, idx) => {
+              const isOpen = openFaq === idx;
+              return (
+                <div
+                  key={idx}
+                  className="rounded-2xl border border-slate-200 bg-slate-50/50 overflow-hidden transition"
+                >
+                  <button
+                    type="button"
+                    onClick={() => toggleFaq(idx)}
+                    className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-bold text-slate-900 text-sm sm:text-base cursor-pointer hover:bg-slate-100/60"
+                  >
+                    <span>{faq.q}</span>
+                    {isOpen ? (
+                      <ChevronUp className="w-5 h-5 text-emerald-700 shrink-0" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-slate-400 shrink-0" />
+                    )}
+                  </button>
+                  {isOpen && (
+                    <div className="px-4 pb-5 sm:px-5 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-200/50 pt-3">
+                      {faq.a}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* 9. BOTTOM CTA */}
+      <section className="py-16 bg-gradient-to-r from-slate-950 via-slate-900 to-emerald-950 text-white text-center">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
+          <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
+            Ready to Run a Smoother, More Profitable Kitchen?
+          </h2>
+          <p className="text-slate-300 text-xs sm:text-base max-w-xl mx-auto leading-relaxed">
+            Join smart restaurant and cafe owners cutting food waste and running flawless daily opening checklists with RestoPulse.
+          </p>
+          <div className="pt-2">
+            <Link
+              href="/signup"
+              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm shadow-xl shadow-emerald-600/30 transition hover:scale-105 active:scale-95"
+            >
+              <span>Get Started in 2 Minutes</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
       </section>
 
-      {/* 6. FAQ SECTION */}
-      <section className="py-20 px-4 sm:px-6 max-w-3xl mx-auto space-y-8">
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900">Frequently Asked Questions</h2>
-          <p className="text-xs sm:text-sm text-zinc-500">Everything you need to know about RestoPulse.</p>
-        </div>
-
-        <div className="space-y-3">
-          {faqs.map((faq, idx) => (
-            <div
-              key={idx}
-              className="border border-zinc-200 rounded-2xl bg-white overflow-hidden transition"
-            >
-              <button
-                type="button"
-                onClick={() => toggleFaq(idx)}
-                className="w-full p-4 text-left flex items-center justify-between text-xs font-bold text-zinc-900 cursor-pointer"
-              >
-                <span>{faq.q}</span>
-                <ChevronDown
-                  className={`w-4 h-4 text-zinc-400 transition-transform ${
-                    openFaq === idx ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-
-              {openFaq === idx && (
-                <div className="px-4 pb-4 text-xs text-zinc-500 leading-relaxed border-t border-zinc-100 pt-3">
-                  {faq.a}
-                </div>
-              )}
+      {/* 10. FOOTER */}
+      <footer className="py-8 bg-white border-t border-slate-200 text-center text-xs text-slate-500 font-medium">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-emerald-700 text-white font-bold flex items-center justify-center text-xs">
+              R
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 7. MINIMALIST FOOTER */}
-      <footer className="border-t border-zinc-100 py-8 px-4 sm:px-6 text-center text-xs text-zinc-400 space-y-2">
-        <div className="flex items-center justify-center gap-2 font-bold text-zinc-900">
-          <div className="w-6 h-6 rounded-lg bg-zinc-900 text-white flex items-center justify-center text-[10px]">
-            RP
+            <span className="font-extrabold text-slate-800">RestoPulse</span>
+            <span>• Daily Restaurant Operations & Wastage Control</span>
           </div>
-          <span>RestoPulse</span>
+          <div className="flex items-center gap-4 text-slate-600">
+            <Link href="/login" className="hover:text-emerald-700 transition">Sign In</Link>
+            <Link href="/signup" className="hover:text-emerald-700 transition">Sign Up</Link>
+          </div>
         </div>
-        <p>© {new Date().getFullYear()} RestoPulse. All rights reserved. Built for high-efficiency kitchen teams.</p>
       </footer>
     </div>
   );

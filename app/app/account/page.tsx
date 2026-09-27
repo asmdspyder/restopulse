@@ -320,7 +320,7 @@ function AccountManagementContent() {
           <div className="flex items-center gap-2.5">
             <Link
               href="/app"
-              className="p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-xs transition group flex items-center justify-center shrink-0"
+              className="p-2 rounded-xl bg-white border border-[#bed6c2] hover:bg-emerald-50 text-slate-700 shadow-xs transition group flex items-center justify-center shrink-0"
               title="Back to Operations Hub"
             >
               <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
@@ -329,25 +329,25 @@ function AccountManagementContent() {
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
               Account & Team Management
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-200">
+            <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold border border-emerald-300">
               {isAdmin ? "Admin Access" : "Staff View"}
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+          <p className="text-xs sm:text-sm text-slate-600 mt-1">
             Manage your restaurant workspace, team members, login credentials, SOP permissions, and operational settings.
           </p>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-1.5 bg-white/80 p-1.5 rounded-2xl border border-slate-200 self-start sm:self-auto shadow-xs">
+        <div className="flex items-center gap-1.5 bg-white/80 p-1.5 rounded-2xl border border-[#bed6c2] self-start sm:self-auto shadow-xs">
           <button
             onClick={() => {
               setActiveTab("users");
               router.replace("/app/account?tab=users");
             }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition ${
               activeTab === "users"
-                ? "bg-indigo-600 text-white shadow-xs font-bold"
+                ? "bg-emerald-700 text-white shadow-sm font-extrabold"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
             }`}
           >
@@ -359,9 +359,9 @@ function AccountManagementContent() {
               setActiveTab("restaurant");
               router.replace("/app/account?tab=restaurant");
             }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition ${
               activeTab === "restaurant"
-                ? "bg-indigo-600 text-white shadow-xs font-bold"
+                ? "bg-emerald-700 text-white shadow-sm font-extrabold"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
             }`}
           >
@@ -373,9 +373,9 @@ function AccountManagementContent() {
               setActiveTab("operations");
               router.replace("/app/account?tab=operations");
             }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition ${
               activeTab === "operations"
-                ? "bg-indigo-600 text-white shadow-xs font-bold"
+                ? "bg-emerald-700 text-white shadow-sm font-extrabold"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
             }`}
           >
@@ -409,7 +409,7 @@ function AccountManagementContent() {
             )}
           </div>
 
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+          <div className="bg-white rounded-3xl border border-[#bed6c2] shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
@@ -526,7 +526,7 @@ function AccountManagementContent() {
 
       {/* 3. TAB: RESTAURANT PROFILE DETAILS */}
       {activeTab === "restaurant" && (
-        <form onSubmit={handleSaveRestaurantDetails} className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+        <form onSubmit={handleSaveRestaurantDetails} className="bg-white rounded-3xl border border-[#bed6c2] p-6 sm:p-8 shadow-xs space-y-6">
           <div>
             <h2 className="text-lg font-bold text-slate-900">Restaurant & Outlet Information</h2>
             <p className="text-xs text-slate-500">Core business info that displays on reports and daily checklists.</p>
@@ -624,7 +624,7 @@ function AccountManagementContent() {
       {/* 4. TAB: OPERATIONAL CONFIG */}
       {activeTab === "operations" && (
         <div className="space-y-6">
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="bg-white rounded-3xl border border-[#bed6c2] p-6 sm:p-8 shadow-xs space-y-6">
             <div>
               <h2 className="text-lg font-bold text-slate-900">Operational Shifts & Work Areas</h2>
               <p className="text-xs text-slate-500">Configure shifts and stations across your restaurant operations.</p>

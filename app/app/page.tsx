@@ -14,14 +14,6 @@ import {
   TrendingDown,
   ShieldCheck,
   Zap,
-  Camera,
-  Layers,
-  History,
-  Users,
-  UtensilsCrossed,
-  CheckCircle2,
-  Clock,
-  ArrowUpRight,
 } from "lucide-react";
 import { formatCurrency, formatLocalDateToYMD } from "@/lib/utils";
 
@@ -30,7 +22,7 @@ export default function RestaurantOperationsHub() {
   const [authContext, setAuthContext] = useState<any>(null);
   const [todayChecklist, setTodayChecklist] = useState<any>(null);
   const [wastageMetrics, setWastageMetrics] = useState<any>(null);
-  const [recentRecords, setRecentRecords] = useState<any[]>([]);
+  const [usersCount, setUsersCount] = useState<number>(1);
 
   useEffect(() => {
     fetchHubData();
@@ -40,11 +32,11 @@ export default function RestaurantOperationsHub() {
     setLoading(true);
     try {
       const todayStr = formatLocalDateToYMD();
-      const [authRes, checklistRes, analyticsRes, historyRes] = await Promise.all([
+      const [authRes, checklistRes, analyticsRes, usersRes] = await Promise.all([
         fetch("/api/auth/me"),
         fetch(`/api/checklists/daily?date=${todayStr}`),
         fetch("/api/analytics?period=month"),
-        fetch("/api/wastage?limit=5"),
+        fetch("/api/users"),
       ]);
 
       const authData = await authRes.json();
@@ -60,9 +52,9 @@ export default function RestaurantOperationsHub() {
         setWastageMetrics(aData);
       }
 
-      if (historyRes.ok) {
-        const hData = await historyRes.json();
-        setRecentRecords(hData.records || []);
+      if (usersRes.ok) {
+        const uData = await usersRes.json();
+        if (uData?.users) setUsersCount(uData.users.length);
       }
     } catch (e) {
       console.error(e);
@@ -88,15 +80,15 @@ export default function RestaurantOperationsHub() {
   if (loading) {
     return (
       <div className="py-24 flex flex-col items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-zinc-900 mb-3" />
-        <span className="text-xs font-semibold text-zinc-500">Loading operations hub...</span>
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-700 mb-2" />
+        <span className="text-xs font-semibold text-slate-600">Loading Restaurant Operations Hub...</span>
       </div>
     );
   }
 
   const isStaff = authContext?.user?.role === "staff";
   const userName = authContext?.user?.name || "Team";
-  const businessName = authContext?.restaurant?.businessName || "Restaurant Hub";
+  const businessName = authContext?.restaurant?.businessName || "Restaurant";
   const checklistRecord = todayChecklist?.dailyRecord;
   const completionPercent = Math.round(Number(checklistRecord?.completionPercent || 0));
   const completedCount = Number(checklistRecord?.completedItemsCount || 0);
@@ -104,301 +96,239 @@ export default function RestaurantOperationsHub() {
   const isCompleted = checklistRecord?.status === "completed";
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto pb-24">
-      {/* 1. TOP WELCOME BANNER */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <span className="text-xs font-semibold text-zinc-400 block mb-1">
-            {todayFormatted} • {businessName}
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">
-            {getGreeting()}, {userName}
-          </h1>
-          <p className="text-xs text-zinc-500 mt-1">
-            {isStaff
-              ? "Your active shift launchpad. Mark today's checklists and record kitchen waste."
-              : "Live restaurant operations, food safety adherence, and cost metrics."}
-          </p>
+    <div className="space-y-8 pb-12">
+      {/* 1. TOP WELCOME HERO BANNER */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white p-5 sm:p-6 rounded-3xl shadow-md border border-slate-700/50">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold uppercase tracking-wider border border-emerald-500/30">
+                Operations Hub
+              </span>
+              <span className="text-slate-500 text-xs">•</span>
+              <span className="text-xs text-slate-300 font-medium">{todayFormatted}</span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">
+                {getGreeting()}, {userName.split(" ")[0]} 👋
+              </h1>
+              <span className="text-xs text-slate-400 font-medium hidden md:inline">
+                • {businessName}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 shrink-0">
+            <Link
+              href="/app/checklists"
+              className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/10 transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Daily Checklist</span>
+            </Link>
+            <Link
+              href="/app/wastage"
+              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/30 flex items-center gap-1.5 transition cursor-pointer"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Record Wastage</span>
+            </Link>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <Link
-            href="/app/checklists"
-            className="px-4 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow-xs cursor-pointer"
-          >
-            <CheckSquare className="w-4 h-4 text-emerald-400" />
-            <span>Open Checklist</span>
-          </Link>
-          <Link
-            href="/app/wastage"
-            className="px-4 py-2.5 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-800 rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow-xs cursor-pointer"
-          >
-            <PlusCircle className="w-4 h-4 text-zinc-500" />
-            <span>Log Waste</span>
-          </Link>
-        </div>
+        {/* Subtle decorative background circles */}
+        <div className="absolute -right-10 -bottom-10 w-36 h-36 rounded-full bg-emerald-600/10 blur-xl pointer-events-none" />
       </div>
 
-      {/* 2. STAFF SHIFT LAUNCHPAD (Focused 2 Large Action Cards) */}
-      {isStaff ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Daily Checklist Card */}
+      {/* 2. THE PRIMARY MODULE CARDS */}
+      <div>
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+              {isStaff ? "Shift Tasks" : "Operations Modules"}
+            </h2>
+            <p className="text-xs text-slate-600">
+              {isStaff ? "Complete your daily checklist and record kitchen wastage" : "Select any operational module to open directly"}
+            </p>
+          </div>
+        </div>
+
+        <div className={`grid gap-6 ${isStaff ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
+          {/* CARD 1: SOP & CHECKLIST */}
           <Link
             href="/app/checklists"
-            className="p-6 rounded-3xl bg-white border border-zinc-200 hover:border-zinc-300 shadow-xs hover:shadow-md transition group flex flex-col justify-between space-y-6"
+            className="group bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs hover:shadow-xl hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between relative overflow-hidden hover:-translate-y-1 cursor-pointer"
           >
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-2xl bg-zinc-100 text-zinc-900 flex items-center justify-center group-hover:scale-105 transition-transform">
-                  <CheckSquare className="w-6 h-6" />
+            {/* Top Accent Strip */}
+            <div className="absolute top-0 inset-x-0 h-1.5 bg-emerald-600 group-hover:h-2 transition-all" />
+
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-800 flex items-center justify-center font-bold shadow-xs border border-emerald-200/80 group-hover:scale-110 group-hover:bg-emerald-700 group-hover:text-white transition duration-300">
+                  <CheckSquare className="w-7 h-7" />
                 </div>
-                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                  isCompleted
-                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                    : completedCount > 0
-                    ? "bg-zinc-100 text-zinc-800 border border-zinc-200"
-                    : "bg-zinc-100 text-zinc-500"
-                }`}>
-                  {isCompleted ? "Completed" : `${completionPercent}% Done`}
+                <span
+                  className={`text-[11px] font-extrabold px-3 py-1 rounded-full border ${
+                    isCompleted
+                      ? "bg-emerald-100 text-emerald-900 border-emerald-300"
+                      : completedCount > 0
+                      ? "bg-amber-100 text-amber-900 border-amber-300"
+                      : "bg-slate-100 text-slate-600 border-slate-200"
+                  }`}
+                >
+                  {isCompleted ? "✓ Completed" : completedCount > 0 ? `In Progress (${completionPercent}%)` : "Not Started"}
                 </span>
               </div>
 
-              <div>
-                <h3 className="text-lg font-bold text-zinc-900">Today&apos;s Checklist</h3>
-                <p className="text-xs text-zinc-500 mt-1">
-                  Complete opening hygiene, food temperature logs, line setup, and cash verification.
-                </p>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
+                  Module 01
+                </span>
               </div>
 
-              {/* Progress Bar */}
-              <div className="space-y-1.5 pt-2">
-                <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
-                  <span>Progress</span>
-                  <span>{completedCount} / {totalRequired} tasks</span>
+              <h3 className="text-xl font-extrabold text-slate-900 group-hover:text-emerald-800 transition">
+                SOP & Checklists
+              </h3>
+              <p className="text-xs text-slate-600 mt-2 leading-relaxed min-h-[40px]">
+                Daily opening audits, station verification tasks, purchase & expense logs, and manager digital sign-off.
+              </p>
+
+              {/* Progress metric card */}
+              <div className="mt-5 p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
+                <div className="flex items-center justify-between text-xs font-bold">
+                  <span className="text-slate-700">Today&apos;s Audit Progress</span>
+                  <span className="text-emerald-900 font-extrabold text-sm">{completionPercent}%</span>
                 </div>
-                <div className="w-full h-2.5 rounded-full bg-zinc-100 overflow-hidden">
+                <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
                   <div
-                    className={`h-full transition-all duration-300 rounded-full ${
-                      isCompleted ? "bg-emerald-500" : "bg-zinc-900"
-                    }`}
+                    className="bg-emerald-700 h-full rounded-full transition-all duration-500"
                     style={{ width: `${completionPercent}%` }}
                   />
                 </div>
+                <span className="text-[11px] text-slate-500 block font-medium">
+                  {completedCount} of {totalRequired} required inspection tasks completed
+                </span>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-zinc-100 text-xs font-bold text-zinc-900 group-hover:text-zinc-700">
-              <span>{isCompleted ? "Review Completed Checklist" : "Continue Shift Tasks"}</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <div className="mt-6 pt-4 border-t border-slate-100">
+              <div className="w-full py-3 px-4 rounded-2xl bg-emerald-700 group-hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 flex items-center justify-center gap-2 transition">
+                <span>Open SOP & Checklists</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
+              </div>
             </div>
           </Link>
 
-          {/* Record Wastage Card */}
+          {/* CARD 2: WASTAGE RECORDING */}
           <Link
             href="/app/wastage"
-            className="p-6 rounded-3xl bg-white border border-zinc-200 hover:border-zinc-300 shadow-xs hover:shadow-md transition group flex flex-col justify-between space-y-6"
+            className="group bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs hover:shadow-xl hover:border-teal-600 transition-all duration-300 flex flex-col justify-between relative overflow-hidden hover:-translate-y-1 cursor-pointer"
           >
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-2xl bg-zinc-100 text-zinc-900 flex items-center justify-center group-hover:scale-105 transition-transform">
-                  <PlusCircle className="w-6 h-6" />
+            {/* Top Accent Strip */}
+            <div className="absolute top-0 inset-x-0 h-1.5 bg-teal-600 group-hover:h-2 transition-all" />
+
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-14 h-14 rounded-2xl bg-teal-50 text-teal-800 flex items-center justify-center font-bold shadow-xs border border-teal-200/80 group-hover:scale-110 group-hover:bg-teal-700 group-hover:text-white transition duration-300">
+                  <BarChart3 className="w-7 h-7" />
                 </div>
-                <span className="px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-600 text-xs font-semibold">
-                  Kitchen POS
+                <span className="text-[11px] font-extrabold px-3 py-1 rounded-full bg-teal-50 text-teal-900 border border-teal-300">
+                  {wastageMetrics?.recordCount || 0} logs this month
                 </span>
               </div>
 
-              <div>
-                <h3 className="text-lg font-bold text-zinc-900">Record Wastage</h3>
-                <p className="text-xs text-zinc-500 mt-1">
-                  Log expired or spoiled ingredients with instant quantity presets and live camera photo proof.
-                </p>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200/60">
+                  Module 02
+                </span>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-zinc-50 border border-zinc-100 space-y-1">
-                <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider block">
-                  Quick Feature
+              <h3 className="text-xl font-extrabold text-slate-900 group-hover:text-teal-800 transition">
+                Wastage Recording
+              </h3>
+              <p className="text-xs text-slate-600 mt-2 leading-relaxed min-h-[40px]">
+                Fast 10-second food waste entry, root-cause Pareto analytics, cost rankings, and items price catalog.
+              </p>
+
+              {/* Loss metric card */}
+              <div className="mt-5 p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
+                <span className="text-[10px] font-extrabold text-teal-800 uppercase tracking-wider block">
+                  This Month&apos;s Wastage Loss
                 </span>
-                <span className="text-xs text-zinc-700 block font-medium">
-                  Direct camera capture without opening photo gallery
+                <div className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                  {formatCurrency(wastageMetrics?.totalWastage || 0)}
+                </div>
+                <span className="text-[11px] text-slate-500 block font-medium truncate">
+                  Top Cause: <strong className="text-slate-800">{wastageMetrics?.topWasteReason?.name || "None recorded"}</strong>
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-zinc-100 text-xs font-bold text-zinc-900 group-hover:text-zinc-700">
-              <span>Launch Wastage Logger</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <div className="mt-6 pt-4 border-t border-slate-100">
+              <div className="w-full py-3 px-4 rounded-2xl bg-teal-700 group-hover:bg-teal-800 text-white font-bold text-xs shadow-md shadow-teal-700/20 flex items-center justify-center gap-2 transition">
+                <span>Open Wastage Recording</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
+              </div>
             </div>
           </Link>
-        </div>
-      ) : (
-        /* 3. MANAGER / OWNER OPERATIONS PULSE */
-        <div className="space-y-6">
-          {/* Key Metrics Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Metric 1: Checklist Status */}
-            <div className="p-5 rounded-2xl bg-white border border-zinc-200/90 shadow-xs space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
-                  Today&apos;s Checklist
-                </span>
-                <ClipboardCheck className="w-4 h-4 text-zinc-500" />
-              </div>
+
+          {/* CARD 3: ACCOUNT & ADMIN (Managers/Owners Only) */}
+          {!isStaff && (
+            <Link
+              href="/app/account"
+              className="group bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs hover:shadow-xl hover:border-blue-600 transition-all duration-300 flex flex-col justify-between relative overflow-hidden hover:-translate-y-1 cursor-pointer"
+            >
+              {/* Top Accent Strip */}
+              <div className="absolute top-0 inset-x-0 h-1.5 bg-blue-600 group-hover:h-2 transition-all" />
+
               <div>
-                <span className="text-2xl font-bold text-zinc-900">{completionPercent}%</span>
-                <span className="text-xs text-zinc-500 block mt-0.5">
-                  {completedCount} of {totalRequired} tasks completed
-                </span>
-              </div>
-              <div className="w-full h-1.5 rounded-full bg-zinc-100 overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${isCompleted ? "bg-emerald-500" : "bg-zinc-900"}`}
-                  style={{ width: `${completionPercent}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Metric 2: Monthly Waste */}
-            <div className="p-5 rounded-2xl bg-white border border-zinc-200/90 shadow-xs space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
-                  Monthly Wastage
-                </span>
-                <TrendingDown className="w-4 h-4 text-zinc-500" />
-              </div>
-              <div>
-                <span className="text-2xl font-bold text-zinc-900">
-                  {formatCurrency(Number(wastageMetrics?.summary?.totalCost || 0))}
-                </span>
-                <span className="text-xs text-zinc-500 block mt-0.5">
-                  {wastageMetrics?.summary?.totalQuantity || 0} units recorded
-                </span>
-              </div>
-              <div className="text-[11px] text-zinc-400">
-                Top Reason: {wastageMetrics?.byReason?.[0]?.name || "Spoilage / Expiry"}
-              </div>
-            </div>
-
-            {/* Metric 3: Active Shift Handover */}
-            <div className="p-5 rounded-2xl bg-white border border-zinc-200/90 shadow-xs space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
-                  Shift Sign-Off
-                </span>
-                <ShieldCheck className="w-4 h-4 text-zinc-500" />
-              </div>
-              <div>
-                <span className="text-base font-bold text-zinc-900 block">
-                  {checklistRecord?.verifiedByName ? `Signed: ${checklistRecord.verifiedByName}` : "Pending Verification"}
-                </span>
-                <span className="text-xs text-zinc-500 block mt-0.5">
-                  {checklistRecord?.verifiedByName ? "Digital manager verification saved" : "Awaiting duty manager signature"}
-                </span>
-              </div>
-              <Link
-                href="/app/checklists"
-                className="text-[11px] font-semibold text-zinc-900 hover:text-zinc-600 flex items-center gap-1 cursor-pointer"
-              >
-                <span>Verify Shift</span>
-                <ArrowRight className="w-3 h-3" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Quick Operations Modules & Recent Activity */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Quick Links (7 cols) */}
-            <div className="lg:col-span-7 bg-white border border-zinc-200/90 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-700">
-                  Operational Modules
-                </h3>
-                <span className="text-[11px] text-zinc-400">Quick Shortcuts</span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Link
-                  href="/app/checklists"
-                  className="p-3.5 rounded-xl bg-zinc-50 hover:bg-zinc-100/80 border border-zinc-200/70 transition flex items-start justify-between group"
-                >
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-zinc-900 block">Daily Checklist</span>
-                    <span className="text-[11px] text-zinc-500 block">Fill opening & closing SOPs</span>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-800 flex items-center justify-center font-bold shadow-xs border border-blue-200/80 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition duration-300">
+                    <Building2 className="w-7 h-7" />
                   </div>
-                  <ArrowUpRight className="w-4 h-4 text-zinc-400 group-hover:text-zinc-900 transition-colors" />
-                </Link>
-
-                <Link
-                  href="/app/wastage"
-                  className="p-3.5 rounded-xl bg-zinc-50 hover:bg-zinc-100/80 border border-zinc-200/70 transition flex items-start justify-between group"
-                >
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-zinc-900 block">Record Wastage</span>
-                    <span className="text-[11px] text-zinc-500 block">Fast 1-tap food waste entry</span>
-                  </div>
-                  <ArrowUpRight className="w-4 h-4 text-zinc-400 group-hover:text-zinc-900 transition-colors" />
-                </Link>
-
-                <Link
-                  href="/app/items"
-                  className="p-3.5 rounded-xl bg-zinc-50 hover:bg-zinc-100/80 border border-zinc-200/70 transition flex items-start justify-between group"
-                >
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-zinc-900 block">Item Catalog</span>
-                    <span className="text-[11px] text-zinc-500 block">Manage prices & base units</span>
-                  </div>
-                  <ArrowUpRight className="w-4 h-4 text-zinc-400 group-hover:text-zinc-900 transition-colors" />
-                </Link>
-
-                <Link
-                  href="/app/analytics"
-                  className="p-3.5 rounded-xl bg-zinc-50 hover:bg-zinc-100/80 border border-zinc-200/70 transition flex items-start justify-between group"
-                >
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-zinc-900 block">Cost Reports</span>
-                    <span className="text-[11px] text-zinc-500 block">Export trends & root causes</span>
-                  </div>
-                  <ArrowUpRight className="w-4 h-4 text-zinc-400 group-hover:text-zinc-900 transition-colors" />
-                </Link>
-              </div>
-            </div>
-
-            {/* Recent Wastage Logs (5 cols) */}
-            <div className="lg:col-span-5 bg-white border border-zinc-200/90 rounded-2xl p-5 shadow-xs space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-700">
-                  Recent Wastage
-                </h3>
-                <Link href="/app/history" className="text-[11px] font-semibold text-zinc-900 hover:text-zinc-600">
-                  View All
-                </Link>
-              </div>
-
-              {recentRecords.length === 0 ? (
-                <div className="py-8 text-center text-zinc-400 text-xs">
-                  No records logged today.
+                  <span className="text-[11px] font-extrabold text-emerald-900 bg-emerald-50 px-3 py-1 rounded-full flex items-center gap-1.5 border border-emerald-300">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    Active Workspace
+                  </span>
                 </div>
-              ) : (
-                <div className="divide-y divide-zinc-100">
-                  {recentRecords.map((r) => (
-                    <div key={r.id} className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between">
-                      <div>
-                        <span className="text-xs font-bold text-zinc-900 block">{r.itemName}</span>
-                        <span className="text-[10px] text-zinc-400">
-                          {r.quantity} {r.unit} • {r.reason?.name || "Waste"}
-                        </span>
-                      </div>
-                      <span className="text-xs font-bold text-zinc-900 font-mono">
-                        {formatCurrency(Number(r.totalCost || 0))}
-                      </span>
-                    </div>
-                  ))}
+
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-800 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200/60">
+                    Module 03
+                  </span>
                 </div>
-              )}
-            </div>
-          </div>
+
+                <h3 className="text-xl font-extrabold text-slate-900 group-hover:text-blue-800 transition">
+                  Account & Admin
+                </h3>
+                <p className="text-xs text-slate-600 mt-2 leading-relaxed min-h-[40px]">
+                  Restaurant outlet profile, team members, SOP editor permissions, operational shifts, and station zones.
+                </p>
+
+                {/* Team metric card */}
+                <div className="mt-5 p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
+                  <span className="text-[10px] font-extrabold text-blue-800 uppercase tracking-wider block">
+                    Workspace Team
+                  </span>
+                  <div className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                    {usersCount} {usersCount === 1 ? "Staff Member" : "Staff Members"}
+                  </div>
+                  <span className="text-[11px] text-slate-500 block font-medium">
+                    Configured shifts & station permissions
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-slate-100">
+                <div className="w-full py-3 px-4 rounded-2xl bg-blue-600 group-hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 flex items-center justify-center gap-2 transition">
+                  <span>Open Account & Admin</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
+                </div>
+              </div>
+            </Link>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

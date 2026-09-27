@@ -149,7 +149,7 @@ export default function ItemsPage() {
           <div className="flex items-center gap-2.5">
             <Link
               href="/app"
-              className="p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-xs transition group flex items-center justify-center shrink-0"
+              className="p-2 rounded-xl bg-white border border-[#bed6c2] hover:bg-emerald-50 text-slate-700 shadow-xs transition group flex items-center justify-center shrink-0"
               title="Back to Operations Hub"
             >
               <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
@@ -163,7 +163,7 @@ export default function ItemsPage() {
 
         <button
           onClick={openAddModal}
-          className="self-start sm:self-auto px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-500/20 transition flex items-center gap-2 cursor-pointer"
+          className="self-start sm:self-auto px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition flex items-center gap-2 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Add New Item</span>
@@ -179,7 +179,7 @@ export default function ItemsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search items by name..."
-            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-hidden"
+            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-hidden"
           />
         </div>
       </div>
@@ -188,7 +188,7 @@ export default function ItemsPage() {
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
         {loading ? (
           <div className="py-20 flex flex-col items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-2" />
+            <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mb-2" />
             <span className="text-xs font-semibold text-slate-500">Loading item catalog...</span>
           </div>
         ) : filteredItems.length === 0 ? (

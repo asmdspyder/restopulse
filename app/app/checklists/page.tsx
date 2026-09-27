@@ -33,11 +33,6 @@ import {
   Receipt,
   Banknote,
   DollarSign,
-  ChevronDown,
-  Sparkle,
-  CheckCheck,
-  RotateCcw,
-  ZoomIn,
 } from "lucide-react";
 import { formatCurrency, formatLocalDateToYMD } from "@/lib/utils";
 import {
@@ -54,9 +49,6 @@ export default function DailyChecklistPage() {
   const [savingStatus, setSavingStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [authContext, setAuthContext] = useState<any>(null);
   const [checklistData, setChecklistData] = useState<any>(null);
-
-  // Active Category Filter / Tab
-  const [activeCategoryTab, setActiveCategoryTab] = useState<string>("all");
 
   // Calendar popover state
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -79,11 +71,6 @@ export default function DailyChecklistPage() {
   // Audit trail drawer state
   const [isAuditDrawerOpen, setIsAuditDrawerOpen] = useState(false);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
-
-  // Digital Signature Canvas
-  const [isSignPadOpen, setIsSignPadOpen] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
 
   // Remarks open map
   const [expandedRemarks, setExpandedRemarks] = useState<{ [itemKey: string]: boolean }>({});
@@ -312,13 +299,13 @@ export default function DailyChecklistPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           dailyRecordId,
-          itemId: item.id,
-          sectionId: section.id,
           itemKey,
           payload: {
+            itemId: item.id,
+            sectionId: section.id,
             valueBoolean: nextBool,
-            remarks: existingVal?.remarks,
             valueJson: existingVal?.valueJson,
+            remarks: existingVal?.remarks,
             sectionTitle: section.title,
             itemLabel: item.label,
           },
@@ -326,34 +313,28 @@ export default function DailyChecklistPage() {
       });
 
       if (res.ok) {
-        const result = await res.json();
-        if (result.completedItemsCount !== undefined) {
-          setChecklistData((prev: any) => ({
-            ...prev,
-            dailyRecord: {
-              ...prev.dailyRecord,
-              completedItemsCount: result.completedItemsCount,
-              totalRequiredItemsCount: result.totalRequiredItemsCount,
-              completionPercent: Math.round(Number(result.completionPercent || 0)),
-              status: result.status,
-            },
-          }));
-        }
+        const resData = await res.json();
         setSavingStatus("saved");
+        setChecklistData((prev: any) => ({
+          ...prev,
+          dailyRecord: {
+            ...prev.dailyRecord,
+            completedItemsCount: resData.completedItemsCount,
+            totalRequiredItemsCount: resData.totalRequiredItemsCount,
+            completionPercent: Math.round(Number(resData.completionPercent || 0)),
+            status: resData.status,
+          },
+        }));
       } else {
         setSavingStatus("error");
       }
-    } catch (e) {
+    } catch (err) {
       setSavingStatus("error");
     }
   };
 
-  // Change Value Input (number, text, temp)
-  const handleChangeValue = async (
-    item: any,
-    section: any,
-    val: { text?: string; number?: number }
-  ) => {
+  // Update Item Remarks
+  const handleUpdateRemarks = async (item: any, section: any, text: string) => {
     const dailyRecordId = checklistData?.dailyRecord?.id;
     if (!dailyRecordId) return;
 
@@ -373,15 +354,13 @@ export default function DailyChecklistPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           dailyRecordId,
-          itemId: item.id,
-          sectionId: section.id,
           itemKey,
           payload: {
-            valueText: val.text !== undefined ? val.text : existingVal?.valueText,
-            valueNumber: val.number !== undefined ? val.number : existingVal?.valueNumber,
+            itemId: item.id,
+            sectionId: section.id,
             valueBoolean: existingVal?.valueBoolean,
-            remarks: existingVal?.remarks,
             valueJson: existingVal?.valueJson,
+            remarks: text.trim(),
             sectionTitle: section.title,
             itemLabel: item.label,
           },
@@ -389,85 +368,8 @@ export default function DailyChecklistPage() {
       });
 
       if (res.ok) {
-        const result = await res.json();
-        const updatedValues = (checklistData.values || []).filter(
-          (v: any) =>
-            !(
-              (item.id && (v.itemId === item.id || v.itemKey === item.id)) ||
-              (item.label &&
-                (v.itemKey === item.label ||
-                  v.itemKey?.toLowerCase().trim() === item.label.toLowerCase().trim()))
-            )
-        );
-        updatedValues.push({
-          itemKey,
-          itemId: item.id,
-          sectionId: section.id,
-          valueText: val.text !== undefined ? val.text : existingVal?.valueText,
-          valueNumber: val.number !== undefined ? val.number : existingVal?.valueNumber,
-          valueBoolean: existingVal?.valueBoolean,
-          remarks: existingVal?.remarks,
-          valueJson: existingVal?.valueJson,
-        });
-
-        setChecklistData((prev: any) => ({
-          ...prev,
-          values: updatedValues,
-          dailyRecord: {
-            ...prev.dailyRecord,
-            completedItemsCount: result.completedItemsCount ?? prev.dailyRecord.completedItemsCount,
-            totalRequiredItemsCount:
-              result.totalRequiredItemsCount ?? prev.dailyRecord.totalRequiredItemsCount,
-            completionPercent: Math.round(
-              Number(result.completionPercent ?? prev.dailyRecord.completionPercent)
-            ),
-            status: result.status ?? prev.dailyRecord.status,
-          },
-        }));
         setSavingStatus("saved");
-      }
-    } catch (e) {
-      setSavingStatus("error");
-    }
-  };
-
-  // Save Item Remarks
-  const handleSaveRemarks = async (item: any, section: any, text: string) => {
-    const dailyRecordId = checklistData?.dailyRecord?.id;
-    if (!dailyRecordId) return;
-
-    const itemKey = item.id || item.label;
-    const existingVal = (checklistData.values || []).find(
-      (v: any) =>
-        (item.id && (v.itemId === item.id || v.itemKey === item.id)) ||
-        (item.label &&
-          (v.itemKey === item.label ||
-            v.itemKey?.toLowerCase().trim() === item.label.toLowerCase().trim()))
-    );
-
-    setSavingStatus("saving");
-    try {
-      const res = await fetch("/api/checklists/daily", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          dailyRecordId,
-          itemId: item.id,
-          sectionId: section.id,
-          itemKey,
-          payload: {
-            remarks: text,
-            valueBoolean: existingVal?.valueBoolean,
-            valueText: existingVal?.valueText,
-            valueNumber: existingVal?.valueNumber,
-            valueJson: existingVal?.valueJson,
-            sectionTitle: section.title,
-            itemLabel: item.label,
-          },
-        }),
-      });
-
-      if (res.ok) {
+        let found = false;
         const updatedValues = (checklistData.values || []).map((v: any) => {
           if (
             (item.id && (v.itemId === item.id || v.itemKey === item.id)) ||
@@ -475,16 +377,24 @@ export default function DailyChecklistPage() {
               (v.itemKey === item.label ||
                 v.itemKey?.toLowerCase().trim() === item.label.toLowerCase().trim()))
           ) {
-            return { ...v, remarks: text };
+            found = true;
+            return { ...v, remarks: text.trim() };
           }
           return v;
         });
-
-        setChecklistData((prev: any) => ({ ...prev, values: updatedValues }));
-        setSavingStatus("saved");
-        showToast("Note saved");
+        if (!found) {
+          updatedValues.push({
+            itemKey,
+            itemId: item.id,
+            sectionId: section.id,
+            remarks: text.trim(),
+          });
+        }
+        setChecklistData({ ...checklistData, values: updatedValues });
+      } else {
+        setSavingStatus("error");
       }
-    } catch (e) {
+    } catch (err) {
       setSavingStatus("error");
     }
   };
@@ -589,7 +499,7 @@ export default function DailyChecklistPage() {
         }
       }
       setSavingStatus("saved");
-      showToast("Cash float updated");
+      showToast("Cash drawer float saved");
     } catch (e) {
       setSavingStatus("error");
     }
@@ -691,70 +601,48 @@ export default function DailyChecklistPage() {
     }
   };
 
-  // Signature Canvas Helpers
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    setIsDrawing(true);
-    const rect = canvas.getBoundingClientRect();
-    const x = "touches" in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
-    const y = "touches" in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-  };
-
-  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if (!isDrawing) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = "touches" in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
-    const y = "touches" in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
-    ctx.lineWidth = 2.5;
-    ctx.lineCap = "round";
-    ctx.strokeStyle = "#09090b";
-    ctx.lineTo(x, y);
-    ctx.stroke();
-  };
-
-  const stopDrawing = () => {
-    setIsDrawing(false);
-  };
-
-  const clearCanvas = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-  };
-
-  const saveCanvasSignature = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const dataUrl = canvas.toDataURL("image/png");
-    setManagerSignature(dataUrl);
-    setIsSignPadOpen(false);
-    showToast("Signature captured");
-  };
-
   if (loading) {
     return (
       <div className="py-24 flex flex-col items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-zinc-900 mb-3" />
-        <span className="text-xs font-semibold text-zinc-500">Loading daily checklist...</span>
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-700 mb-2" />
+        <span className="text-xs font-semibold text-slate-600">
+          Loading daily checklist...
+        </span>
       </div>
     );
   }
 
-  const structure = checklistData?.structure || { sections: [] };
+  const structure = checklistData?.structure || {};
+  const sections: any[] = structure.sections || [];
   const dailyRecord = checklistData?.dailyRecord || {};
-  const sections = structure.sections || [];
-  const values = checklistData?.values || [];
+  const values: any[] = checklistData?.values || [];
+
+  const valuesMap = new Map<string, any>();
+  values.forEach((v: any) => {
+    if (v.itemKey) {
+      valuesMap.set(v.itemKey, v);
+      if (typeof v.itemKey === "string") {
+        valuesMap.set(v.itemKey.toLowerCase().trim(), v);
+      }
+    }
+    if (v.itemId) {
+      valuesMap.set(v.itemId, v);
+    }
+  });
+
+  const getItemValue = (item: any) => {
+    if (!item) return null;
+    if (item.id && valuesMap.has(item.id)) return valuesMap.get(item.id);
+    if (item.label && valuesMap.has(item.label)) return valuesMap.get(item.label);
+    if (
+      item.label &&
+      typeof item.label === "string" &&
+      valuesMap.has(item.label.toLowerCase().trim())
+    ) {
+      return valuesMap.get(item.label.toLowerCase().trim());
+    }
+    return null;
+  };
 
   const completionPercent = Math.round(Number(dailyRecord.completionPercent || 0));
   const completedCount = Number(dailyRecord.completedItemsCount || 0);
@@ -778,14 +666,8 @@ export default function DailyChecklistPage() {
     sec.sectionType === "manager_signoff" ||
     ["F", "G", "I"].includes(sec.sectionCode);
 
-  const checklistSectionsList = sections.filter((s: any) => !isNonChecklistSection(s));
-  const nonChecklistSectionsList = sections.filter((s: any) => isNonChecklistSection(s));
-
-  // Filter sections by active category tab
-  const displayedChecklistSections =
-    activeCategoryTab === "all"
-      ? checklistSectionsList
-      : checklistSectionsList.filter((s: any) => s.id === activeCategoryTab || s.sectionCode === activeCategoryTab);
+  const checklistSectionsList = sections.filter((s) => !isNonChecklistSection(s));
+  const nonChecklistSectionsList = sections.filter((s) => isNonChecklistSection(s));
 
   // Generate Calendar Days for Popover
   const renderCalendarDays = () => {
@@ -814,12 +696,12 @@ export default function DailyChecklistPage() {
             setSelectedDate(dateStr);
             setIsCalendarOpen(false);
           }}
-          className={`w-8 h-8 rounded-xl text-xs font-semibold transition flex items-center justify-center cursor-pointer ${
+          className={`w-8 h-8 rounded-xl text-xs font-bold transition flex items-center justify-center cursor-pointer ${
             isSelected
-              ? "bg-zinc-900 text-white shadow-xs font-bold"
+              ? "bg-emerald-700 text-white shadow-md shadow-emerald-700/30 scale-105"
               : isCurrentDay
-              ? "bg-zinc-100 text-zinc-900 border border-zinc-300 font-bold"
-              : "hover:bg-zinc-100 text-zinc-600"
+              ? "bg-emerald-100 text-emerald-900 border border-emerald-400 font-extrabold"
+              : "hover:bg-slate-100 text-slate-700"
           }`}
         >
           {d}
@@ -837,58 +719,59 @@ export default function DailyChecklistPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-24">
-      {/* Toast Notification */}
+    <div className="space-y-6 max-w-5xl mx-auto pb-16">
+      {/* Toast */}
       {toastMsg && (
-        <div className="fixed bottom-6 right-6 z-50 bg-zinc-900 text-white px-4 py-2.5 rounded-2xl shadow-xl text-xs font-medium flex items-center gap-2 animate-in fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           <span>{toastMsg}</span>
         </div>
       )}
 
-      {/* 1. TOP HEADER & CALENDAR PICKER */}
+      {/* 1. TOP HEADER & INTERACTIVE CALENDAR PICKER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
             <Link
               href="/app"
-              className="p-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-600 shadow-xs transition group flex items-center justify-center shrink-0"
+              className="p-2 rounded-xl bg-white border border-[#bed6c2] hover:bg-emerald-50 text-slate-700 shadow-xs transition group flex items-center justify-center shrink-0"
               title="Back to Operations Hub"
             >
-              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+              <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
             </Link>
 
-            <h1 className="text-xl sm:text-2xl font-bold text-zinc-900 tracking-tight">
-              {structure.title || "Daily Operational Checklist"}
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+              {structure.title || "Daily Opening Checklist"}
             </h1>
-            <span className="px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-600 text-[11px] font-semibold border border-zinc-200">
+            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-[10px] font-bold border border-emerald-300">
               v{dailyRecord.versionNumber || "1"}
             </span>
           </div>
-          <p className="text-xs text-zinc-500 mt-1">
-            Standard operating procedures, temperature logs, and cash verification.
+          <p className="text-xs text-slate-600 mt-1">
+            Standard operating procedure verification & morning audit checklist with direct photo capture.
           </p>
         </div>
 
-        {/* Action Controls & Calendar */}
+        {/* Calendar Trigger, Builder Link, and Audit Button */}
         <div className="flex items-center gap-2 relative">
           <div className="relative" ref={calendarRef}>
             <button
               type="button"
               onClick={() => setIsCalendarOpen(!isCalendarOpen)}
-              className="px-3 py-2 rounded-xl bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-800 text-xs font-medium shadow-xs flex items-center gap-2 transition cursor-pointer"
+              className="px-3.5 py-2 rounded-2xl bg-white border border-[#bed6c2] hover:border-emerald-600 text-slate-800 text-xs font-bold shadow-xs flex items-center gap-2 transition cursor-pointer"
             >
-              <CalendarIcon className="w-4 h-4 text-zinc-500" />
+              <CalendarIcon className="w-4 h-4 text-emerald-700" />
               <span>{isToday ? `Today (${dateFormatted})` : dateFormatted}</span>
               {isToday && (
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
               )}
             </button>
 
             {/* Calendar Popover */}
             {isCalendarOpen && (
-              <div className="absolute right-0 top-12 z-50 bg-white rounded-2xl p-4 shadow-xl border border-zinc-200 w-72 space-y-3 animate-in fade-in zoom-in-95">
-                <div className="flex items-center justify-between pb-2 border-b border-zinc-100">
+              <div className="absolute right-0 top-12 z-50 bg-white rounded-3xl p-4 shadow-2xl border border-slate-200 w-72 space-y-3 animate-in fade-in zoom-in-95">
+                {/* Month/Year Navigation */}
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                   <button
                     type="button"
                     onClick={() => {
@@ -896,11 +779,11 @@ export default function DailyChecklistPage() {
                       prev.setMonth(prev.getMonth() - 1);
                       setCalendarMonth(prev);
                     }}
-                    className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-600"
+                    className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <span className="text-xs font-bold text-zinc-900">
+                  <span className="text-xs font-extrabold text-slate-900">
                     {calendarMonth.toLocaleDateString("en-IN", {
                       month: "long",
                       year: "numeric",
@@ -913,13 +796,14 @@ export default function DailyChecklistPage() {
                       next.setMonth(next.getMonth() + 1);
                       setCalendarMonth(next);
                     }}
-                    className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-600"
+                    className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
 
-                <div className="grid grid-cols-7 text-center text-[10px] font-semibold text-zinc-400">
+                {/* Days of Week Header */}
+                <div className="grid grid-cols-7 text-center text-[10px] font-bold text-slate-400">
                   <span>Mo</span>
                   <span>Tu</span>
                   <span>We</span>
@@ -929,11 +813,13 @@ export default function DailyChecklistPage() {
                   <span>Su</span>
                 </div>
 
+                {/* Days Grid */}
                 <div className="grid grid-cols-7 gap-1 place-items-center">
                   {renderCalendarDays()}
                 </div>
 
-                <div className="pt-2 border-t border-zinc-100 flex items-center justify-between">
+                {/* Quick Today Shortcut */}
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                   <button
                     type="button"
                     onClick={() => {
@@ -941,14 +827,14 @@ export default function DailyChecklistPage() {
                       setCalendarMonth(new Date());
                       setIsCalendarOpen(false);
                     }}
-                    className="text-[11px] font-semibold text-zinc-900 hover:text-zinc-600 cursor-pointer"
+                    className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 cursor-pointer"
                   >
                     Jump to Today
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsCalendarOpen(false)}
-                    className="text-[11px] font-medium text-zinc-400 hover:text-zinc-600 cursor-pointer"
+                    className="text-[11px] font-bold text-slate-400 hover:text-slate-600 cursor-pointer"
                   >
                     Close
                   </button>
@@ -957,273 +843,148 @@ export default function DailyChecklistPage() {
             )}
           </div>
 
-          {authContext?.user?.role !== "staff" && (
-            <Link
-              href="/app/checklists/builder"
-              className="p-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shadow-xs"
-              title="Customize Checklist Template"
-            >
-              <Sliders className="w-4 h-4 text-zinc-500" />
-              <span className="hidden sm:inline">Customize</span>
-            </Link>
+          <Link
+            href="/app/checklists/builder"
+            className="p-2.5 rounded-2xl bg-white border border-[#bed6c2] hover:bg-emerald-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+            title="Customize Checklist & SOP Template"
+          >
+            <Sliders className="w-4 h-4 text-emerald-700" />
+            <span className="hidden sm:inline">Edit Template</span>
+          </Link>
+
+          <button
+            onClick={() => {
+              setIsAuditDrawerOpen(true);
+              fetchAuditLogs();
+            }}
+            className="p-2.5 rounded-2xl bg-white border border-[#bed6c2] hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+            title="View Audit Log"
+          >
+            <History className="w-4 h-4 text-slate-600" />
+            <span className="hidden sm:inline">Audit Trail</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 2. PROGRESS SUMMARY STRIP */}
+      <div className="bg-white rounded-3xl border border-[#bed6c2] p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex-1 space-y-1.5">
+          <div className="flex items-center justify-between text-xs font-bold">
+            <span className="text-slate-700">Checklist Completion</span>
+            <span className="text-slate-900 font-extrabold text-sm">
+              {completionPercent}% ({completedCount}/{totalRequired} completed)
+            </span>
+          </div>
+          <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+            <div
+              className="bg-emerald-700 h-full rounded-full transition-all duration-300"
+              style={{ width: `${completionPercent}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 self-end sm:self-center">
+          {savingStatus === "saving" && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg animate-pulse">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span>Saving...</span>
+            </span>
+          )}
+          {savingStatus === "saved" && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg">
+              <Check className="w-3.5 h-3.5 text-emerald-700" />
+              <span>Saved</span>
+            </span>
+          )}
+          {savingStatus === "error" && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span>Save error</span>
+            </span>
           )}
 
-          <button
-            type="button"
-            onClick={() => {
-              fetchAuditLogs();
-              setIsAuditDrawerOpen(true);
-            }}
-            className="p-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shadow-xs"
-            title="View Audit Log & Changes"
-          >
-            <History className="w-4 h-4 text-zinc-500" />
-            <span className="hidden sm:inline">Audit Log</span>
-          </button>
+          {!isToday && !isCompleted && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600 bg-rose-50 px-2 py-1 rounded-lg">
+              <AlertTriangle className="w-3 h-3" />
+              <span>{Math.max(0, totalRequired - completedCount)} items missed</span>
+            </span>
+          )}
         </div>
       </div>
 
-      {/* 2. PROGRESS STRIP & STATS */}
-      <div className="bg-white border border-zinc-200/90 rounded-2xl p-4 sm:p-5 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-              isCompleted ? "bg-emerald-50 text-emerald-600" : "bg-zinc-100 text-zinc-800"
-            }`}>
-              {isCompleted ? <CheckCheck className="w-5 h-5" /> : <ClipboardCheck className="w-5 h-5" />}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-zinc-900">
-                  {completedCount} of {totalRequired} tasks completed
-                </span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                  isCompleted
-                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                    : completedCount > 0
-                    ? "bg-zinc-100 text-zinc-700 border border-zinc-200"
-                    : "bg-zinc-100 text-zinc-500"
-                }`}>
-                  {isCompleted ? "Fully Completed" : completedCount > 0 ? "In Progress" : "Not Started"}
-                </span>
-              </div>
-              <span className="text-xs text-zinc-500 block mt-0.5">
-                {dailyRecord.verifiedByName
-                  ? `Verified by ${dailyRecord.verifiedByName}`
-                  : "Pending manager sign-off"}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <span className="text-xs font-bold text-zinc-900">{completionPercent}%</span>
-              <span className="text-[10px] text-zinc-400 block">Progress</span>
-            </div>
-            <div className="w-28 sm:w-36 h-2 rounded-full bg-zinc-100 overflow-hidden shrink-0">
-              <div
-                className={`h-full transition-all duration-300 rounded-full ${
-                  isCompleted ? "bg-emerald-500" : "bg-zinc-900"
-                }`}
-                style={{ width: `${completionPercent}%` }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. CATEGORY PILL FILTER */}
-      {checklistSectionsList.length > 1 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          <button
-            type="button"
-            onClick={() => setActiveCategoryTab("all")}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
-              activeCategoryTab === "all"
-                ? "bg-zinc-900 text-white shadow-xs"
-                : "bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-50"
-            }`}
-          >
-            All Categories ({checklistSectionsList.length})
-          </button>
-          {checklistSectionsList.map((sec: any) => {
-            const secItems = sec.items || [];
-            const doneInSec = secItems.filter((it: any) => {
-              const v = values.find(
-                (val: any) =>
-                  (it.id && (val.itemId === it.id || val.itemKey === it.id)) ||
-                  (it.label &&
-                    (val.itemKey === it.label ||
-                      val.itemKey?.toLowerCase().trim() === it.label.toLowerCase().trim()))
-              );
-              return v?.valueBoolean === true || (v?.valueText && v.valueText.trim() !== "");
-            }).length;
-
-            return (
-              <button
-                key={sec.id}
-                type="button"
-                onClick={() => setActiveCategoryTab(sec.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 cursor-pointer ${
-                  activeCategoryTab === sec.id
-                    ? "bg-zinc-900 text-white shadow-xs"
-                    : "bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-50"
-                }`}
-              >
-                <span>{sec.title}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${
-                  activeCategoryTab === sec.id
-                    ? "bg-zinc-800 text-zinc-300"
-                    : "bg-zinc-100 text-zinc-500"
-                }`}>
-                  {doneInSec}/{secItems.length}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* 4. MAIN CHECKLIST SECTIONS */}
-      <div className="space-y-6">
-        {displayedChecklistSections.map((section: any, sIdx: number) => {
-          const items = section.items || [];
+      {/* 3. TOP SECTION: ALL STANDARD CHECKLIST CATEGORIES */}
+      <div className="space-y-5">
+        {checklistSectionsList.map((section: any, sIdx: number) => {
           return (
             <div
               key={section.id || sIdx}
-              className="bg-white border border-zinc-200/90 rounded-2xl shadow-xs overflow-hidden"
+              className="bg-white rounded-3xl border border-[#bed6c2] p-4 sm:p-5 shadow-xs"
             >
-              {/* Section Header */}
-              <div className="px-5 py-3.5 bg-zinc-50/70 border-b border-zinc-200/80 flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-bold text-zinc-900">{section.title}</h3>
-                  {section.description && (
-                    <p className="text-[11px] text-zinc-500 mt-0.5">{section.description}</p>
-                  )}
+              <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-900 font-extrabold text-xs flex items-center justify-center">
+                    {section.sectionCode || sIdx + 1}
+                  </span>
+                  <div>
+                    <h2 className="text-sm sm:text-base font-bold text-slate-900">
+                      {section.title}
+                    </h2>
+                    {section.description && (
+                      <p className="text-[10px] text-slate-500">{section.description}</p>
+                    )}
+                  </div>
                 </div>
-                <span className="text-[11px] font-semibold text-zinc-500">
-                  {items.length} task{items.length === 1 ? "" : "s"}
-                </span>
               </div>
 
-              {/* Items List */}
-              <div className="divide-y divide-zinc-100">
-                {items.map((item: any) => {
+              {/* 2 to 3 Columns Grid for Checklist Items */}
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                {(section.items || []).map((item: any) => {
                   const itemKey = item.id || item.label;
-                  const val = values.find(
-                    (v: any) =>
-                      (item.id && (v.itemId === item.id || v.itemKey === item.id)) ||
-                      (item.label &&
-                        (v.itemKey === item.label ||
-                          v.itemKey?.toLowerCase().trim() === item.label.toLowerCase().trim())) ||
-                      v.itemKey === itemKey
-                  );
-
+                  const val = getItemValue(item);
                   const isChecked = val?.valueBoolean === true;
-                  const itemImages: ChecklistItemImage[] = val?.valueJson?.images || [];
-                  const remarksText = val?.remarks || "";
-                  const isRemarksExpanded = expandedRemarks[itemKey] || Boolean(remarksText);
+                  const remarks = val?.remarks || "";
+                  const isRemarksOpen = expandedRemarks[itemKey] || !!remarks;
+                  const markedByName =
+                    val?.updatedByName ||
+                    (isChecked ? authContext?.user?.name || "Staff" : "");
+
+                  // Extract images for this checklist item
+                  const itemImages: ChecklistItemImage[] =
+                    val?.valueJson?.images && Array.isArray(val.valueJson.images)
+                      ? val.valueJson.images
+                      : [];
+                  const photoCount = itemImages.length;
 
                   return (
                     <div
-                      key={item.id || item.label}
-                      className={`p-4 transition-colors ${
-                        isChecked ? "bg-emerald-50/20" : "hover:bg-zinc-50/50"
+                      key={itemKey}
+                      className={`p-2.5 sm:p-3 rounded-2xl border transition flex flex-col justify-between ${
+                        isChecked
+                          ? "bg-emerald-50/80 border-emerald-300 text-emerald-950"
+                          : "bg-slate-50/70 border-slate-200/80 text-slate-800 hover:border-slate-300 hover:bg-slate-50"
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        {/* Checkbox & Title */}
-                        <div className="flex items-start gap-3 flex-1 min-w-0">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleItem(item, section)}
-                            className={`w-5 h-5 rounded-lg flex items-center justify-center transition shrink-0 mt-0.5 cursor-pointer ${
+                      <div className="flex items-start justify-between gap-2">
+                        <label className="flex items-start gap-2.5 cursor-pointer flex-1 select-none">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleToggleItem(item, section)}
+                            className="mt-0.5 w-4 h-4 rounded text-emerald-700 focus:ring-emerald-600 cursor-pointer shrink-0"
+                          />
+                          <span
+                            className={`text-xs leading-snug ${
                               isChecked
-                                ? "bg-emerald-600 text-white shadow-xs"
-                                : "border border-zinc-300 hover:border-zinc-400 bg-white"
+                                ? "font-semibold text-slate-900 line-through opacity-85"
+                                : "font-medium text-slate-800"
                             }`}
                           >
-                            {isChecked && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
-                          </button>
+                            {item.label}
+                          </span>
+                        </label>
 
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span
-                                onClick={() => handleToggleItem(item, section)}
-                                className={`text-xs font-semibold cursor-pointer select-none ${
-                                  isChecked ? "text-zinc-900" : "text-zinc-800"
-                                }`}
-                              >
-                                {item.label}
-                              </span>
-                              {(item.isRequired || item.is_required) && (
-                                <span className="text-[10px] text-zinc-400 font-medium">*</span>
-                              )}
-                            </div>
-
-                            {item.description && (
-                              <p className="text-[11px] text-zinc-500 mt-0.5">{item.description}</p>
-                            )}
-
-                            {/* Attached Camera Photos Thumbnails */}
-                            {itemImages.length > 0 && (
-                              <div className="flex items-center gap-2 mt-2 flex-wrap">
-                                {itemImages.map((img, i) => (
-                                  <div
-                                    key={i}
-                                    onClick={() =>
-                                      setCameraModalItem({
-                                        item,
-                                        section,
-                                        itemKey,
-                                        itemLabel: item.label,
-                                        sectionTitle: section.title,
-                                        images: itemImages,
-                                      })
-                                    }
-                                    className="relative w-12 h-10 rounded-lg overflow-hidden border border-zinc-200 bg-zinc-100 cursor-pointer group shadow-xs shrink-0"
-                                  >
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                      src={img.url}
-                                      alt="Photo proof"
-                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                                    />
-                                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                                      <ZoomIn className="w-3 h-3" />
-                                    </div>
-                                  </div>
-                                ))}
-                                <span className="text-[10px] text-zinc-400 font-medium">
-                                  {itemImages.length} photo proof attached
-                                </span>
-                              </div>
-                            )}
-
-                            {/* Inline Value Input for Temperature / Text fields */}
-                            {(item.fieldType === "number" ||
-                              item.field_type === "number" ||
-                              item.fieldType === "temperature") && (
-                              <div className="mt-2 flex items-center gap-2">
-                                <input
-                                  type="number"
-                                  placeholder="Enter reading / °C"
-                                  defaultValue={val?.valueNumber ?? ""}
-                                  onBlur={(e) =>
-                                    handleChangeValue(item, section, {
-                                      number: e.target.value ? parseFloat(e.target.value) : undefined,
-                                    })
-                                  }
-                                  className="w-32 px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-zinc-200 bg-white focus:outline-none focus:border-zinc-400"
-                                />
-                                <span className="text-[11px] text-zinc-400">°C</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Action buttons: Camera Proof & Remarks */}
-                        <div className="flex items-center gap-1 shrink-0">
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {/* Photo Capture / Gallery Button */}
                           <button
                             type="button"
                             onClick={() =>
@@ -1236,56 +997,76 @@ export default function DailyChecklistPage() {
                                 images: itemImages,
                               })
                             }
-                            className={`p-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1 cursor-pointer ${
-                              itemImages.length > 0
-                                ? "bg-zinc-100 text-zinc-900 border border-zinc-200"
-                                : "text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100"
+                            className={`px-1.5 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 ${
+                              photoCount > 0
+                                ? "bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-xs"
+                                : "text-slate-400 hover:text-emerald-700 hover:bg-slate-200/60"
                             }`}
-                            title="Capture photo proof"
+                            title={
+                              photoCount > 0
+                                ? `${photoCount} photo${photoCount > 1 ? "s" : ""} captured`
+                                : "Take photo with camera"
+                            }
                           >
                             <Camera className="w-3.5 h-3.5" />
-                            {itemImages.length > 0 && (
-                              <span className="text-[10px] font-bold">{itemImages.length}</span>
-                            )}
+                            {photoCount > 0 && <span>{photoCount}</span>}
                           </button>
 
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setExpandedRemarks((prev) => ({
-                                ...prev,
-                                [itemKey]: !prev[itemKey],
-                              }))
-                            }
-                            className={`p-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                              remarksText
-                                ? "bg-zinc-100 text-zinc-900 border border-zinc-200"
-                                : "text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100"
-                            }`}
-                            title="Add note / remarks"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5" />
-                          </button>
+                          {/* Remarks Toggle Button */}
+                          {item.allowsRemarks && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setExpandedRemarks((prev) => ({
+                                  ...prev,
+                                  [itemKey]: !isRemarksOpen,
+                                }))
+                              }
+                              className={`p-1 rounded-md text-[10px] transition ${
+                                remarks
+                                  ? "text-emerald-800 bg-emerald-100/80 font-bold"
+                                  : "text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                              }`}
+                              title="Add remark / temperature log"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </div>
 
-                      {/* Expandable Remarks Drawer */}
-                      {isRemarksExpanded && (
-                        <div className="mt-3 pt-2.5 border-t border-zinc-100">
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              placeholder="Add a note or issue report..."
-                              defaultValue={remarksText}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  handleSaveRemarks(item, section, e.currentTarget.value);
-                                }
-                              }}
-                              onBlur={(e) => handleSaveRemarks(item, section, e.target.value)}
-                              className="flex-1 px-3 py-1.5 rounded-lg border border-zinc-200 text-xs text-zinc-800 bg-zinc-50/50 focus:bg-white focus:outline-none focus:border-zinc-400"
-                            />
-                          </div>
+                      {/* Staff Name Badge if Checked */}
+                      {isChecked && markedByName && (
+                        <div className="mt-1.5 flex items-center justify-between">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-900 bg-emerald-100/90 border border-emerald-300/80 px-2 py-0.5 rounded-md">
+                            <Check className="w-3 h-3 text-emerald-700" />
+                            <span>{markedByName}</span>
+                          </span>
+                          {photoCount > 0 && (
+                            <span className="text-[10px] text-emerald-700 font-semibold">
+                              📷 {photoCount} proof photo{photoCount > 1 ? "s" : ""}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Inline Remarks Input */}
+                      {isRemarksOpen && (
+                        <div className="mt-2 pt-2 border-t border-slate-200/60 flex items-center gap-1.5">
+                          <input
+                            type="text"
+                            defaultValue={remarks}
+                            placeholder="Add note or reading..."
+                            onBlur={(e) =>
+                              handleUpdateRemarks(item, section, e.target.value)
+                            }
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                handleUpdateRemarks(item, section, e.currentTarget.value);
+                              }
+                            }}
+                            className="w-full p-1.5 px-2.5 rounded-lg border border-slate-200 text-[11px] bg-white text-slate-900 focus:border-emerald-500 focus:outline-hidden"
+                          />
                         </div>
                       )}
                     </div>
@@ -1297,419 +1078,482 @@ export default function DailyChecklistPage() {
         })}
       </div>
 
-      {/* 5. PURCHASES & EXPENSES REPEATABLE TABLES */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Daily Cash Purchases Table */}
-        <div className="bg-white border border-zinc-200/90 rounded-2xl shadow-xs overflow-hidden">
-          <div className="px-5 py-3.5 bg-zinc-50/70 border-b border-zinc-200/80 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-zinc-600" />
-              <h3 className="text-sm font-bold text-zinc-900">Direct Purchases</h3>
+      {/* 4. BOTTOM SECTION: SEPARATE VISUALLY DISTINCT PANEL FOR OPERATIONS, CASH & MANAGER SIGN-OFF */}
+      <div className="mt-10 pt-6 border-t-2 border-slate-200/80 space-y-6">
+        {/* Distinct Header For Non-Checklist Operations */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-xs">
+              <FileCheck2 className="w-4 h-4 text-emerald-400" />
             </div>
-            <span className="text-xs font-bold text-zinc-900">{formatCurrency(totalPurchase)}</span>
-          </div>
-
-          <div className="p-4 space-y-3">
-            {purchaseRows.map((row, idx) => (
-              <div key={idx} className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="Item name"
-                  value={row.item || ""}
-                  onChange={(e) => {
-                    const next = [...purchaseRows];
-                    next[idx].item = e.target.value;
-                    setPurchaseRows(next);
-                  }}
-                  className="flex-1 px-2.5 py-1.5 rounded-lg border border-zinc-200 text-xs text-zinc-800 bg-white"
-                />
-                <input
-                  type="text"
-                  placeholder="Qty"
-                  value={row.qty || ""}
-                  onChange={(e) => {
-                    const next = [...purchaseRows];
-                    next[idx].qty = e.target.value;
-                    setPurchaseRows(next);
-                  }}
-                  className="w-16 px-2 py-1.5 rounded-lg border border-zinc-200 text-xs text-zinc-800 bg-white"
-                />
-                <input
-                  type="number"
-                  placeholder="₹ Amount"
-                  value={row.amount || ""}
-                  onChange={(e) => {
-                    const next = [...purchaseRows];
-                    next[idx].amount = e.target.value;
-                    setPurchaseRows(next);
-                  }}
-                  className="w-24 px-2.5 py-1.5 rounded-lg border border-zinc-200 text-xs text-zinc-800 font-semibold bg-white"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPurchaseRows(purchaseRows.filter((_, i) => i !== idx));
-                  }}
-                  className="p-1.5 text-zinc-400 hover:text-rose-600 rounded-lg transition"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
-
-            <div className="flex items-center justify-between pt-2 border-t border-zinc-100">
-              <button
-                type="button"
-                onClick={() =>
-                  setPurchaseRows([
-                    ...purchaseRows,
-                    { item: "", qty: "", vendor: "", amount: "", paymentMode: "Cash" },
-                  ])
-                }
-                className="text-xs font-semibold text-zinc-700 hover:text-zinc-900 flex items-center gap-1 cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Purchase Row</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSavePurchases}
-                className="px-3 py-1.5 bg-zinc-900 text-white rounded-lg text-xs font-semibold hover:bg-zinc-800 transition cursor-pointer"
-              >
-                Save Purchases
-              </button>
+            <div>
+              <h2 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">
+                Operations, Cash & Manager Sign-Off
+              </h2>
+              <p className="text-xs text-slate-500">
+                Daily financial registers, morning purchases, and manager digital verification.
+              </p>
             </div>
           </div>
+          <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl border border-slate-200">
+            Shift Close & Handover
+          </span>
         </div>
 
-        {/* Daily Cash Expenses Table */}
-        <div className="bg-white border border-zinc-200/90 rounded-2xl shadow-xs overflow-hidden">
-          <div className="px-5 py-3.5 bg-zinc-50/70 border-b border-zinc-200/80 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Banknote className="w-4 h-4 text-zinc-600" />
-              <h3 className="text-sm font-bold text-zinc-900">Shift Expenses</h3>
-            </div>
-            <span className="text-xs font-bold text-zinc-900">{formatCurrency(totalExpense)}</span>
-          </div>
-
-          <div className="p-4 space-y-3">
-            {expenseRows.map((row, idx) => (
-              <div key={idx} className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="Expense description"
-                  value={row.expense || ""}
-                  onChange={(e) => {
-                    const next = [...expenseRows];
-                    next[idx].expense = e.target.value;
-                    setExpenseRows(next);
-                  }}
-                  className="flex-1 px-2.5 py-1.5 rounded-lg border border-zinc-200 text-xs text-zinc-800 bg-white"
-                />
-                <input
-                  type="number"
-                  placeholder="₹ Amount"
-                  value={row.amount || ""}
-                  onChange={(e) => {
-                    const next = [...expenseRows];
-                    next[idx].amount = e.target.value;
-                    setExpenseRows(next);
-                  }}
-                  className="w-24 px-2.5 py-1.5 rounded-lg border border-zinc-200 text-xs text-zinc-800 font-semibold bg-white"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setExpenseRows(expenseRows.filter((_, i) => i !== idx));
-                  }}
-                  className="p-1.5 text-zinc-400 hover:text-rose-600 rounded-lg transition"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
-
-            <div className="flex items-center justify-between pt-2 border-t border-zinc-100">
-              <button
-                type="button"
-                onClick={() =>
-                  setExpenseRows([...expenseRows, { expense: "", amount: "", remarks: "" }])
-                }
-                className="text-xs font-semibold text-zinc-700 hover:text-zinc-900 flex items-center gap-1 cursor-pointer"
+        {/* Dynamic Render for Non-Checklist Sections */}
+        {nonChecklistSectionsList.map((section: any, sIdx: number) => {
+          // B. Purchase & Expense Tables
+          if (
+            section.sectionType === "table_purchase_expense" ||
+            section.sectionCode === "F"
+          ) {
+            return (
+              <div
+                key={section.id || sIdx}
+                className="bg-white rounded-3xl border-2 border-slate-200 p-4 sm:p-6 shadow-sm space-y-4"
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Expense Row</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSaveExpenses}
-                className="px-3 py-1.5 bg-zinc-900 text-white rounded-lg text-xs font-semibold hover:bg-zinc-800 transition cursor-pointer"
-              >
-                Save Expenses
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 6. CASH FLOAT & SHIFT VERIFICATION DRAWER */}
-      <div className="bg-white border border-zinc-200/90 rounded-2xl shadow-xs overflow-hidden">
-        <div className="px-5 py-3.5 bg-zinc-50/70 border-b border-zinc-200/80 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-zinc-700" />
-            <h3 className="text-sm font-bold text-zinc-900">Cash Float & Shift Sign-Off</h3>
-          </div>
-          {dailyRecord.verifiedByName && (
-            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-              Signed by {dailyRecord.verifiedByName}
-            </span>
-          )}
-        </div>
-
-        <div className="p-5 sm:p-6 space-y-5">
-          {/* Float Inputs */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[11px] font-bold text-zinc-600 uppercase tracking-wider mb-1">
-                Opening Cash Drawer (₹)
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  placeholder="e.g. 2000"
-                  value={openingCashDrawer}
-                  onChange={(e) => setOpeningCashDrawer(e.target.value)}
-                  onBlur={handleSaveCashValues}
-                  className="w-full px-3 py-2 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-800 bg-zinc-50/40 focus:bg-white focus:outline-none focus:border-zinc-400"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-zinc-600 uppercase tracking-wider mb-1">
-                Small Change Available (₹)
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  placeholder="e.g. 500"
-                  value={smallChange}
-                  onChange={(e) => setSmallChange(e.target.value)}
-                  onBlur={handleSaveCashValues}
-                  className="w-full px-3 py-2 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-800 bg-zinc-50/40 focus:bg-white focus:outline-none focus:border-zinc-400"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Verification Names & Signature */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-zinc-100">
-            <div>
-              <label className="block text-[11px] font-bold text-zinc-600 uppercase tracking-wider mb-1">
-                Duty Manager Name
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Rahul Sharma"
-                value={openingManagerName}
-                onChange={(e) => setOpeningManagerName(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-800 bg-zinc-50/40 focus:bg-white focus:outline-none focus:border-zinc-400"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-zinc-600 uppercase tracking-wider mb-1">
-                Cashier / Line Lead Name
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Priya K."
-                value={cashierName}
-                onChange={(e) => setCashierName(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-800 bg-zinc-50/40 focus:bg-white focus:outline-none focus:border-zinc-400"
-              />
-            </div>
-          </div>
-
-          {/* Pending Issues */}
-          <div>
-            <label className="block text-[11px] font-bold text-zinc-600 uppercase tracking-wider mb-1">
-              Shift Handover Notes & Pending Items
-            </label>
-            <textarea
-              rows={2}
-              placeholder="Any maintenance issues, stock shortages, or notes for next shift..."
-              value={pendingIssues}
-              onChange={(e) => setPendingIssues(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-zinc-200 text-xs text-zinc-800 bg-zinc-50/40 focus:bg-white focus:outline-none focus:border-zinc-400"
-            />
-          </div>
-
-          {/* Digital Signature */}
-          <div className="pt-4 border-t border-zinc-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <span className="text-xs font-bold text-zinc-900 block">Digital Manager Signature</span>
-              <span className="text-[11px] text-zinc-400">
-                {managerSignature ? "Signature captured & verified" : "Sign on screen to finalize today's audit"}
-              </span>
-
-              {managerSignature && (
-                <div className="mt-2 p-2 bg-zinc-50 border border-zinc-200 rounded-xl inline-block">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={managerSignature} alt="Manager signature" className="h-10 object-contain" />
+                <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                  <div className="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-700 font-extrabold text-xs flex items-center justify-center border border-indigo-100">
+                    <Receipt className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                      {section.title}
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Quick entry for morning market purchases and daily cash expenses.
+                    </p>
+                  </div>
                 </div>
-              )}
-            </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setIsSignPadOpen(true)}
-                className="px-3.5 py-2 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-800 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-              >
-                <PenTool className="w-3.5 h-3.5 text-zinc-500" />
-                <span>{managerSignature ? "Redraw Signature" : "Sign with Finger/Mouse"}</span>
-              </button>
+                <div className="grid lg:grid-cols-2 gap-4">
+                  {/* Purchase Table */}
+                  <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-900">
+                        Purchase Quick Record
+                      </span>
+                      <span className="text-xs font-extrabold text-indigo-700">
+                        Total: {formatCurrency(totalPurchase)}
+                      </span>
+                    </div>
 
-              <button
-                type="button"
-                onClick={() => handleManagerVerification(true)}
-                className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                      {purchaseRows.map((row, idx) => (
+                        <div
+                          key={idx}
+                          className="grid grid-cols-12 gap-1.5 text-xs items-center"
+                        >
+                          <input
+                            type="text"
+                            placeholder="Item name"
+                            value={row.item || ""}
+                            onChange={(e) => {
+                              const copy = [...purchaseRows];
+                              copy[idx].item = e.target.value;
+                              setPurchaseRows(copy);
+                            }}
+                            className="col-span-5 p-1.5 rounded-lg border border-slate-200 text-xs bg-white"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Vendor"
+                            value={row.vendor || ""}
+                            onChange={(e) => {
+                              const copy = [...purchaseRows];
+                              copy[idx].vendor = e.target.value;
+                              setPurchaseRows(copy);
+                            }}
+                            className="col-span-3 p-1.5 rounded-lg border border-slate-200 text-xs bg-white"
+                          />
+                          <input
+                            type="number"
+                            placeholder="₹"
+                            value={row.amount || ""}
+                            onChange={(e) => {
+                              const copy = [...purchaseRows];
+                              copy[idx].amount = e.target.value;
+                              setPurchaseRows(copy);
+                            }}
+                            className="col-span-3 p-1.5 rounded-lg border border-slate-200 text-xs bg-white font-bold"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setPurchaseRows(purchaseRows.filter((_, i) => i !== idx))
+                            }
+                            className="col-span-1 text-slate-400 hover:text-rose-600 text-center font-bold"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setPurchaseRows([
+                            ...purchaseRows,
+                            {
+                              item: "",
+                              qty: "",
+                              vendor: "",
+                              amount: "",
+                              paymentMode: "Cash",
+                            },
+                          ])
+                        }
+                        className="text-[11px] font-bold text-indigo-700 hover:text-indigo-800"
+                      >
+                        + Add Purchase Row
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSavePurchases}
+                        className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                      >
+                        Save Purchases
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Expense Table */}
+                  <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-900">
+                        Expenses Quick Record
+                      </span>
+                      <span className="text-xs font-extrabold text-indigo-700">
+                        Total: {formatCurrency(totalExpense)}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                      {expenseRows.map((row, idx) => (
+                        <div
+                          key={idx}
+                          className="grid grid-cols-12 gap-1.5 text-xs items-center"
+                        >
+                          <input
+                            type="text"
+                            placeholder="Category"
+                            value={row.expense || ""}
+                            onChange={(e) => {
+                              const copy = [...expenseRows];
+                              copy[idx].expense = e.target.value;
+                              setExpenseRows(copy);
+                            }}
+                            className="col-span-4 p-1.5 rounded-lg border border-slate-200 text-xs bg-white"
+                          />
+                          <input
+                            type="number"
+                            placeholder="₹"
+                            value={row.amount || ""}
+                            onChange={(e) => {
+                              const copy = [...expenseRows];
+                              copy[idx].amount = e.target.value;
+                              setExpenseRows(copy);
+                            }}
+                            className="col-span-3 p-1.5 rounded-lg border border-slate-200 text-xs bg-white font-bold"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Remarks"
+                            value={row.remarks || ""}
+                            onChange={(e) => {
+                              const copy = [...expenseRows];
+                              copy[idx].remarks = e.target.value;
+                              setExpenseRows(copy);
+                            }}
+                            className="col-span-4 p-1.5 rounded-lg border border-slate-200 text-xs bg-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpenseRows(expenseRows.filter((_, i) => i !== idx))
+                            }
+                            className="col-span-1 text-slate-400 hover:text-rose-600 text-center font-bold"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpenseRows([
+                            ...expenseRows,
+                            { expense: "", amount: "", remarks: "" },
+                          ])
+                        }
+                        className="text-[11px] font-bold text-indigo-700 hover:text-indigo-800"
+                      >
+                        + Add Expense Row
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveExpenses}
+                        className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                      >
+                        Save Expenses
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          // C. Cash & Billing Section
+          if (
+            section.sectionType === "cash_summary" ||
+            section.sectionCode === "G"
+          ) {
+            return (
+              <div
+                key={section.id || sIdx}
+                className="bg-white rounded-3xl border-2 border-slate-200 p-4 sm:p-6 shadow-sm space-y-4"
               >
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Verify & Sign Shift</span>
-              </button>
-            </div>
-          </div>
-        </div>
+                <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                  <div className="w-7 h-7 rounded-xl bg-amber-50 text-amber-700 font-extrabold text-xs flex items-center justify-center border border-amber-100">
+                    <Banknote className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                      {section.title}
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Opening register cash float and cashier handover.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4 max-w-lg">
+                  <div className="p-3 bg-slate-50/80 rounded-2xl border border-slate-200/80">
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
+                      Opening Cash Drawer Float (₹)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 2000"
+                      value={openingCashDrawer}
+                      onChange={(e) => setOpeningCashDrawer(e.target.value)}
+                      onBlur={handleSaveCashValues}
+                      className="w-full p-2 rounded-xl border border-slate-200 text-sm font-bold text-slate-900 bg-white focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div className="p-3 bg-slate-50/80 rounded-2xl border border-slate-200/80">
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
+                      Small Change Available (₹)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 500"
+                      value={smallChange}
+                      onChange={(e) => setSmallChange(e.target.value)}
+                      onBlur={handleSaveCashValues}
+                      className="w-full p-2 rounded-xl border border-slate-200 text-sm font-bold text-slate-900 bg-white focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          // D. Manager Verification & Sign-off Section
+          if (
+            section.sectionType === "manager_signoff" ||
+            section.sectionCode === "I"
+          ) {
+            return (
+              <div
+                key={section.id || sIdx}
+                className="bg-white rounded-3xl border-2 border-slate-200 p-4 sm:p-6 shadow-sm space-y-4"
+              >
+                <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                  <div className="w-7 h-7 rounded-xl bg-emerald-50 text-emerald-700 font-extrabold text-xs flex items-center justify-center border border-emerald-100">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                      {section.title}
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Manager digital sign-off and pending operational handover notes.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Opening Manager Name
+                    </label>
+                    <input
+                      type="text"
+                      value={openingManagerName}
+                      onChange={(e) => setOpeningManagerName(e.target.value)}
+                      placeholder="e.g. Rahul Sharma"
+                      className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Cashier Name
+                    </label>
+                    <input
+                      type="text"
+                      value={cashierName}
+                      onChange={(e) => setCashierName(e.target.value)}
+                      placeholder="e.g. Amit Kumar"
+                      className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Pending Issues / Notes
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={pendingIssues}
+                      onChange={(e) => setPendingIssues(e.target.value)}
+                      placeholder="Equipment issues, stock shortages, or notes for evening shift..."
+                      className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="text-xs">
+                    {dailyRecord.managerSignature ? (
+                      <span className="text-emerald-800 font-bold flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        <span>
+                          Signed by {dailyRecord.managerSignature} at{" "}
+                          {new Date(
+                            dailyRecord.verifiedAt || dailyRecord.updatedAt
+                          ).toLocaleTimeString("en-IN", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 font-medium">
+                        Pending manager digital signature
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleManagerVerification(false)}
+                      className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition"
+                    >
+                      Save Notes
+                    </button>
+                    {!dailyRecord.managerSignature && (
+                      <button
+                        type="button"
+                        onClick={() => handleManagerVerification(true)}
+                        className="px-5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-md shadow-emerald-700/20 flex items-center gap-1.5 transition active:scale-95"
+                      >
+                        <PenTool className="w-3.5 h-3.5" />
+                        <span>Sign & Verify</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          return null;
+        })}
       </div>
 
-      {/* SIGNATURE MODAL */}
-      {isSignPadOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-zinc-900">Sign Checklist Handover</h3>
-                <p className="text-[11px] text-zinc-500">Use your finger or mouse to draw signature below</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsSignPadOpen(false)}
-                className="p-1.5 text-zinc-400 hover:text-zinc-700 rounded-lg"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="border border-zinc-200 rounded-2xl bg-zinc-50 overflow-hidden relative">
-              <canvas
-                ref={canvasRef}
-                width={360}
-                height={160}
-                onMouseDown={startDrawing}
-                onMouseMove={draw}
-                onMouseUp={stopDrawing}
-                onMouseLeave={stopDrawing}
-                onTouchStart={startDrawing}
-                onTouchMove={draw}
-                onTouchEnd={stopDrawing}
-                className="w-full h-40 bg-white cursor-crosshair touch-none"
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <button
-                type="button"
-                onClick={clearCanvas}
-                className="text-xs font-semibold text-zinc-500 hover:text-zinc-800 flex items-center gap-1 cursor-pointer"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Clear</span>
-              </button>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsSignPadOpen(false)}
-                  className="px-3.5 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-xl text-xs font-semibold cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={saveCanvasSignature}
-                  className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-semibold cursor-pointer"
-                >
-                  Save Signature
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* CAMERA PROOF MODAL */}
-      {cameraModalItem && (
+      {/* 5. CAMERA MODAL FOR PHOTO PROOFS */}
+      {cameraModalItem && checklistData?.dailyRecord?.id && (
         <ChecklistCameraModal
-          isOpen={true}
+          isOpen={!!cameraModalItem}
           onClose={() => setCameraModalItem(null)}
-          dailyRecordId={dailyRecord.id}
+          dailyRecordId={checklistData.dailyRecord.id}
           itemKey={cameraModalItem.itemKey}
-          itemId={cameraModalItem.item.id}
-          sectionId={cameraModalItem.section.id}
           itemLabel={cameraModalItem.itemLabel}
           sectionTitle={cameraModalItem.sectionTitle}
+          itemId={cameraModalItem.item.id}
+          sectionId={cameraModalItem.section.id}
           initialImages={cameraModalItem.images}
-          onImagesUpdated={(imgs) => handleImagesUpdated(cameraModalItem.itemKey, imgs)}
+          onImagesUpdated={(newImgs) =>
+            handleImagesUpdated(cameraModalItem.itemKey, newImgs)
+          }
         />
       )}
 
-      {/* AUDIT TRAIL SLIDE-OVER */}
+      {/* 6. AUDIT LOG DRAWER */}
       {isAuditDrawerOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex justify-end">
-          <div className="bg-white w-full max-w-md h-full shadow-2xl p-6 overflow-y-auto space-y-6 animate-in slide-in-from-right">
-            <div className="flex items-center justify-between pb-4 border-b border-zinc-100">
-              <div>
-                <h3 className="text-base font-bold text-zinc-900">Checklist Audit Trail</h3>
-                <p className="text-xs text-zinc-500">Live timestamped logs for {dateFormatted}</p>
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex justify-end">
+          <div className="bg-white w-full max-w-md h-full p-6 space-y-4 overflow-y-auto shadow-2xl animate-in slide-in-from-right">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <History className="w-5 h-5 text-emerald-700" />
+                <h3 className="font-extrabold text-sm text-slate-900">
+                  Audit Trail ({selectedDate})
+                </h3>
               </div>
               <button
-                type="button"
                 onClick={() => setIsAuditDrawerOpen(false)}
-                className="p-1.5 text-zinc-400 hover:text-zinc-700 rounded-lg cursor-pointer"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {auditLogs.length === 0 ? (
-              <div className="py-12 text-center text-zinc-400 text-xs">
-                No modifications recorded for this date yet.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {auditLogs.map((log: any, idx: number) => (
-                  <div key={idx} className="p-3 rounded-xl bg-zinc-50 border border-zinc-100 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-zinc-900">{log.userName || "Staff"}</span>
-                      <span className="text-[10px] text-zinc-400">
+            <div className="space-y-3">
+              {auditLogs.length === 0 ? (
+                <div className="py-12 text-center text-xs text-slate-400">
+                  No audit trail recorded for this date yet.
+                </div>
+              ) : (
+                auditLogs.map((log: any) => (
+                  <div
+                    key={log.id}
+                    className="p-3 rounded-2xl bg-slate-50 border border-slate-100 text-xs space-y-1"
+                  >
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-bold text-slate-900">
+                        {log.userName || "User"}
+                      </span>
+                      <span className="text-slate-400">
                         {new Date(log.createdAt).toLocaleTimeString("en-IN", {
                           hour: "2-digit",
                           minute: "2-digit",
+                          second: "2-digit",
                         })}
                       </span>
                     </div>
-                    <span className="text-xs text-zinc-600 block">{log.action || log.description}</span>
-                    {log.itemKey && (
-                      <span className="text-[10px] text-zinc-400 font-mono block">Item: {log.itemKey}</span>
-                    )}
+                    <div className="text-[11px] text-slate-600 font-medium">
+                      <span className="font-bold text-emerald-800 capitalize">
+                        {log.action.replace("_", " ")}:{" "}
+                      </span>
+                      <span>{log.itemLabel || log.sectionTitle}</span>
+                      {log.newValue && (
+                        <div className="text-[10px] text-slate-500 mt-0.5 font-mono">
+                          {log.newValue}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}
