@@ -204,13 +204,7 @@ export default function RestaurantOperationsHub() {
                 </div>
               </div>
 
-              {/* Micro Feature Tags */}
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold">📷 Camera Proof</span>
-                <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold">✍️ Digital Signature</span>
-                <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold">💵 Cash Float</span>
               </div>
-            </div>
 
             {/* High-impact Action Button */}
             <div className="mt-5 pt-3 border-t border-slate-100">
@@ -262,13 +256,6 @@ export default function RestaurantOperationsHub() {
                   {wastageMetrics?.recordCount || 0} items
                 </span>
               </div>
-
-              {/* Micro Feature Tags */}
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold">⚡ 10s Fast Log</span>
-                <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold">📷 Live Photo Proof</span>
-                <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold">📊 Station Loss</span>
-              </div>
             </div>
 
             {/* High-impact Action Button */}
@@ -317,13 +304,6 @@ export default function RestaurantOperationsHub() {
                     <span>Role-based Staff logins</span>
                     <span className="text-emerald-700 font-extrabold">Active</span>
                   </div>
-                </div>
-
-                {/* Micro Feature Tags */}
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold">👥 Staff Accounts</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold">⚙️ Customize SOPs</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold">🕒 Shift Times</span>
                 </div>
               </div>
 

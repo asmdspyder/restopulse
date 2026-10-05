@@ -317,7 +317,7 @@ export function ChecklistCameraModal({
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Failed to save photo to cloud");
+        throw new Error(data.error || "Failed to save photo. Please try again.");
       }
 
       setImages(data.allImages || []);
@@ -530,7 +530,7 @@ export function ChecklistCameraModal({
                   {isUploading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Saving to Cloud...
+                      Saving Photo...
                     </>
                   ) : (
                     <>
