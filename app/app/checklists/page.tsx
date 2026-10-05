@@ -110,16 +110,41 @@ export default function DailyChecklistPage() {
     };
   }, [isCalendarOpen]);
 
+  // Lock body scrolling and listen to Escape when camera modal or audit drawer is open
+  useEffect(() => {
+    if (cameraModalItem || isAuditDrawerOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          setCameraModalItem(null);
+          setIsAuditDrawerOpen(false);
+        }
+      };
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+    }
+  }, [cameraModalItem, isAuditDrawerOpen]);
+
   const fetchDailyChecklist = async (dateStr: string) => {
     setLoading(true);
     try {
-      const [authRes, checkRes] = await Promise.all([
-        fetch("/api/auth/me"),
+      const promises: Promise<Response>[] = [
         fetch(`/api/checklists/daily?date=${dateStr}`),
-      ]);
+      ];
+      if (!authContext) {
+        promises.push(fetch("/api/auth/me"));
+      }
 
-      const authData = await authRes.json();
-      setAuthContext(authData);
+      const results = await Promise.all(promises);
+      const checkRes = results[0];
+      if (results.length > 1) {
+        const authData = await results[1].json();
+        setAuthContext(authData);
+      }
 
       if (checkRes.ok) {
         const data = await checkRes.json();

@@ -498,7 +498,7 @@ export async function getOrCreateDailyChecklist(
 
   // Return full structure snapshot (or live structure if snapshot not yet populated or template updated)
   let structure = dailyRecord.structureSnapshot;
-  if (!structure || dailyRecord.status !== "completed" || Number(dailyRecord.versionNumber || 1) < Number(template.currentVersion || 1)) {
+  if (!structure || Number(dailyRecord.versionNumber || 1) < Number(template.currentVersion || 1)) {
     const liveStructure = await getChecklistTemplateWithStructure(template.id, restaurantId);
     if (liveStructure) {
       structure = liveStructure;

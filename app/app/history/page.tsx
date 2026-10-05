@@ -84,6 +84,22 @@ export default function WastageHistoryPage() {
     }
   };
 
+  // Lock body scrolling and listen to Escape key when photo lightbox is open
+  useEffect(() => {
+    if (viewingPhoto) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") setViewingPhoto(null);
+      };
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+    }
+  }, [viewingPhoto]);
+
   const fetchHistory = async () => {
     setLoading(true);
     try {
@@ -672,44 +688,66 @@ export default function WastageHistoryPage() {
       {/* Full Photo Lightbox Modal */}
       {viewingPhoto && (
         <div
-          className="fixed inset-0 z-60 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-60 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200 select-none overscroll-none"
           onClick={() => setViewingPhoto(null)}
         >
           <div
-            className="relative max-w-2xl w-full bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-white/10"
+            className="relative max-w-3xl w-full bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col max-h-[92vh]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-4 flex items-center justify-between border-b border-white/10 text-white">
-              <div className="flex items-center gap-2">
-                <Camera className="w-4 h-4 text-emerald-400" />
-                <span className="font-bold text-sm">Wastage Live Photo Proof</span>
+            {/* Modal Header */}
+            <div className="px-5 py-4 bg-slate-950 border-b border-white/10 flex items-center justify-between text-white shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-600/30 text-emerald-400 flex items-center justify-center border border-emerald-500/30 font-bold">
+                  <Camera className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-sm text-white">Food Wastage Photo Proof</h4>
+                  <p className="text-[11px] text-slate-400">Captured on site</p>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setViewingPhoto(null)}
-                className="p-1.5 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition border border-white/10 cursor-pointer active:scale-95"
+                title="Close Photo Viewer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
+                <span>Close (Esc)</span>
               </button>
             </div>
-            <div className="p-2 bg-black/40 flex items-center justify-center min-h-[300px] max-h-[75vh]">
+
+            {/* Photo Body */}
+            <div className="p-3 sm:p-4 bg-black/70 flex items-center justify-center overflow-auto flex-1 min-h-[260px]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={viewingPhoto}
                 alt="Wastage Proof Full"
-                className="max-h-[70vh] w-auto max-w-full rounded-xl object-contain mx-auto"
+                className="max-w-full max-h-[68vh] object-contain rounded-2xl shadow-xl mx-auto"
               />
             </div>
-            <div className="p-3 bg-slate-900/90 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
-              <span>Captured live on site</span>
-              <a
-                href={viewingPhoto}
-                target="_blank"
-                rel="noreferrer"
-                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition flex items-center gap-1.5 text-xs"
-              >
-                <Eye className="w-3.5 h-3.5" />
-                Open original
-              </a>
+
+            {/* Modal Footer */}
+            <div className="px-5 py-3.5 bg-slate-950 border-t border-white/10 flex items-center justify-between text-xs text-slate-400 shrink-0">
+              <span className="text-[11px]">Visual audit verification</span>
+              <div className="flex items-center gap-2">
+                <a
+                  href={viewingPhoto}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition border border-white/10 flex items-center gap-1.5"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Open Full Size</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setViewingPhoto(null)}
+                  className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs transition shadow-sm cursor-pointer"
+                >
+                  Done
+                </button>
+              </div>
             </div>
           </div>
         </div>

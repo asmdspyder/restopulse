@@ -186,6 +186,17 @@ export function ChecklistCameraModal({
     [images, stopCameraStream]
   );
 
+  // Lock body scrolling when modal is active
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen]);
+
   // Initial camera start on mount if in camera mode
   useEffect(() => {
     if (isOpen && !readOnly && viewMode === "camera") {
@@ -692,7 +703,7 @@ export function ChecklistCameraModal({
               <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-start gap-2.5">
                 <Clock className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                 <div className="text-xs text-slate-500 leading-relaxed">
-                  <strong className="text-slate-700">30-Day Retention:</strong> Photos captured here are securely stored on Cloudflare R2 and accessible for 30 days for operational audit compliance.
+                  <strong className="text-slate-700">30-Day Retention:</strong> Photos captured here are securely saved and accessible for 30 days for operational audit compliance.
                 </div>
               </div>
             </div>

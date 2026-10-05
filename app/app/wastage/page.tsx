@@ -65,6 +65,22 @@ export default function RecordWastagePage() {
     loadData();
   }, []);
 
+  // Lock body scrolling and listen to Escape key when photo lightbox is open
+  useEffect(() => {
+    if (viewingPhotoUrl) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") setViewingPhotoUrl(null);
+      };
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+    }
+  }, [viewingPhotoUrl]);
+
   const loadData = async () => {
     try {
       const [itemsRes, reasonsRes, historyRes] = await Promise.all([
@@ -789,24 +805,68 @@ export default function RecordWastagePage() {
       {/* Photo Lightbox Preview */}
       {viewingPhotoUrl && (
         <div
-          className="fixed inset-0 z-60 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in"
+          className="fixed inset-0 z-60 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200 select-none overscroll-none"
           onClick={() => setViewingPhotoUrl(null)}
         >
-          <div className="absolute top-4 right-4 z-10">
-            <button
-              onClick={() => setViewingPhotoUrl(null)}
-              className="p-2 text-white/80 hover:text-white bg-black/40 hover:bg-black/60 rounded-full transition cursor-pointer"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={viewingPhotoUrl}
-            alt="Wastage photo proof"
-            className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+          <div
+            className="relative max-w-3xl w-full bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-white/10 flex flex-col max-h-[92vh]"
             onClick={(e) => e.stopPropagation()}
-          />
+          >
+            {/* Modal Header */}
+            <div className="px-5 py-4 bg-slate-950 border-b border-white/10 flex items-center justify-between text-white shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-600/30 text-emerald-400 flex items-center justify-center border border-emerald-500/30 font-bold">
+                  <Camera className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-sm text-white">Food Wastage Photo Proof</h4>
+                  <p className="text-[11px] text-slate-400">Captured on site</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewingPhotoUrl(null)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition border border-white/10 cursor-pointer active:scale-95"
+                title="Close Photo Viewer"
+              >
+                <X className="w-4 h-4" />
+                <span>Close (Esc)</span>
+              </button>
+            </div>
+
+            {/* Photo Body */}
+            <div className="p-3 sm:p-4 bg-black/70 flex items-center justify-center overflow-auto flex-1 min-h-[260px]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={viewingPhotoUrl}
+                alt="Wastage photo proof"
+                className="max-w-full max-h-[68vh] object-contain rounded-2xl shadow-xl mx-auto"
+              />
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-5 py-3.5 bg-slate-950 border-t border-white/10 flex items-center justify-between text-xs text-slate-400 shrink-0">
+              <span className="text-[11px]">Visual audit verification</span>
+              <div className="flex items-center gap-2">
+                <a
+                  href={viewingPhotoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition border border-white/10 flex items-center gap-1.5"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Open Full Size</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setViewingPhotoUrl(null)}
+                  className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs transition shadow-sm cursor-pointer"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

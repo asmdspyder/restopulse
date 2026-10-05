@@ -126,6 +126,17 @@ export function WastageCameraModal({
     setIsStartingCamera(false);
   }, [stopCameraStream]);
 
+  // Lock body scrolling when modal is active
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen]);
+
   // Initialize camera when modal opens
   useEffect(() => {
     if (isOpen) {
