@@ -8,7 +8,6 @@ import {
   RotateCcw,
   Loader2,
   AlertCircle,
-  SwitchCamera,
   UtensilsCrossed,
 } from "lucide-react";
 import { compressChecklistImage } from "@/lib/utils/image-compression";
@@ -31,9 +30,6 @@ export function WastageCameraModal({
 
   // Camera stream state
   const [isStartingCamera, setIsStartingCamera] = useState(false);
-  const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
-  const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
-  const [selectedDeviceIndex, setSelectedDeviceIndex] = useState<number>(0);
 
   // Snapshot preview state
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -64,108 +60,71 @@ export function WastageCameraModal({
     setIsStartingCamera(false);
   }, []);
 
-  // Enumerate all video cameras on mount
-  useEffect(() => {
-    if (navigator.mediaDevices?.enumerateDevices) {
-      navigator.mediaDevices
-        .enumerateDevices()
-        .then((devices) => {
-          const vList = devices.filter((d) => d.kind === "videoinput");
-          setVideoDevices(vList);
-        })
-        .catch(() => {});
+  // Start Camera with back/environment camera
+  const startCamera = useCallback(async () => {
+    setError(null);
+    setViewMode("camera");
+    setIsStartingCamera(true);
+
+    // 1. Release previous stream and wait a brief tick for OS hardware unlock
+    stopCameraStream();
+    await new Promise((r) => setTimeout(r, 60));
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setIsStartingCamera(false);
+      setError("Live camera is not supported or permission is blocked in this browser.");
+      return;
     }
-  }, []);
 
-  // Start Camera with 3-tier fallback for 100% reliability
-  const startCamera = useCallback(
-    async (
-      chosenFacing: "environment" | "user" = facingMode,
-      targetDeviceId?: string
-    ) => {
-      setError(null);
-      setViewMode("camera");
-      setIsStartingCamera(true);
+    let stream: MediaStream | null = null;
 
-      // 1. Release previous stream and wait a brief tick for OS hardware unlock
-      stopCameraStream();
-      await new Promise((r) => setTimeout(r, 60));
+    // Tier 1: Try back/environment camera
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
+        audio: false,
+      });
+    } catch (e) {
+      console.warn("Back camera facingMode failed, attempting standard video constraint:", e);
+    }
 
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    // Tier 2: Fallback to basic generic video constraint
+    if (!stream) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        });
+      } catch (err: any) {
+        console.error("Camera access error:", err);
         setIsStartingCamera(false);
-        setError("Live camera is not supported or permission is blocked in this browser.");
+        setError(
+          err.name === "NotAllowedError" || err.name === "PermissionDeniedError"
+            ? "Camera permission was denied. Please allow camera access in your browser settings."
+            : err.message || "Failed to access device camera."
+        );
         return;
       }
+    }
 
-      let stream: MediaStream | null = null;
-
-      // Tier 1: Try exact deviceId if specified
-      if (targetDeviceId) {
+    if (stream) {
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
         try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              deviceId: { exact: targetDeviceId },
-              width: { ideal: 1920 },
-              height: { ideal: 1080 },
-            },
-            audio: false,
-          });
-        } catch (e) {
-          console.warn("Exact deviceId camera failed, attempting facingMode:", e);
+          await videoRef.current.play();
+        } catch (playErr) {
+          console.warn("Video play exception:", playErr);
         }
       }
+    }
 
-      // Tier 2: Try facingMode ideal
-      if (!stream) {
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: { ideal: chosenFacing },
-              width: { ideal: 1920 },
-              height: { ideal: 1080 },
-            },
-            audio: false,
-          });
-        } catch (e) {
-          console.warn("FacingMode camera failed, attempting basic video:", e);
-        }
-      }
-
-      // Tier 3: Basic generic video constraint
-      if (!stream) {
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: false,
-          });
-        } catch (err: any) {
-          console.error("Camera access error:", err);
-          setIsStartingCamera(false);
-          setError(
-            err.name === "NotAllowedError" || err.name === "PermissionDeniedError"
-              ? "Camera permission was denied. Please allow camera access in your browser settings."
-              : err.message || "Failed to access device camera."
-          );
-          return;
-        }
-      }
-
-      if (stream) {
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          try {
-            await videoRef.current.play();
-          } catch (playErr) {
-            console.warn("Video play exception:", playErr);
-          }
-        }
-      }
-
-      setIsStartingCamera(false);
-    },
-    [facingMode, stopCameraStream]
-  );
+    setIsStartingCamera(false);
+  }, [stopCameraStream]);
 
   // Initialize camera when modal opens
   useEffect(() => {
@@ -174,7 +133,7 @@ export function WastageCameraModal({
       setPreviewUrl(null);
       setPreviewBlob(null);
       setPreviewMeta(null);
-      startCamera("environment");
+      startCamera();
     }
     return () => {
       stopCameraStream();
@@ -182,21 +141,6 @@ export function WastageCameraModal({
   }, [isOpen, startCamera, stopCameraStream]);
 
   if (!isOpen) return null;
-
-  // Foolproof Front / Back Camera Switch
-  const handleToggleFacingMode = async () => {
-    const nextFacing = facingMode === "environment" ? "user" : "environment";
-    setFacingMode(nextFacing);
-
-    if (videoDevices.length > 1) {
-      const nextIdx = (selectedDeviceIndex + 1) % videoDevices.length;
-      setSelectedDeviceIndex(nextIdx);
-      const nextDevId = videoDevices[nextIdx]?.deviceId;
-      await startCamera(nextFacing, nextDevId);
-    } else {
-      await startCamera(nextFacing);
-    }
-  };
 
   // Instant Snapshot Capture
   const handleCaptureFrame = async () => {
@@ -278,7 +222,7 @@ export function WastageCameraModal({
     setPreviewUrl(null);
     setPreviewMeta(null);
     setError(null);
-    startCamera(facingMode);
+    startCamera();
   };
 
   // Confirm photo capture & pass back to parent form
@@ -372,14 +316,6 @@ export function WastageCameraModal({
                   </div>
 
                   <div className="flex items-center gap-2 pointer-events-auto">
-                    <button
-                      type="button"
-                      onClick={handleToggleFacingMode}
-                      className="p-2.5 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white rounded-full border border-white/10 transition shadow-sm cursor-pointer"
-                      title="Flip Camera (Front/Back)"
-                    >
-                      <SwitchCamera className="w-4 h-4" />
-                    </button>
                     <button
                       type="button"
                       onClick={() => {

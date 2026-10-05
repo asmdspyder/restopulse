@@ -13,7 +13,6 @@ import {
   ZoomIn,
   AlertCircle,
   Plus,
-  SwitchCamera,
 } from "lucide-react";
 import { compressChecklistImage } from "@/lib/utils/image-compression";
 
@@ -64,12 +63,8 @@ export function ChecklistCameraModal({
     initialImages.length === 0 ? "camera" : "gallery"
   );
 
-  // Live Camera Stream State
+  // Live Camera Stream State (Always Back/Environment Camera)
   const [isStartingCamera, setIsStartingCamera] = useState(false);
-  const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
-  const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
-  const [selectedDeviceIndex, setSelectedDeviceIndex] = useState<number>(0);
-  const [hasMultipleCameras, setHasMultipleCameras] = useState(true);
 
   // Preview & Upload State
   const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
@@ -106,27 +101,9 @@ export function ChecklistCameraModal({
     setIsStartingCamera(false);
   }, []);
 
-  // Check if device has multiple cameras (front/rear)
-  useEffect(() => {
-    if (navigator.mediaDevices?.enumerateDevices) {
-      navigator.mediaDevices
-        .enumerateDevices()
-        .then((devices) => {
-          const vList = devices.filter((d) => d.kind === "videoinput");
-          setVideoDevices(vList);
-          setHasMultipleCameras(vList.length > 1);
-        })
-        .catch(() => {});
-    }
-  }, []);
-
-  // Start Camera Stream with 3-tier fallback for 100% switching reliability
+  // Start Camera Stream with back/environment camera
   const startCamera = useCallback(
-    async (
-      slotNumber?: number,
-      chosenFacing: "environment" | "user" = facingMode,
-      targetDeviceId?: string
-    ) => {
+    async (slotNumber?: number) => {
       setError(null);
 
       // Determine target slot
@@ -159,39 +136,21 @@ export function ChecklistCameraModal({
 
       let stream: MediaStream | null = null;
 
-      // Tier 1: Try exact deviceId if available
-      if (targetDeviceId) {
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              deviceId: { exact: targetDeviceId },
-              width: { ideal: 1920 },
-              height: { ideal: 1080 },
-            },
-            audio: false,
-          });
-        } catch (e) {
-          console.warn("Exact deviceId camera failed, attempting facingMode:", e);
-        }
+      // Tier 1: Try back/environment camera
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
+          audio: false,
+        });
+      } catch (e) {
+        console.warn("Back camera facingMode failed, attempting standard video constraint:", e);
       }
 
-      // Tier 2: Try facingMode ideal
-      if (!stream) {
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: { ideal: chosenFacing },
-              width: { ideal: 1920 },
-              height: { ideal: 1080 },
-            },
-            audio: false,
-          });
-        } catch (e) {
-          console.warn("FacingMode camera failed, attempting basic video:", e);
-        }
-      }
-
-      // Tier 3: Basic generic video constraint
+      // Tier 2: Fallback to basic generic video constraint
       if (!stream) {
         try {
           stream = await navigator.mediaDevices.getUserMedia({
@@ -224,7 +183,7 @@ export function ChecklistCameraModal({
 
       setIsStartingCamera(false);
     },
-    [facingMode, images, stopCameraStream]
+    [images, stopCameraStream]
   );
 
   // Initial camera start on mount if in camera mode
@@ -239,21 +198,6 @@ export function ChecklistCameraModal({
   }, [isOpen, readOnly, viewMode, startCamera, stopCameraStream]);
 
   if (!isOpen) return null;
-
-  // Toggle Front / Back Camera
-  const handleToggleFacingMode = async () => {
-    const nextFacing = facingMode === "environment" ? "user" : "environment";
-    setFacingMode(nextFacing);
-
-    if (videoDevices.length > 1) {
-      const nextIdx = (selectedDeviceIndex + 1) % videoDevices.length;
-      setSelectedDeviceIndex(nextIdx);
-      const nextDevId = videoDevices[nextIdx]?.deviceId;
-      await startCamera(capturingSlot, nextFacing, nextDevId);
-    } else {
-      await startCamera(capturingSlot, nextFacing);
-    }
-  };
 
   // 1. Instant Camera Shutter Capture
   const handleCaptureFrame = async () => {
@@ -504,16 +448,6 @@ export function ChecklistCameraModal({
                   </div>
 
                   <div className="flex items-center gap-2 pointer-events-auto">
-                    {hasMultipleCameras && (
-                      <button
-                        type="button"
-                        onClick={handleToggleFacingMode}
-                        className="p-2 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white rounded-full border border-white/10 transition shadow-sm cursor-pointer"
-                        title="Flip Camera (Front/Back)"
-                      >
-                        <SwitchCamera className="w-4 h-4" />
-                      </button>
-                    )}
                     {images.length > 0 && (
                       <button
                         type="button"

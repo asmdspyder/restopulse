@@ -337,15 +337,11 @@ export default function WastageHistoryPage() {
                             <button
                               type="button"
                               onClick={() => setViewingPhoto(r.imageUrl)}
-                              className="group relative flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200/80 text-emerald-800 hover:bg-emerald-100 transition shadow-2xs cursor-pointer"
+                              className="group relative flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-800 hover:bg-emerald-100 transition shadow-2xs cursor-pointer"
                               title="Click to view photo proof"
                             >
-                              <img
-                                src={r.imageUrl}
-                                alt="Proof"
-                                className="w-5 h-5 rounded object-cover border border-emerald-300"
-                              />
-                              <span className="text-[10px] font-bold">Photo</span>
+                              <Camera className="w-3.5 h-3.5 text-emerald-700" />
+                              <span className="text-[10px] font-bold">View Photo</span>
                             </button>
                             <button
                               type="button"

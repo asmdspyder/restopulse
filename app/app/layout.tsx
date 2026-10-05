@@ -315,7 +315,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           )}
 
           {/* Navigation Links */}
-          <nav className="flex-1 px-3 space-y-1 overflow-y-auto pt-2">
+          <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto pt-2">
             {/* A. SOP MODULE NAVIGATION */}
             {currentModule === "sop" && (
               <>
@@ -329,15 +329,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <Link
                       key={item.name}
                       href={item.href}
-                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition ${
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs transition ${
                         isActive
-                          ? "bg-emerald-50 text-emerald-900 font-bold border border-emerald-200"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                          ? "bg-emerald-700 text-white font-extrabold shadow-sm shadow-emerald-700/25"
+                          : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-950 font-semibold"
                       }`}
                     >
                       <Icon
                         className={`w-4 h-4 shrink-0 ${
-                          isActive ? "text-emerald-700" : "text-slate-400"
+                          isActive ? "text-white" : "text-slate-500"
                         }`}
                       />
                       <span>{item.name}</span>
@@ -360,15 +360,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <Link
                       key={item.name}
                       href={item.href}
-                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition ${
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs transition ${
                         isActive
-                          ? "bg-teal-50 text-teal-900 font-bold border border-teal-200"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                          ? "bg-emerald-700 text-white font-extrabold shadow-sm shadow-emerald-700/25"
+                          : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-950 font-semibold"
                       }`}
                     >
                       <Icon
                         className={`w-4 h-4 shrink-0 ${
-                          isActive ? "text-teal-700" : "text-slate-400"
+                          isActive ? "text-white" : "text-slate-500"
                         }`}
                       />
                       <span>{item.name}</span>
@@ -383,14 +383,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <>
                 {accountNavItems.map((item) => {
                   const Icon = item.icon;
+                  const isActive = pathname.startsWith("/app/account");
 
                   return (
                     <Link
                       key={item.name}
                       href={item.href}
-                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs transition ${
+                        isActive
+                          ? "bg-emerald-700 text-white font-extrabold shadow-sm shadow-emerald-700/25"
+                          : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-950 font-semibold"
+                      }`}
                     >
-                      <Icon className="w-4 h-4 shrink-0 text-slate-400" />
+                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-white" : "text-slate-500"}`} />
                       <span>{item.name}</span>
                     </Link>
                   );
