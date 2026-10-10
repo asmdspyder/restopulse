@@ -35,8 +35,19 @@ function BlockedContent() {
     setError(null);
 
     try {
-      // 1. Create order
-      const orderRes = await fetch("/api/razorpay/create-order", {
+      // 1. Ensure Razorpay script is loaded
+      if (typeof window !== "undefined" && !window.Razorpay) {
+        await new Promise((resolve) => {
+          const script = document.createElement("script");
+          script.src = "https://checkout.razorpay.com/v1/checkout.js";
+          script.onload = () => resolve(true);
+          script.onerror = () => resolve(false);
+          document.body.appendChild(script);
+        });
+      }
+
+      // 2. Call backend endpoint to create order
+      const orderRes = await fetch("/api/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan }),
@@ -44,33 +55,38 @@ function BlockedContent() {
       const orderData = await orderRes.json();
 
       if (!orderRes.ok) {
-        throw new Error(orderData.error || "Failed to initialize payment");
+        throw new Error(orderData.error || "Failed to initialize payment order");
       }
 
-      // 2. Open Razorpay Checkout modal if live SDK is available, else simulated fallback
-      if (
-        typeof window !== "undefined" &&
-        (window as any).Razorpay &&
-        !orderData.isSimulated &&
-        orderData.key &&
-        !orderData.key.includes("placeholder")
-      ) {
-        const rzpInstance = new (window as any).Razorpay({
-          key: orderData.key,
+      const keyId =
+        orderData.key_id ||
+        orderData.key ||
+        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
+        "rzp_test_TmAcAQ44tFd1V5";
+
+      // 3. Open Razorpay Standard Checkout Modal
+      if (typeof window !== "undefined" && window.Razorpay) {
+        const options = {
+          key: keyId,
           amount: orderData.amount,
           currency: orderData.currency || "INR",
           name: "RestoPulse",
           description: orderData.planName || "Restaurant Workspace Subscription",
-          order_id: orderData.orderId,
-          handler: async function (response: any) {
+          order_id: orderData.order_id || orderData.orderId,
+          handler: async function (response: {
+            razorpay_payment_id: string;
+            razorpay_order_id: string;
+            razorpay_signature: string;
+          }) {
             try {
-              const verifyRes = await fetch("/api/razorpay/verify", {
+              // 4. Verify signature on backend
+              const verifyRes = await fetch("/api/verify-payment", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                  orderId: response.razorpay_order_id || orderData.orderId,
-                  paymentId: response.razorpay_payment_id,
-                  signature: response.razorpay_signature,
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
                   plan,
                 }),
               });
@@ -89,28 +105,16 @@ function BlockedContent() {
               setLoading(false);
             },
           },
+        };
+
+        const rzpInstance = new window.Razorpay(options);
+        rzpInstance.on("payment.failed", function (response: any) {
+          setError(response.error?.description || "Payment failed. Please try again.");
+          setLoading(false);
         });
         rzpInstance.open();
       } else {
-        // Simulated / Sandbox activation
-        const verifyRes = await fetch("/api/razorpay/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            orderId: orderData.orderId,
-            paymentId: `pay_sub_${Date.now()}`,
-            signature: "simulated_valid_signature",
-            plan,
-          }),
-        });
-
-        const verifyData = await verifyRes.json();
-        if (!verifyRes.ok) {
-          throw new Error(verifyData.error || "Payment verification failed");
-        }
-
-        router.push("/app/dashboard");
-        router.refresh();
+        throw new Error("Razorpay SDK could not be loaded. Please refresh the page.");
       }
     } catch (err: any) {
       setError(err.message || "Failed to activate subscription");

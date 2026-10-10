@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import RazorpayCheckoutButton from "@/components/razorpay-checkout-button";
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -197,6 +198,25 @@ export default function SettingsPage() {
             <span className="text-sm font-extrabold text-slate-900">
               {subscription?.currentPeriodEnd ? formatDate(subscription.currentPeriodEnd) : "Active"}
             </span>
+          </div>
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs text-slate-500">
+            {subscription?.status === "trial"
+              ? "Upgrade to a paid plan at any time to keep full access without interruption."
+              : "Renew or update your subscription anytime using Razorpay Checkout."}
+          </div>
+          <div className="flex items-center gap-2">
+            <RazorpayCheckoutButton
+              plan={subscription?.planType === "yearly" ? "yearly" : "monthly"}
+              buttonText={subscription?.status === "trial" ? "Activate Plan Now" : "Pay / Renew Plan"}
+              className="py-2.5 px-4 text-xs font-bold"
+              onSuccess={() => {
+                loadSettings();
+                setSuccessMessage("Payment verified successfully! Your subscription is active.");
+              }}
+            />
           </div>
         </div>
       </div>
