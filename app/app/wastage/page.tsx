@@ -744,7 +744,7 @@ export default function RecordWastagePage() {
                         className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-lg hover:bg-amber-100 transition cursor-pointer"
                       >
                         <Camera className="w-3 h-3 text-amber-700" />
-                        <span>+ Add Live Photo</span>
+                        <span>Add Live Photo</span>
                       </button>
                     )}
                   </div>

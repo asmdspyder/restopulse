@@ -452,7 +452,7 @@ export default function ChecklistBuilderPage() {
             className="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-emerald-50 border border-slate-200 text-slate-800 hover:text-emerald-900 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
           >
             <Plus className="w-4 h-4 text-emerald-700" />
-            <span>+ Add Category</span>
+            <span>Add Category</span>
           </button>
 
           <button
@@ -746,7 +746,7 @@ export default function ChecklistBuilderPage() {
                       className="w-full py-2.5 rounded-2xl border border-dashed border-slate-300 hover:border-emerald-600 hover:bg-emerald-50/50 text-slate-600 hover:text-emerald-900 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
                     >
                       <Plus className="w-4 h-4 text-emerald-700" />
-                      <span>+ Add Task to {section.title || "Category"}</span>
+                      <span>Add Task to {section.title || "Category"}</span>
                     </button>
                   </div>
                 </div>
@@ -764,7 +764,7 @@ export default function ChecklistBuilderPage() {
           className="w-full py-4 rounded-3xl bg-white border-2 border-dashed border-emerald-300 hover:border-emerald-600 hover:bg-emerald-50/60 text-emerald-900 font-extrabold text-sm flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
         >
           <Plus className="w-5 h-5 text-emerald-700" />
-          <span>+ Add Another Category / Station</span>
+          <span>Add Another Category / Station</span>
         </button>
       </div>
 

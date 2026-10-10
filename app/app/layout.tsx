@@ -142,8 +142,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       ];
 
   const costingNavItems = [
-    { name: "Menu Items & Margins", href: "/app/menu-costing?tab=items", icon: UtensilsCrossed },
-    { name: "Ingredients Library", href: "/app/menu-costing?tab=ingredients", icon: Layers },
+    { name: "Dish Costing & Recipes", href: "/app/menu-costing", icon: UtensilsCrossed, exact: true },
   ];
 
   const wastageNavItems = isStaff
@@ -233,7 +232,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-md shadow-emerald-700/20 flex items-center gap-1.5 cursor-pointer transition"
             >
               <PlusCircle className="w-4 h-4" />
-              <span>+ Quick Wastage</span>
+              <span>Quick Wastage</span>
             </button>
             <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-slate-200">
               <div className="text-right">
@@ -318,7 +317,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 className="w-full py-2.5 px-3 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs shadow-md shadow-teal-700/20 transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 <PlusCircle className="w-4 h-4" />
-                <span>+ Quick Wastage</span>
+                <span>Quick Wastage</span>
               </button>
             </div>
           )}
@@ -391,7 +390,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {currentModule === "costing" && (
               <>
                 {costingNavItems.map((item) => {
-                  const isActive = pathname === item.href.split("?")[0];
+                  const isActive = pathname.startsWith("/app/menu-costing");
                   const Icon = item.icon;
 
                   return (

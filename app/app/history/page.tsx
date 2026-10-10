@@ -382,7 +382,7 @@ export default function WastageHistoryPage() {
                             title="Add live camera photo"
                           >
                             <Camera className="w-3 h-3 text-amber-600" />
-                            <span>+ Add</span>
+                            <span>Add Photo</span>
                           </button>
                         )}
                       </td>
@@ -465,7 +465,7 @@ export default function WastageHistoryPage() {
                           className="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
                         >
                           <Camera className="w-3 h-3" />
-                          <span>+ Add Photo</span>
+                          <span>Add Photo</span>
                         </button>
                       )}
                     </div>

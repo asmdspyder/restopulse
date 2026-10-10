@@ -10,22 +10,17 @@ import {
   Edit2,
   Trash2,
   AlertTriangle,
-  CheckCircle2,
   TrendingUp,
   TrendingDown,
   Info,
-  DollarSign,
   BookOpen,
-  ArrowUpDown,
   MoveUp,
   MoveDown,
   X,
   Loader2,
   Percent,
-  RefreshCw,
-  HelpCircle,
 } from "lucide-react";
-import { formatCurrency, formatPercentage } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import {
   UNIT_OPTIONS,
   StandardUnit,
@@ -265,8 +260,7 @@ export default function MenuCostingPage() {
     return menuItems.filter((item) => {
       const matchesSearch =
         !searchTerm.trim() ||
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
+        item.name.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesCategory =
         selectedCategory === "all" || item.category === selectedCategory;
@@ -333,7 +327,6 @@ export default function MenuCostingPage() {
     setSavingIngredient(true);
     try {
       if (editingIngredient) {
-        // PUT update
         const res = await fetch(`/api/menu-costing/ingredients/${editingIngredient.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -354,14 +347,12 @@ export default function MenuCostingPage() {
         const data = await res.json();
         setIsIngredientModalOpen(false);
 
-        // Check if price changed and affected recipes
         if (data.impactReport && data.impactReport.affectedMenuItemsCount > 0) {
           setImpactReport(data.impactReport);
         }
 
         await fetchAllData();
       } else {
-        // POST create
         const res = await fetch("/api/menu-costing/ingredients", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -428,7 +419,7 @@ export default function MenuCostingPage() {
     setItemForm({
       name: "",
       sellingPrice: "",
-      category: "",
+      category: categories[0] || "",
       description: "",
       ingredients: [
         {
@@ -446,7 +437,6 @@ export default function MenuCostingPage() {
     setEditingItem(item);
     setItemError("");
 
-    // Fetch full details with recipe rows
     try {
       const res = await fetch(`/api/menu-costing/menu-items/${item.id}`);
       if (res.ok) {
@@ -456,13 +446,14 @@ export default function MenuCostingPage() {
           sellingPrice: detailed.sellingPrice.toString(),
           category: detailed.category || "",
           description: detailed.description || "",
-          ingredients: detailed.ingredients && detailed.ingredients.length > 0
-            ? detailed.ingredients.map((ing: any) => ({
-                ingredientId: ing.ingredientId,
-                quantity: ing.quantity.toString(),
-                unit: ing.unit,
-              }))
-            : [],
+          ingredients:
+            detailed.ingredients && detailed.ingredients.length > 0
+              ? detailed.ingredients.map((ing: any) => ({
+                  ingredientId: ing.ingredientId,
+                  quantity: ing.quantity.toString(),
+                  unit: ing.unit,
+                }))
+              : [],
         });
       }
     } catch (e) {
@@ -509,7 +500,6 @@ export default function MenuCostingPage() {
         const matchingIng = ingredients.find((i) => i.id === value);
         if (matchingIng) {
           const compatible = getCompatibleUnits(matchingIng.purchaseUnit);
-          // If current unit is incompatible, reset to first compatible unit
           if (!compatible.includes(target.unit as StandardUnit)) {
             target.unit = compatible[0];
           }
@@ -559,10 +549,10 @@ export default function MenuCostingPage() {
     setSavingItem(true);
     try {
       const payload = {
-        name: itemForm.name,
+        name: itemForm.name.trim(),
         sellingPrice,
-        category: itemForm.category,
-        description: itemForm.description,
+        category: itemForm.category?.trim() || null,
+        description: null, // Dish name is enough
         ingredients: itemForm.ingredients
           .filter((i) => i.ingredientId && parseFloat(i.quantity as string) > 0)
           .map((i) => ({
@@ -718,166 +708,140 @@ export default function MenuCostingPage() {
   };
 
   return (
-    <div className="space-y-6 pb-16">
-      {/* 1. TOP HEADER & METRIC SUMMARY */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/80 pb-5">
+    <div className="space-y-4 pb-16">
+      {/* 1. COMPACT, CLEAN HEADER (Space-saving) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider">
-              Menu Engineering & Costing
-            </span>
-            <span className="text-slate-400 text-xs">•</span>
-            <span className="text-xs text-slate-500 font-semibold">
-              Portion Accuracy & Margin Protection
-            </span>
-          </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
             <span>Dish Costing & Recipes</span>
           </h1>
-          <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
-            Calculate exact dish prep costs, gross profit margins, preparation SOP steps, and simulate price changes instantly.
+          <p className="text-xs text-slate-500 mt-0.5">
+            Recipe ingredient costs, profit margins & cooking steps
           </p>
         </div>
 
-        {/* Global Action Buttons */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        {/* Global Action Button (NO double plus) */}
+        <div className="flex items-center gap-2 shrink-0">
           {activeTab === "items" ? (
             <button
               onClick={openAddDishModal}
               disabled={ingredients.length === 0}
-              className="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 flex items-center gap-2 transition cursor-pointer disabled:opacity-50"
+              className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
             >
               <Plus className="w-4 h-4" />
-              <span>+ Add Dish Recipe</span>
+              <span>Add Dish</span>
             </button>
           ) : (
             <button
               onClick={openAddIngredientModal}
-              className="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 flex items-center gap-2 transition cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 flex items-center gap-1.5 transition cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>+ Add Raw Ingredient</span>
+              <span>Add Ingredient</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* 2. STATS OVERVIEW CARDS */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Menu Dishes</span>
-            <UtensilsCrossed className="w-4 h-4 text-emerald-700" />
+      {/* 2. COMPACT STATS OVERVIEW CARDS */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+        <div className="bg-white p-3 rounded-xl border border-slate-200/90 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-400 mb-0.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider">Dishes on Menu</span>
+            <UtensilsCrossed className="w-3.5 h-3.5 text-emerald-700" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-slate-900">
-            {summaryMetrics.totalDishes}
-          </div>
-          <div className="text-[10px] text-slate-500 font-semibold mt-0.5">
-            {summaryMetrics.completedDishesCount} fully costed
-          </div>
+          <div className="text-lg font-black text-slate-900">{summaryMetrics.totalDishes}</div>
+          <div className="text-[10px] text-slate-500 font-semibold">{summaryMetrics.completedDishesCount} costed</div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Ingredients Library</span>
-            <Layers className="w-4 h-4 text-teal-700" />
+        <div className="bg-white p-3 rounded-xl border border-slate-200/90 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-400 mb-0.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider">Raw Ingredients</span>
+            <Layers className="w-3.5 h-3.5 text-teal-700" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-slate-900">
-            {summaryMetrics.totalIngredients}
-          </div>
-          <div className="text-[10px] text-slate-500 font-semibold mt-0.5">
-            Standard unit conversions
-          </div>
+          <div className="text-lg font-black text-slate-900">{summaryMetrics.totalIngredients}</div>
+          <div className="text-[10px] text-slate-500 font-semibold">Standard unit rates</div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Avg Gross Margin</span>
-            <TrendingUp className="w-4 h-4 text-emerald-600" />
+        <div className="bg-white p-3 rounded-xl border border-slate-200/90 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-400 mb-0.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider">Avg Profit Margin</span>
+            <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-emerald-700">
-            {summaryMetrics.avgGrossMargin}%
-          </div>
-          <div className="text-[10px] text-slate-500 font-semibold mt-0.5">
-            Selling price - Portion cost
-          </div>
+          <div className="text-lg font-black text-emerald-700">{summaryMetrics.avgGrossMargin}%</div>
+          <div className="text-[10px] text-slate-500 font-semibold">Selling price − Cost</div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Avg Food Cost %</span>
-            <Percent className="w-4 h-4 text-amber-600" />
+        <div className="bg-white p-3 rounded-xl border border-slate-200/90 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-400 mb-0.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider">Avg Food Cost</span>
+            <Percent className="w-3.5 h-3.5 text-amber-600" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-slate-900">
-            {summaryMetrics.avgFoodCost}%
-          </div>
-          <div className="text-[10px] text-slate-500 font-semibold mt-0.5">
-            Target benchmark: &lt; 32%
-          </div>
+          <div className="text-lg font-black text-slate-900">{summaryMetrics.avgFoodCost}%</div>
+          <div className="text-[10px] text-slate-500 font-semibold">Benchmark: &lt; 32%</div>
         </div>
       </div>
 
-      {/* 3. SUB-NAVIGATION TABS */}
+      {/* 3. CLEAN SUB-NAVIGATION TABS */}
       <div className="flex items-center justify-between gap-4 border-b border-slate-200">
         <div className="flex items-center gap-2">
           <button
             onClick={() => handleTabChange("items")}
-            className={`pb-3 px-4 text-xs font-black flex items-center gap-2 border-b-2 transition cursor-pointer ${
+            className={`pb-2.5 px-3 text-xs font-bold flex items-center gap-2 border-b-2 transition cursor-pointer ${
               activeTab === "items"
-                ? "border-emerald-700 text-emerald-800"
-                : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"
+                ? "border-emerald-700 text-emerald-800 font-extrabold"
+                : "border-transparent text-slate-500 hover:text-slate-900"
             }`}
           >
-            <UtensilsCrossed className="w-4 h-4" />
+            <UtensilsCrossed className="w-3.5 h-3.5" />
             <span>Dishes & Recipes ({menuItems.length})</span>
           </button>
 
           <button
             onClick={() => handleTabChange("ingredients")}
-            className={`pb-3 px-4 text-xs font-black flex items-center gap-2 border-b-2 transition cursor-pointer ${
+            className={`pb-2.5 px-3 text-xs font-bold flex items-center gap-2 border-b-2 transition cursor-pointer ${
               activeTab === "ingredients"
-                ? "border-emerald-700 text-emerald-800"
-                : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"
+                ? "border-emerald-700 text-emerald-800 font-extrabold"
+                : "border-transparent text-slate-500 hover:text-slate-900"
             }`}
           >
-            <Layers className="w-4 h-4" />
+            <Layers className="w-3.5 h-3.5" />
             <span>Raw Ingredients ({ingredients.length})</span>
           </button>
         </div>
 
-        {/* Quick hint */}
-        <div className="hidden lg:flex items-center gap-1.5 text-[11px] text-slate-400 font-semibold mb-2">
+        <div className="hidden sm:flex items-center gap-1 text-[11px] text-slate-400 mb-1.5 font-medium">
           <Info className="w-3.5 h-3.5" />
-          <span>Updating an ingredient price immediately recalculates all affected dish margins.</span>
+          <span>Changing ingredient prices automatically updates all dish margins.</span>
         </div>
       </div>
 
-      {/* 4. FILTERS & SEARCH BAR */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="relative w-full sm:w-72">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+      {/* 4. FILTERS & SEARCH */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5">
+        <div className="relative w-full sm:w-64">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder={activeTab === "items" ? "Search dishes..." : "Search ingredients..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-white border border-slate-200/90 focus:outline-none focus:ring-2 focus:ring-emerald-700 focus:border-transparent text-slate-900 placeholder-slate-400"
+            className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900 placeholder-slate-400"
           />
           {searchTerm && (
             <button
               onClick={() => setSearchTerm("")}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-3 h-3" />
             </button>
           )}
         </div>
 
         {activeTab === "items" && categories.length > 0 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1">
+          <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-0.5">
             <button
               onClick={() => setSelectedCategory("all")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
                 selectedCategory === "all"
                   ? "bg-emerald-700 text-white shadow-2xs"
                   : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
@@ -889,7 +853,7 @@ export default function MenuCostingPage() {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
                   selectedCategory === cat
                     ? "bg-emerald-700 text-white shadow-2xs"
                     : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
@@ -902,37 +866,37 @@ export default function MenuCostingPage() {
         )}
       </div>
 
-      {/* 5. LOADING SPINNER */}
+      {/* 5. CONTENT */}
       {loading ? (
-        <div className="py-24 flex flex-col items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-emerald-700 mb-2" />
-          <span className="text-xs font-semibold text-slate-600">Loading Menu Costing & Recipes...</span>
+        <div className="py-20 flex flex-col items-center justify-center">
+          <Loader2 className="w-7 h-7 animate-spin text-emerald-700 mb-2" />
+          <span className="text-xs font-semibold text-slate-600">Loading Menu Costing...</span>
         </div>
       ) : activeTab === "items" ? (
         /* ========================================================= */
-        /* TAB 1: MENU ITEMS & RECIPES CARDS GRID                    */
+        /* TAB 1: MENU ITEMS & RECIPES (CLEAN, COMPACT CARDS)        */
         /* ========================================================= */
         filteredMenuItems.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto mb-3">
-              <UtensilsCrossed className="w-6 h-6" />
+          <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-10 text-center">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto mb-2">
+              <UtensilsCrossed className="w-5 h-5" />
             </div>
-            <h3 className="text-base font-extrabold text-slate-900">
-              {menuItems.length === 0 ? "No Menu Items Costed Yet" : "No Matching Dishes Found"}
+            <h3 className="text-sm font-bold text-slate-900">
+              {menuItems.length === 0 ? "No Menu Dishes Yet" : "No Matching Dishes Found"}
             </h3>
-            <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 mb-4 leading-relaxed">
+            <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-3">
               {menuItems.length === 0
-                ? "Start adding your restaurant dishes with recipe ingredients to unlock gross margins, food cost % and price change impact analysis."
-                : "Try clearing your search query or selecting a different category."}
+                ? "Add your restaurant dishes with portion recipes to calculate profit margins."
+                : "Try clearing your search query."}
             </p>
             {menuItems.length === 0 ? (
               <button
                 onClick={openAddDishModal}
                 disabled={ingredients.length === 0}
-                className="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 inline-flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ Create Your First Dish</span>
+                <span>Create First Dish</span>
               </button>
             ) : (
               <button
@@ -940,48 +904,41 @@ export default function MenuCostingPage() {
                   setSearchTerm("");
                   setSelectedCategory("all");
                 }}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer"
               >
                 Reset Filters
               </button>
             )}
-            {ingredients.length === 0 && menuItems.length === 0 && (
-              <p className="text-[11px] text-amber-700 font-semibold mt-3">
-                💡 Tip: Add your raw ingredients first in the &quot;Ingredients Library&quot; tab.
-              </p>
-            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {filteredMenuItems.map((item) => {
               const econ = item.economics;
-              // Food cost health status
               const isHealthy = econ.foodCostPercent <= 30;
               const isModerate = econ.foodCostPercent > 30 && econ.foodCostPercent <= 40;
-              const isHigh = econ.foodCostPercent > 40;
 
               return (
                 <div
                   key={item.id}
-                  className="bg-white rounded-2xl border border-slate-200 hover:border-emerald-500 p-5 shadow-xs hover:shadow-lg transition-all duration-200 flex flex-col justify-between group"
+                  className="bg-white rounded-2xl border border-slate-200 hover:border-emerald-500 p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group"
                 >
-                  <div className="space-y-4">
-                    {/* Header: Title, Category, Status */}
-                    <div className="flex items-start justify-between gap-2.5">
+                  <div className="space-y-3">
+                    {/* Top Row: Dish Name + Category & Margin Pill */}
+                    <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         {item.category && (
                           <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md inline-block mb-1 border border-emerald-200/60">
                             {item.category}
                           </span>
                         )}
-                        <h3 className="text-base font-black text-slate-900 group-hover:text-emerald-800 transition truncate">
+                        <h3 className="text-sm font-black text-slate-900 group-hover:text-emerald-800 transition truncate">
                           {item.name}
                         </h3>
                       </div>
 
                       {econ.isComplete ? (
                         <span
-                          className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border shrink-0 ${
+                          className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border shrink-0 ${
                             isHealthy
                               ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                               : isModerate
@@ -990,105 +947,77 @@ export default function MenuCostingPage() {
                           }`}
                         >
                           {isHealthy ? "🟢 " : isModerate ? "🟡 " : "🔴 "}
-                          {econ.foodCostPercent}% Food Cost
+                          {econ.grossMarginPercent}% Margin
                         </span>
                       ) : (
-                        <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
                           Incomplete Recipe
                         </span>
                       )}
                     </div>
 
-                    {item.description && (
-                      <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                        {item.description}
-                      </p>
-                    )}
-
-                    {/* Financial Economics Grid */}
-                    <div className="p-3.5 rounded-xl bg-slate-50/90 border border-slate-200/80 space-y-2.5">
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                            Selling Price
-                          </span>
-                          <span className="text-sm font-black text-slate-900">
-                            {formatCurrency(item.sellingPrice)}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                            Kitchen Prep Cost
-                          </span>
-                          <span className="text-sm font-black text-emerald-800">
-                            {econ.isComplete ? formatCurrency(econ.totalIngredientCost) : "—"}
-                          </span>
-                        </div>
+                    {/* Compact 3-Column Financial Grid */}
+                    <div className="grid grid-cols-3 gap-1.5 p-2 rounded-xl bg-slate-50 border border-slate-200/70 text-center">
+                      <div>
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">
+                          Selling Price
+                        </span>
+                        <span className="text-xs font-black text-slate-900">
+                          {formatCurrency(item.sellingPrice)}
+                        </span>
                       </div>
-
-                      <div className="pt-2 border-t border-slate-200/70 grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                            You Keep (Profit)
-                          </span>
-                          <span
-                            className={`text-sm font-black ${
-                              econ.grossProfit >= 0 ? "text-slate-900" : "text-rose-600"
-                            }`}
-                          >
-                            {econ.isComplete ? formatCurrency(econ.grossProfit) : "—"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                            Profit Margin
-                          </span>
-                          <span
-                            className={`text-sm font-black ${
-                              econ.grossMarginPercent >= 60
-                                ? "text-emerald-700"
-                                : econ.grossMarginPercent >= 50
-                                ? "text-amber-700"
-                                : "text-rose-600"
-                            }`}
-                          >
-                            {econ.isComplete ? `${econ.grossMarginPercent}%` : "—"}
-                          </span>
-                        </div>
+                      <div>
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">
+                          Prep Cost
+                        </span>
+                        <span className="text-xs font-black text-emerald-800">
+                          {econ.isComplete ? formatCurrency(econ.totalIngredientCost) : "—"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">
+                          Profit
+                        </span>
+                        <span
+                          className={`text-xs font-black ${
+                            econ.grossProfit >= 0 ? "text-slate-900" : "text-rose-600"
+                          }`}
+                        >
+                          {econ.isComplete ? formatCurrency(econ.grossProfit) : "—"}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Recipe & SOP summary pills */}
-                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-                      <span className="inline-flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded-md text-[11px]">
-                        <Layers className="w-3 h-3 text-slate-400" />
-                        {item.ingredientCount} {item.ingredientCount === 1 ? "ingredient" : "ingredients"}
-                      </span>
-                      <span className="inline-flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded-md text-[11px]">
-                        <BookOpen className="w-3 h-3 text-slate-400" />
-                        {item.stepCount} {item.stepCount === 1 ? "step" : "steps"}
+                    {/* Summary Counter Pill */}
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
+                      <span>{item.ingredientCount} ingredients</span>
+                      <span>•</span>
+                      <span>{item.stepCount} cooking steps</span>
+                      <span>•</span>
+                      <span className="font-semibold text-slate-700">
+                        {econ.isComplete ? `${econ.foodCostPercent}% Food Cost` : "No Recipe"}
                       </span>
                     </div>
                   </div>
 
-                  {/* Actions Footer */}
-                  <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                  {/* Compact Actions Footer */}
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-1.5">
                     <button
                       onClick={() => openStepsModal(item)}
-                      className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
-                      title="View & Edit Preparation SOP Steps"
+                      className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 font-bold text-xs flex items-center gap-1 transition cursor-pointer"
+                      title="Cooking SOP Steps"
                     >
-                      <BookOpen className="w-3.5 h-3.5" />
-                      <span>Cooking SOP ({item.stepCount})</span>
+                      <BookOpen className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Cooking SOP</span>
                     </button>
 
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1">
                       <button
                         onClick={() => openEditDishModal(item)}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
-                        title="Edit Dish Recipe & Selling Price"
+                        className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                        title="Edit Recipe & Cost"
                       >
-                        <Edit2 className="w-3.5 h-3.5" />
+                        <Edit2 className="w-3 h-3" />
                         <span>Recipe & Cost</span>
                       </button>
                       <button
@@ -1096,7 +1025,7 @@ export default function MenuCostingPage() {
                         className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
                         title="Delete Dish"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
@@ -1107,33 +1036,31 @@ export default function MenuCostingPage() {
         )
       ) : (
         /* ========================================================= */
-        /* TAB 2: INGREDIENTS LIBRARY LIST                           */
+        /* TAB 2: INGREDIENTS LIBRARY (CLEAN, SLEEK MODERN TABLE)    */
         /* ========================================================= */
         filteredIngredients.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center mx-auto mb-3">
-              <Layers className="w-6 h-6" />
+          <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-10 text-center">
+            <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center mx-auto mb-2">
+              <Layers className="w-5 h-5" />
             </div>
-            <h3 className="text-base font-extrabold text-slate-900">
-              {ingredients.length === 0 ? "No Raw Ingredients Added Yet" : "No Ingredients Found"}
+            <h3 className="text-sm font-bold text-slate-900">
+              {ingredients.length === 0 ? "No Raw Ingredients Yet" : "No Ingredients Found"}
             </h3>
-            <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 mb-4 leading-relaxed">
-              {ingredients.length === 0
-                ? "Add your raw ingredients (like Paneer, Butter, Cooking Oil, Vegetables) with purchase quantities and prices to establish base unit rates."
-                : "No ingredients match your search query."}
+            <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-3">
+              Add your raw kitchen ingredients with bought package and cost.
             </p>
             {ingredients.length === 0 ? (
               <button
                 onClick={openAddIngredientModal}
-                className="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 inline-flex items-center gap-2 cursor-pointer"
+                className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 inline-flex items-center gap-1.5 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ Add Raw Ingredient</span>
+                <span>Add Ingredient</span>
               </button>
             ) : (
               <button
                 onClick={() => setSearchTerm("")}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer"
               >
                 Clear Search
               </button>
@@ -1145,51 +1072,51 @@ export default function MenuCostingPage() {
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase font-black tracking-wider text-slate-500">
                   <tr>
-                    <th className="py-3 px-4">Ingredient Name</th>
-                    <th className="py-3 px-4">Bought Package</th>
-                    <th className="py-3 px-4">Purchase Price</th>
-                    <th className="py-3 px-4">Unit Rate</th>
-                    <th className="py-3 px-4">Dish Usage</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
+                    <th className="py-2.5 px-3.5">Ingredient Name</th>
+                    <th className="py-2.5 px-3.5">Bought Package</th>
+                    <th className="py-2.5 px-3.5">Purchase Cost</th>
+                    <th className="py-2.5 px-3.5">Unit Rate</th>
+                    <th className="py-2.5 px-3.5">Dish Usage</th>
+                    <th className="py-2.5 px-3.5 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredIngredients.map((ing) => (
                     <tr key={ing.id} className="hover:bg-slate-50/70 transition">
-                      <td className="py-3.5 px-4">
+                      <td className="py-3 px-3.5">
                         <span className="font-extrabold text-slate-900 block text-xs">
                           {ing.name}
                         </span>
                         {ing.notes && (
-                          <span className="text-[11px] text-slate-400 block line-clamp-1">
+                          <span className="text-[10px] text-slate-400 block line-clamp-1">
                             {ing.notes}
                           </span>
                         )}
                       </td>
-                      <td className="py-3.5 px-4 font-semibold text-slate-700">
+                      <td className="py-3 px-3.5 font-semibold text-slate-700">
                         {ing.purchaseQuantity} {ing.purchaseUnit}
                       </td>
-                      <td className="py-3.5 px-4 font-extrabold text-slate-900">
+                      <td className="py-3 px-3.5 font-extrabold text-slate-900">
                         {formatCurrency(ing.purchasePrice)}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span className="font-extrabold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200/60 inline-block">
+                      <td className="py-3 px-3.5">
+                        <span className="font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60 inline-block text-[11px]">
                           {ing.standardCostDisplay}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4">
+                      <td className="py-3 px-3.5">
                         {ing.usedInCount > 0 ? (
-                          <span className="text-[11px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
-                            Used in {ing.usedInCount} {ing.usedInCount === 1 ? "recipe" : "recipes"}
+                          <span className="text-[10px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
+                            {ing.usedInCount} {ing.usedInCount === 1 ? "dish" : "dishes"}
                           </span>
                         ) : (
-                          <span className="text-[11px] font-medium text-slate-400">
+                          <span className="text-[10px] font-medium text-slate-400">
                             Unused
                           </span>
                         )}
                       </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                      <td className="py-3 px-3.5 text-right">
+                        <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => openEditIngredientModal(ing)}
                             className="p-1.5 rounded-lg text-slate-600 hover:text-emerald-800 hover:bg-emerald-50 transition cursor-pointer"
@@ -1216,31 +1143,31 @@ export default function MenuCostingPage() {
       )}
 
       {/* ========================================================= */}
-      {/* MODAL 1: ADD / EDIT INGREDIENT MODAL                       */}
+      {/* MODAL 1: ADD / EDIT INGREDIENT (SIMPLE & DIRECT INPUTS)   */}
       {/* ========================================================= */}
       {isIngredientModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h3 className="text-base font-black text-slate-900">
-                  {editingIngredient ? "Edit Raw Ingredient" : "Add New Raw Ingredient"}
+                  {editingIngredient ? "Edit Ingredient" : "Add Raw Ingredient"}
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Set purchase packaging & price for standard unit conversion.
+                  e.g. 1 kg rice @ ₹100, or 500 ml oil @ ₹75
                 </p>
               </div>
               <button
                 onClick={() => setIsIngredientModalOpen(false)}
                 className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveIngredient} className="p-5 space-y-4">
+            <form onSubmit={handleSaveIngredient} className="p-4 space-y-3.5">
               {ingredientError && (
-                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+                <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 shrink-0" />
                   <span>{ingredientError}</span>
                 </div>
@@ -1252,38 +1179,39 @@ export default function MenuCostingPage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Malai Paneer, Cooking Oil, Tomatoes"
+                  placeholder="e.g. Rice, Malai Paneer, Cooking Oil"
                   value={ingredientForm.name}
                   onChange={(e) =>
                     setIngredientForm((prev) => ({ ...prev, name: e.target.value }))
                   }
                   required
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900"
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900 font-semibold"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* Purchase Package: Quantity + Unit */}
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">
-                    Purchase Quantity <span className="text-rose-500">*</span>
+                    Bought Quantity <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="number"
-                    step="0.01"
-                    min="0.001"
+                    step="any"
+                    min="0"
                     placeholder="e.g. 1, 5, 500"
                     value={ingredientForm.purchaseQuantity}
                     onChange={(e) =>
                       setIngredientForm((prev) => ({ ...prev, purchaseQuantity: e.target.value }))
                     }
                     required
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900"
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900 font-semibold"
                   />
                 </div>
 
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">
-                    Purchase Unit <span className="text-rose-500">*</span>
+                    Unit <span className="text-rose-500">*</span>
                   </label>
                   <select
                     value={ingredientForm.purchaseUnit}
@@ -1293,7 +1221,7 @@ export default function MenuCostingPage() {
                         purchaseUnit: e.target.value as StandardUnit,
                       }))
                     }
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900 font-semibold"
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900 font-bold"
                   >
                     {UNIT_OPTIONS.map((u) => (
                       <option key={u.value} value={u.value}>
@@ -1304,9 +1232,10 @@ export default function MenuCostingPage() {
                 </div>
               </div>
 
+              {/* Purchase Price (step="any" so any manual number is accepted without 'nearest value' errors) */}
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">
-                  Purchase Price (₹) <span className="text-rose-500">*</span>
+                  Total Price Paid (₹) <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">
@@ -1314,58 +1243,51 @@ export default function MenuCostingPage() {
                   </span>
                   <input
                     type="number"
-                    step="0.01"
+                    step="any"
                     min="0"
-                    placeholder="e.g. 240.00"
+                    placeholder="e.g. 100 or 320"
                     value={ingredientForm.purchasePrice}
                     onChange={(e) =>
                       setIngredientForm((prev) => ({ ...prev, purchasePrice: e.target.value }))
                     }
                     required
-                    className="w-full pl-7 pr-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900 font-bold"
+                    className="w-full pl-7 pr-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900 font-bold text-sm"
                   />
                 </div>
               </div>
 
-              {/* LIVE UNIT COST PREVIEW */}
+              {/* LIVE UNIT RATE PREVIEW */}
               {ingredientModalLiveCost && (
-                <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 block">
-                      Calculated Unit Cost
-                    </span>
-                    <span className="text-sm font-black text-emerald-900">
-                      {ingredientModalLiveCost.primary}
-                    </span>
-                  </div>
-                  {ingredientModalLiveCost.secondary && (
-                    <span className="text-[11px] font-extrabold text-emerald-700">
-                      {ingredientModalLiveCost.secondary}
-                    </span>
-                  )}
+                <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs">
+                  <span className="font-bold text-emerald-800">
+                    Unit Rate:
+                  </span>
+                  <span className="font-black text-emerald-900 text-sm">
+                    {ingredientModalLiveCost.primary}
+                  </span>
                 </div>
               )}
 
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">
-                  Optional Supplier / Brand Notes
+                  Supplier / Notes (Optional)
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Amul Dairy supplier, Pack of 5L"
+                  placeholder="e.g. Local vendor, Brand"
                   value={ingredientForm.notes}
                   onChange={(e) =>
                     setIngredientForm((prev) => ({ ...prev, notes: e.target.value }))
                   }
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900"
+                  className="w-full px-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900"
                 />
               </div>
 
               {editingIngredient && editingIngredient.usedInCount > 0 && (
-                <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-medium flex items-center gap-2">
-                  <Info className="w-4 h-4 shrink-0 text-amber-700" />
+                <div className="p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-medium flex items-center gap-1.5">
+                  <Info className="w-3.5 h-3.5 shrink-0 text-amber-700" />
                   <span>
-                    Used in {editingIngredient.usedInCount} recipe(s). Changing this price will trigger the Price Impact Report.
+                    Used in {editingIngredient.usedInCount} dishes. Price changes trigger an Impact Report.
                   </span>
                 </div>
               )}
@@ -1374,14 +1296,14 @@ export default function MenuCostingPage() {
                 <button
                   type="button"
                   onClick={() => setIsIngredientModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs transition cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={savingIngredient}
-                  className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   {savingIngredient ? (
                     <>
@@ -1399,171 +1321,86 @@ export default function MenuCostingPage() {
       )}
 
       {/* ========================================================= */}
-      {/* MODAL 2: INGREDIENT PRICE CHANGE IMPACT REPORT DIALOG      */}
+      {/* MODAL 2: INGREDIENT PRICE IMPACT REPORT DIALOG            */}
       {/* ========================================================= */}
       {impactReport && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150">
-            {/* Header */}
-            <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-emerald-900 to-slate-900 text-white flex items-center justify-between">
+            <div className="p-4 border-b border-slate-100 bg-slate-900 text-white flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-md inline-block mb-1 border border-emerald-400/30">
-                  Live Financial Simulation
-                </span>
-                <h3 className="text-base font-black">
-                  Ingredient Price Impact Report
+                <h3 className="text-sm font-black flex items-center gap-2">
+                  <span>Price Impact Report: {impactReport.ingredientName}</span>
                 </h3>
-                <p className="text-xs text-slate-300 mt-0.5">
-                  Price change on <strong>{impactReport.ingredientName}</strong> has been recalculated across all recipes.
+                <p className="text-[11px] text-slate-300 mt-0.5">
+                  {formatCurrency(impactReport.oldPurchasePrice)} → {formatCurrency(impactReport.newPurchasePrice)} / {impactReport.newPurchaseUnit} ({impactReport.affectedMenuItemsCount} dishes affected)
                 </p>
               </div>
               <button
                 onClick={() => setImpactReport(null)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
+                className="p-1 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
-              {/* Summary Banner */}
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                    Old Purchase Price
-                  </span>
-                  <span className="text-sm font-black text-slate-700">
-                    {formatCurrency(impactReport.oldPurchasePrice)} / {impactReport.oldPurchaseUnit}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                    New Purchase Price
-                  </span>
-                  <span className="text-sm font-black text-emerald-800">
-                    {formatCurrency(impactReport.newPurchasePrice)} / {impactReport.newPurchaseUnit}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                    Dishes Affected
-                  </span>
-                  <span className="text-sm font-black text-slate-900">
-                    {impactReport.affectedMenuItemsCount} {impactReport.affectedMenuItemsCount === 1 ? "dish" : "dishes"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Notice */}
-              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold flex items-center gap-2">
+            <div className="p-4 space-y-3 max-h-[65vh] overflow-y-auto">
+              <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold flex items-center gap-1.5">
                 <Info className="w-4 h-4 shrink-0 text-amber-700" />
-                <span>
-                  Selling prices have remained untouched. Observe how dish prep costs and margins have shifted below:
-                </span>
+                <span>Selling prices stay unchanged. See updated dish prep costs and margins below:</span>
               </div>
 
-              {/* Impact Items Table */}
               <div className="rounded-xl border border-slate-200 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase font-black tracking-wider text-slate-500">
-                      <tr>
-                        <th className="py-2.5 px-3">Affected Dish</th>
-                        <th className="py-2.5 px-3">Prep Cost</th>
-                        <th className="py-2.5 px-3">Cost Change</th>
-                        <th className="py-2.5 px-3">Gross Margin</th>
-                        <th className="py-2.5 px-3 text-right">Gross Profit</th>
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase font-black tracking-wider text-slate-500">
+                    <tr>
+                      <th className="py-2 px-3">Dish</th>
+                      <th className="py-2 px-3">Prep Cost</th>
+                      <th className="py-2 px-3">Cost Change</th>
+                      <th className="py-2 px-3">Margin %</th>
+                      <th className="py-2 px-3 text-right">Profit</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {impactReport.affectedItems.map((item) => (
+                      <tr key={item.menuItemId} className="hover:bg-slate-50/70">
+                        <td className="py-2.5 px-3">
+                          <span className="font-extrabold text-slate-900 block">{item.menuItemName}</span>
+                          <span className="text-[10px] text-slate-400">Sell at {formatCurrency(item.sellingPrice)}</span>
+                        </td>
+                        <td className="py-2.5 px-3 font-semibold text-slate-700">
+                          {formatCurrency(item.oldTotalCost)} → <span className="font-bold text-slate-900">{formatCurrency(item.newTotalCost)}</span>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span
+                            className={`text-[11px] font-bold px-1.5 py-0.5 rounded ${
+                              item.costChange > 0 ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"
+                            }`}
+                          >
+                            {item.costChange > 0 ? "+" : ""}{formatCurrency(item.costChange)}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 font-semibold">
+                          <span className="text-slate-400">{item.oldGrossMarginPercent}%</span> →{" "}
+                          <span className={item.newGrossMarginPercent < item.oldGrossMarginPercent ? "text-rose-600 font-bold" : "text-emerald-700 font-bold"}>
+                            {item.newGrossMarginPercent}%
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-bold text-slate-900">
+                          {formatCurrency(item.newGrossProfit)}
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {impactReport.affectedItems.map((item) => {
-                        const isCostIncreased = item.costChange > 0;
-                        const isCostDecreased = item.costChange < 0;
-
-                        return (
-                          <tr key={item.menuItemId} className="hover:bg-slate-50/70">
-                            <td className="py-3 px-3">
-                              <span className="font-extrabold text-slate-900 block">
-                                {item.menuItemName}
-                              </span>
-                              <span className="text-[10px] text-slate-400">
-                                Selling at {formatCurrency(item.sellingPrice)}
-                              </span>
-                            </td>
-
-                            <td className="py-3 px-3 font-semibold text-slate-700">
-                              <div className="flex items-center gap-1.5">
-                                <span className="line-through text-slate-400">
-                                  {formatCurrency(item.oldTotalCost)}
-                                </span>
-                                <span>&rarr;</span>
-                                <span className="font-black text-slate-900">
-                                  {formatCurrency(item.newTotalCost)}
-                                </span>
-                              </div>
-                            </td>
-
-                            <td className="py-3 px-3">
-                              <span
-                                className={`text-[11px] font-extrabold px-2 py-0.5 rounded-md inline-flex items-center gap-1 ${
-                                  isCostIncreased
-                                    ? "bg-rose-50 text-rose-700 border border-rose-200"
-                                    : isCostDecreased
-                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                    : "bg-slate-100 text-slate-600"
-                                }`}
-                              >
-                                {isCostIncreased ? (
-                                  <TrendingUp className="w-3 h-3" />
-                                ) : isCostDecreased ? (
-                                  <TrendingDown className="w-3 h-3" />
-                                ) : null}
-                                {isCostIncreased ? "+" : ""}
-                                {formatCurrency(item.costChange)} ({item.costChangePercent > 0 ? "+" : ""}
-                                {item.costChangePercent}%)
-                              </span>
-                            </td>
-
-                            <td className="py-3 px-3">
-                              <div className="flex items-center gap-1 text-[11px] font-bold">
-                                <span className="text-slate-400">{item.oldGrossMarginPercent}%</span>
-                                <span>&rarr;</span>
-                                <span
-                                  className={
-                                    item.newGrossMarginPercent < item.oldGrossMarginPercent
-                                      ? "text-rose-600 font-extrabold"
-                                      : "text-emerald-700 font-extrabold"
-                                  }
-                                >
-                                  {item.newGrossMarginPercent}%
-                                </span>
-                              </div>
-                            </td>
-
-                            <td className="py-3 px-3 text-right">
-                              <div className="text-[11px] font-bold">
-                                <span className="text-slate-400">{formatCurrency(item.oldGrossProfit)}</span>
-                                <span className="mx-1">&rarr;</span>
-                                <span className="text-slate-900 font-black">
-                                  {formatCurrency(item.newGrossProfit)}
-                                </span>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-100 flex items-center justify-end bg-slate-50/50">
+            <div className="p-3 border-t border-slate-100 flex justify-end bg-slate-50">
               <button
                 onClick={() => setImpactReport(null)}
-                className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md transition cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs cursor-pointer"
               >
-                Done & Acknowledge
+                Done
               </button>
             </div>
           </div>
@@ -1571,42 +1408,39 @@ export default function MenuCostingPage() {
       )}
 
       {/* ========================================================= */}
-      {/* MODAL 3: IN-USE DELETION CONFLICT DIALOG                   */}
+      {/* MODAL 3: IN-USE DELETION CONFLICT DIALOG                  */}
       {/* ========================================================= */}
       {inUseConflict && inUseConflict.isOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150">
-            <div className="p-5 border-b border-slate-100 flex items-center gap-3 bg-amber-50 text-amber-900">
-              <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-800 shrink-0">
-                <AlertTriangle className="w-5 h-5" />
-              </div>
+            <div className="p-4 border-b border-slate-100 flex items-center gap-2.5 bg-amber-50 text-amber-900">
+              <AlertTriangle className="w-5 h-5 text-amber-800 shrink-0" />
               <div>
                 <h3 className="text-sm font-black">Cannot Delete Ingredient</h3>
-                <p className="text-xs text-amber-700">Currently in use by active dish recipes</p>
+                <p className="text-xs text-amber-700">Currently in use by active recipes</p>
               </div>
             </div>
 
-            <div className="p-5 space-y-3">
-              <p className="text-xs text-slate-600 leading-relaxed">
-                <strong>&quot;{inUseConflict.ingredientName}&quot;</strong> is actively linked to the following recipe(s). To protect recipe costing data integrity, remove it from these dishes first before deleting:
+            <div className="p-4 space-y-2.5 text-xs">
+              <p className="text-slate-600">
+                <strong>&quot;{inUseConflict.ingredientName}&quot;</strong> is used in these dishes:
               </p>
-
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 max-h-40 overflow-y-auto space-y-1.5">
+              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 max-h-36 overflow-y-auto space-y-1">
                 {inUseConflict.usedInMenuNames.map((name, i) => (
-                  <div key={i} className="text-xs font-bold text-slate-800 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0" />
+                  <div key={i} className="font-bold text-slate-800 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
                     <span>{name}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-100 flex justify-end bg-slate-50/50">
+            <div className="p-3 border-t border-slate-100 flex justify-end bg-slate-50">
               <button
                 onClick={() => setInUseConflict(null)}
                 className="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 cursor-pointer"
               >
-                Close & Keep Ingredient
+                Close
               </button>
             </div>
           </div>
@@ -1614,69 +1448,54 @@ export default function MenuCostingPage() {
       )}
 
       {/* ========================================================= */}
-      {/* MODAL 4: ADD / EDIT DISH & RECIPE BUILDER MODAL            */}
+      {/* MODAL 4: RECIPE BUILDER (SLEEK, CLEAN & INTUITIVE)        */}
       {/* ========================================================= */}
       {isItemModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150 flex flex-col max-h-[90vh]">
             {/* Header */}
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between shrink-0">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between shrink-0">
               <div>
                 <h3 className="text-base font-black text-slate-900">
-                  {editingItem ? `Edit Recipe: ${editingItem.name}` : "Create New Dish Recipe"}
+                  {editingItem ? `Edit Recipe: ${editingItem.name}` : "Create Dish Recipe"}
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Define ingredients per single serving & live margin economics.
+                  Set dish name, price & ingredients per serving
                 </p>
               </div>
               <button
                 onClick={() => setIsItemModalOpen(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Form Body */}
-            <form onSubmit={handleSaveMenuItem} className="flex-1 overflow-y-auto p-5 space-y-5">
+            {/* Form */}
+            <form onSubmit={handleSaveMenuItem} className="flex-1 overflow-y-auto p-4 space-y-4">
               {itemError && (
-                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+                <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 shrink-0" />
                   <span>{itemError}</span>
                 </div>
               )}
 
-              {/* Basic Dish Info */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="sm:col-span-2">
+              {/* Dish Name & Selling Price */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">
                     Dish Name <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Paneer Butter Masala, Cold Coffee"
+                    placeholder="e.g. Paneer Butter Masala"
                     value={itemForm.name}
                     onChange={(e) => setItemForm((p) => ({ ...p, name: e.target.value }))}
                     required
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900"
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900 font-semibold"
                   />
                 </div>
 
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">
-                    Category
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Mains, Starters"
-                    value={itemForm.category}
-                    onChange={(e) => setItemForm((p) => ({ ...p, category: e.target.value }))}
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">
                     Selling Price (₹) <span className="text-rose-500">*</span>
@@ -1687,9 +1506,9 @@ export default function MenuCostingPage() {
                     </span>
                     <input
                       type="number"
-                      step="0.01"
+                      step="any"
                       min="0"
-                      placeholder="e.g. 280.00"
+                      placeholder="e.g. 280"
                       value={itemForm.sellingPrice}
                       onChange={(e) =>
                         setItemForm((p) => ({ ...p, sellingPrice: e.target.value }))
@@ -1699,38 +1518,63 @@ export default function MenuCostingPage() {
                     />
                   </div>
                 </div>
+              </div>
 
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">
-                    Short Description (Optional)
-                  </label>
+              {/* Category: Dropdown Suggestions + Free Typing */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Category (Select existing or type new)
+                </label>
+                <div className="space-y-1.5">
                   <input
                     type="text"
-                    placeholder="e.g. Signature cottage cheese in creamy tomato gravy"
-                    value={itemForm.description}
-                    onChange={(e) =>
-                      setItemForm((p) => ({ ...p, description: e.target.value }))
-                    }
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900"
+                    list="category-suggestions"
+                    placeholder="Select or type new category..."
+                    value={itemForm.category}
+                    onChange={(e) => setItemForm((p) => ({ ...p, category: e.target.value }))}
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900 font-semibold"
                   />
+                  <datalist id="category-suggestions">
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat} />
+                    ))}
+                  </datalist>
+
+                  {/* Quick-select chips */}
+                  {categories.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                      <span className="text-[10px] text-slate-400 font-bold">Existing:</span>
+                      {categories.map((cat) => (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => setItemForm((p) => ({ ...p, category: cat }))}
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition cursor-pointer ${
+                            itemForm.category === cat
+                              ? "bg-emerald-700 text-white border-emerald-700"
+                              : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* RECIPE INGREDIENTS BUILDER */}
-              <div className="pt-2">
+              {/* Recipe Ingredients Section */}
+              <div className="pt-1">
                 <div className="flex items-center justify-between mb-2">
                   <div>
                     <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">
-                      Recipe Ingredients (Per Serving)
+                      Recipe Ingredients (1 Serving)
                     </h4>
-                    <p className="text-[11px] text-slate-400">
-                      Select ingredients and specify portion sizes. Units are constrained to compatible categories.
-                    </p>
                   </div>
                   <button
                     type="button"
                     onClick={handleAddIngredientRow}
-                    className="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center gap-1 transition cursor-pointer"
+                    className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center gap-1 cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add Row</span>
@@ -1738,20 +1582,18 @@ export default function MenuCostingPage() {
                 </div>
 
                 {itemForm.ingredients.length === 0 ? (
-                  <div className="p-6 rounded-2xl border border-dashed border-slate-200 text-center bg-slate-50/50">
-                    <p className="text-xs text-slate-500 mb-2">
-                      No ingredients added to this dish yet.
-                    </p>
+                  <div className="p-5 rounded-2xl border border-dashed border-slate-200 text-center bg-slate-50">
+                    <p className="text-xs text-slate-500 mb-2">No ingredients added to this recipe yet.</p>
                     <button
                       type="button"
                       onClick={handleAddIngredientRow}
                       className="px-3 py-1.5 rounded-xl bg-emerald-700 text-white font-bold text-xs"
                     >
-                      + Add First Ingredient
+                      Add First Ingredient
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {itemForm.ingredients.map((row, idx) => {
                       const selectedIng = ingredients.find((i) => i.id === row.ingredientId);
                       const compatibleUnits = selectedIng
@@ -1775,7 +1617,7 @@ export default function MenuCostingPage() {
                       return (
                         <div
                           key={idx}
-                          className="p-3 rounded-xl bg-slate-50/80 border border-slate-200/90 flex flex-col sm:flex-row items-center gap-2.5"
+                          className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/90 flex flex-col sm:flex-row items-center gap-2"
                         >
                           {/* Ingredient Select */}
                           <div className="flex-1 w-full sm:w-auto">
@@ -1784,7 +1626,7 @@ export default function MenuCostingPage() {
                               onChange={(e) =>
                                 handleIngredientRowChange(idx, "ingredientId", e.target.value)
                               }
-                              className="w-full px-3 py-2 text-xs rounded-lg bg-white border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-700 font-semibold text-slate-900"
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-white border border-slate-200 font-semibold text-slate-900 focus:outline-none"
                             >
                               {ingredients.map((ing) => (
                                 <option key={ing.id} value={ing.id}>
@@ -1794,29 +1636,29 @@ export default function MenuCostingPage() {
                             </select>
                           </div>
 
-                          {/* Quantity Input */}
-                          <div className="w-full sm:w-28">
+                          {/* Quantity */}
+                          <div className="w-full sm:w-24">
                             <input
                               type="number"
-                              step="0.01"
-                              min="0.001"
+                              step="any"
+                              min="0"
                               placeholder="Qty"
                               value={row.quantity}
                               onChange={(e) =>
                                 handleIngredientRowChange(idx, "quantity", e.target.value)
                               }
-                              className="w-full px-3 py-2 text-xs rounded-lg bg-white border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-700 text-slate-900 font-semibold"
+                              className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-white border border-slate-200 text-slate-900 font-semibold focus:outline-none"
                             />
                           </div>
 
-                          {/* Unit Select (strictly compatible) */}
-                          <div className="w-full sm:w-24">
+                          {/* Unit */}
+                          <div className="w-full sm:w-20">
                             <select
                               value={row.unit}
                               onChange={(e) =>
                                 handleIngredientRowChange(idx, "unit", e.target.value)
                               }
-                              className="w-full px-2 py-2 text-xs rounded-lg bg-white border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-700 text-slate-900 font-bold"
+                              className="w-full px-2 py-1.5 text-xs rounded-lg bg-white border border-slate-200 text-slate-900 font-bold focus:outline-none"
                             >
                               {compatibleUnits.map((u) => (
                                 <option key={u} value={u}>
@@ -1826,19 +1668,19 @@ export default function MenuCostingPage() {
                             </select>
                           </div>
 
-                          {/* Live Portion Cost Badge */}
-                          <div className="w-full sm:w-28 text-right font-black text-xs text-slate-900 shrink-0">
+                          {/* Portion Cost */}
+                          <div className="w-full sm:w-24 text-right font-black text-xs text-slate-900 shrink-0">
                             {formatCurrency(portionCost)}
                           </div>
 
-                          {/* Delete row */}
+                          {/* Remove */}
                           <button
                             type="button"
                             onClick={() => handleRemoveIngredientRow(idx)}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                            className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
                             title="Remove Ingredient"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       );
@@ -1847,66 +1689,63 @@ export default function MenuCostingPage() {
                 )}
               </div>
 
-              {/* LIVE MARGIN & FINANCIAL PREVIEW BANNER */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 to-emerald-950 text-white space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">
-                    Live Financial Preview
-                  </span>
+              {/* LIVE MARGIN & SUMMARY BANNER */}
+              <div className="p-3.5 rounded-2xl bg-slate-900 text-white space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-emerald-400">Financial Summary</span>
                   <span
-                    className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                    className={`font-black px-2 py-0.5 rounded-full text-[10px] ${
                       itemModalEconomics.foodCostPercent <= 30
-                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-400/30"
+                        ? "bg-emerald-500/20 text-emerald-300"
                         : itemModalEconomics.foodCostPercent <= 40
-                        ? "bg-amber-500/20 text-amber-300 border border-amber-400/30"
-                        : "bg-rose-500/20 text-rose-300 border border-rose-400/30"
+                        ? "bg-amber-500/20 text-amber-300"
+                        : "bg-rose-500/20 text-rose-300"
                     }`}
                   >
                     {itemModalEconomics.foodCostPercent}% Food Cost
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 text-center pt-1 border-t border-white/10">
+                <div className="grid grid-cols-3 gap-2 text-center pt-1 border-t border-white/10 text-xs">
                   <div>
-                    <span className="text-[10px] text-slate-400 block">Total Prep Cost</span>
-                    <span className="text-base font-black text-emerald-400">
+                    <span className="text-[10px] text-slate-400 block">Prep Cost</span>
+                    <span className="font-black text-emerald-400 text-sm">
                       {formatCurrency(itemModalEconomics.totalIngredientCost)}
                     </span>
                   </div>
-
                   <div>
-                    <span className="text-[10px] text-slate-400 block">Gross Profit</span>
-                    <span className="text-base font-black text-white">
+                    <span className="text-[10px] text-slate-400 block">You Make</span>
+                    <span className="font-black text-white text-sm">
                       {formatCurrency(itemModalEconomics.grossProfit)}
                     </span>
                   </div>
-
                   <div>
-                    <span className="text-[10px] text-slate-400 block">Gross Margin</span>
-                    <span className="text-base font-black text-emerald-300">
+                    <span className="text-[10px] text-slate-400 block">Margin</span>
+                    <span className="font-black text-emerald-300 text-sm">
                       {itemModalEconomics.grossMarginPercent}%
                     </span>
                   </div>
                 </div>
               </div>
 
+              {/* Action Buttons */}
               <div className="pt-2 flex items-center justify-end gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsItemModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs transition cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={savingItem}
-                  className="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   {savingItem ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Saving Dish...</span>
+                      <span>Saving...</span>
                     </>
                   ) : (
                     <span>Save Dish Recipe</span>
@@ -1919,44 +1758,41 @@ export default function MenuCostingPage() {
       )}
 
       {/* ========================================================= */}
-      {/* MODAL 5: RECIPE PREPARATION SOP STEPS MODAL                */}
+      {/* MODAL 5: COOKING SOP STEPS MODAL                          */}
       {/* ========================================================= */}
       {isStepsModalOpen && activeStepsItem && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150 flex flex-col max-h-[85vh]">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between shrink-0">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150 flex flex-col max-h-[85vh]">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between shrink-0">
               <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md inline-block mb-1 border border-emerald-200">
-                  Kitchen SOP Standard
-                </span>
-                <h3 className="text-base font-black text-slate-900">
-                  Preparation SOP: {activeStepsItem.name}
+                <h3 className="text-sm font-black text-slate-900">
+                  Cooking SOP: {activeStepsItem.name}
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Ordered instructions for kitchen staff to ensure taste and consistency.
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Step-by-step instructions for kitchen staff
                 </p>
               </div>
               <button
                 onClick={() => setIsStepsModalOpen(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5 space-y-3">
+            <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
               {recipeSteps.length === 0 ? (
-                <div className="p-6 text-center text-xs text-slate-500">
-                  No steps defined yet.
+                <div className="p-5 text-center text-xs text-slate-500">
+                  No cooking steps added yet.
                 </div>
               ) : (
                 recipeSteps.map((step, idx) => (
                   <div
                     key={idx}
-                    className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 group"
+                    className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-black text-emerald-800 bg-emerald-100/70 px-2.5 py-0.5 rounded-lg">
+                      <span className="text-[11px] font-black text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded-md">
                         Step {step.stepNumber}
                       </span>
                       <div className="flex items-center gap-1">
@@ -1981,7 +1817,7 @@ export default function MenuCostingPage() {
                         <button
                           type="button"
                           onClick={() => handleRemoveStep(idx)}
-                          className="p-1 text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                          className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
                           title="Delete step"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1991,10 +1827,10 @@ export default function MenuCostingPage() {
 
                     <textarea
                       rows={2}
-                      placeholder={`Describe step ${step.stepNumber}...`}
+                      placeholder={`Step ${step.stepNumber} instruction...`}
                       value={step.instruction}
                       onChange={(e) => handleStepInstructionChange(idx, e.target.value)}
-                      className="w-full p-2.5 text-xs rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900 resize-none font-medium"
+                      className="w-full p-2 text-xs rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900 resize-none font-medium"
                     />
                   </div>
                 ))
@@ -2003,18 +1839,18 @@ export default function MenuCostingPage() {
               <button
                 type="button"
                 onClick={handleAddStep}
-                className="w-full py-2.5 rounded-xl border border-dashed border-emerald-400/80 bg-emerald-50/50 hover:bg-emerald-50 text-emerald-800 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                className="w-full py-2 rounded-xl border border-dashed border-emerald-400/80 bg-emerald-50/50 hover:bg-emerald-50 text-emerald-800 font-bold text-xs flex items-center justify-center gap-1 transition cursor-pointer"
               >
-                <Plus className="w-4 h-4" />
-                <span>+ Add Next Step</span>
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Next Step</span>
               </button>
             </div>
 
-            <div className="p-4 border-t border-slate-100 flex items-center justify-end gap-2 bg-slate-50/50 shrink-0">
+            <div className="p-3 border-t border-slate-100 flex items-center justify-end gap-2 bg-slate-50 shrink-0">
               <button
                 type="button"
                 onClick={() => setIsStepsModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs transition cursor-pointer"
+                className="px-3.5 py-1.5 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs cursor-pointer"
               >
                 Cancel
               </button>
@@ -2022,15 +1858,15 @@ export default function MenuCostingPage() {
                 type="button"
                 onClick={handleSaveSteps}
                 disabled={savingSteps}
-                className="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 {savingSteps ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Saving SOP...</span>
+                    <span>Saving...</span>
                   </>
                 ) : (
-                  <span>Save Preparation SOP</span>
+                  <span>Save Cooking SOP</span>
                 )}
               </button>
             </div>
