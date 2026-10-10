@@ -486,6 +486,93 @@ export const checklistAuditLogs = pgTable(
   ]
 );
 
+// 18. INGREDIENTS (MENU COSTING MODULE)
+export const ingredients = pgTable(
+  "ingredients",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    restaurantId: uuid("restaurant_id")
+      .references(() => restaurants.id, { onDelete: "cascade" })
+      .notNull(),
+    name: varchar("name", { length: 255 }).notNull(),
+    purchaseQuantity: numeric("purchase_quantity", { precision: 10, scale: 3 }).notNull(),
+    purchaseUnit: varchar("purchase_unit", { length: 50 }).notNull(), // 'kg' | 'g' | 'L' | 'ml' | 'pcs'
+    purchasePrice: numeric("purchase_price", { precision: 10, scale: 2 }).notNull(),
+    costPerBaseUnit: numeric("cost_per_base_unit", { precision: 14, scale: 6 }).notNull(),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("idx_ingredients_restaurant").on(table.restaurantId),
+    index("idx_ingredients_rest_name").on(table.restaurantId, table.name),
+  ]
+);
+
+// 19. MENU ITEMS (MENU COSTING MODULE)
+export const menuItems = pgTable(
+  "menu_items",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    restaurantId: uuid("restaurant_id")
+      .references(() => restaurants.id, { onDelete: "cascade" })
+      .notNull(),
+    name: varchar("name", { length: 255 }).notNull(),
+    sellingPrice: numeric("selling_price", { precision: 10, scale: 2 }).default("0.00").notNull(),
+    category: varchar("category", { length: 100 }),
+    description: text("description"),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("idx_menu_items_restaurant").on(table.restaurantId),
+    index("idx_menu_items_rest_active").on(table.restaurantId, table.isActive),
+    index("idx_menu_items_rest_name").on(table.restaurantId, table.name),
+  ]
+);
+
+// 20. MENU ITEM INGREDIENTS (RECIPE INGREDIENTS PER SERVING)
+export const menuItemIngredients = pgTable(
+  "menu_item_ingredients",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    menuItemId: uuid("menu_item_id")
+      .references(() => menuItems.id, { onDelete: "cascade" })
+      .notNull(),
+    ingredientId: uuid("ingredient_id")
+      .references(() => ingredients.id, { onDelete: "restrict" })
+      .notNull(),
+    quantity: numeric("quantity", { precision: 10, scale: 3 }).notNull(),
+    unit: varchar("unit", { length: 50 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("idx_menu_item_ing_item").on(table.menuItemId),
+    index("idx_menu_item_ing_ing").on(table.ingredientId),
+  ]
+);
+
+// 21. MENU ITEM PREPARATION STEPS (ORDERED SOP STEPS)
+export const menuItemSteps = pgTable(
+  "menu_item_steps",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    menuItemId: uuid("menu_item_id")
+      .references(() => menuItems.id, { onDelete: "cascade" })
+      .notNull(),
+    stepNumber: numeric("step_number", { precision: 5, scale: 0 }).notNull(),
+    instruction: text("instruction").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("idx_menu_item_steps_item").on(table.menuItemId),
+    index("idx_menu_item_steps_order").on(table.menuItemId, table.stepNumber),
+  ]
+);
+
 // RELATIONS
 export const restaurantsRelations = relations(restaurants, ({ many }) => ({
   users: many(users),
@@ -498,6 +585,8 @@ export const restaurantsRelations = relations(restaurants, ({ many }) => ({
   checklistTemplates: many(checklistTemplates),
   dailyChecklistRecords: many(dailyChecklistRecords),
   checklistAuditLogs: many(checklistAuditLogs),
+  ingredients: many(ingredients),
+  menuItems: many(menuItems),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -663,4 +752,40 @@ export const checklistAuditLogsRelations = relations(checklistAuditLogs, ({ one 
     references: [users.id],
   }),
 }));
+
+export const ingredientsRelations = relations(ingredients, ({ one, many }) => ({
+  restaurant: one(restaurants, {
+    fields: [ingredients.restaurantId],
+    references: [restaurants.id],
+  }),
+  menuItemIngredients: many(menuItemIngredients),
+}));
+
+export const menuItemsRelations = relations(menuItems, ({ one, many }) => ({
+  restaurant: one(restaurants, {
+    fields: [menuItems.restaurantId],
+    references: [restaurants.id],
+  }),
+  ingredients: many(menuItemIngredients),
+  steps: many(menuItemSteps),
+}));
+
+export const menuItemIngredientsRelations = relations(menuItemIngredients, ({ one }) => ({
+  menuItem: one(menuItems, {
+    fields: [menuItemIngredients.menuItemId],
+    references: [menuItems.id],
+  }),
+  ingredient: one(ingredients, {
+    fields: [menuItemIngredients.ingredientId],
+    references: [ingredients.id],
+  }),
+}));
+
+export const menuItemStepsRelations = relations(menuItemSteps, ({ one }) => ({
+  menuItem: one(menuItems, {
+    fields: [menuItemSteps.menuItemId],
+    references: [menuItems.id],
+  }),
+}));
+
 

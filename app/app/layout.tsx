@@ -68,6 +68,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           "/app/account",
           "/app/users",
           "/app/settings",
+          "/app/menu-costing",
         ];
         if (staffRestrictedPaths.some((p) => pathname.startsWith(p))) {
           router.replace("/app/checklists");
@@ -107,7 +108,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isHub = pathname === "/app";
 
   // Determine current active module context
-  let currentModule: "hub" | "sop" | "wastage" | "account" = "hub";
+  let currentModule: "hub" | "sop" | "wastage" | "costing" | "account" = "hub";
 
   if (pathname.startsWith("/app/checklists")) {
     currentModule = "sop";
@@ -119,6 +120,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     pathname.startsWith("/app/analytics")
   ) {
     currentModule = "wastage";
+  } else if (pathname.startsWith("/app/menu-costing")) {
+    currentModule = "costing";
   } else if (
     pathname.startsWith("/app/account") ||
     pathname.startsWith("/app/users") ||
@@ -137,6 +140,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         { name: "Checklist History", href: "/app/checklists/history", icon: ClipboardList },
         { name: "Customize Checklist", href: "/app/checklists/builder", icon: Layers },
       ];
+
+  const costingNavItems = [
+    { name: "Menu Items & Margins", href: "/app/menu-costing?tab=items", icon: UtensilsCrossed },
+    { name: "Ingredients Library", href: "/app/menu-costing?tab=ingredients", icon: Layers },
+  ];
 
   const wastageNavItems = isStaff
     ? [{ name: "Record Wastage", href: "/app/wastage", icon: PlusCircle, exact: true }]
@@ -297,6 +305,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
               {currentModule === "sop" && "SOP / Checklist Module"}
               {currentModule === "wastage" && "Wastage Recording Module"}
+              {currentModule === "costing" && "Menu Costing & Margins"}
               {currentModule === "account" && "Account & Admin Module"}
             </div>
           </div>
@@ -378,7 +387,36 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </>
             )}
 
-            {/* C. ACCOUNT MODULE NAVIGATION */}
+            {/* C. COSTING MODULE NAVIGATION */}
+            {currentModule === "costing" && (
+              <>
+                {costingNavItems.map((item) => {
+                  const isActive = pathname === item.href.split("?")[0];
+                  const Icon = item.icon;
+
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs transition ${
+                        isActive
+                          ? "bg-emerald-700 text-white font-extrabold shadow-sm shadow-emerald-700/25"
+                          : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-950 font-semibold"
+                      }`}
+                    >
+                      <Icon
+                        className={`w-4 h-4 shrink-0 ${
+                          isActive ? "text-white" : "text-slate-500"
+                        }`}
+                      />
+                      <span>{item.name}</span>
+                    </Link>
+                  );
+                })}
+              </>
+            )}
+
+            {/* D. ACCOUNT MODULE NAVIGATION */}
             {currentModule === "account" && (
               <>
                 {accountNavItems.map((item) => {
@@ -478,18 +516,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
 
             {/* Quick module selection */}
-            <div className="grid grid-cols-4 gap-2 pb-2">
+            <div className={`grid ${isStaff ? "grid-cols-3" : "grid-cols-5"} gap-1.5 pb-2`}>
               <Link
                 href="/app"
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-2 rounded-xl text-center text-xs font-bold border bg-slate-50 text-slate-700"
+                className="p-1.5 rounded-xl text-center text-[11px] font-bold border bg-slate-50 text-slate-700"
               >
                 🏠 Hub
               </Link>
               <Link
                 href="/app/checklists"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`p-2 rounded-xl text-center text-xs font-bold border transition ${
+                className={`p-1.5 rounded-xl text-center text-[11px] font-bold border transition ${
                   currentModule === "sop" ? "bg-emerald-700 text-white" : "bg-slate-50 text-slate-700"
                 }`}
               >
@@ -498,17 +536,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Link
                 href="/app/wastage"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`p-2 rounded-xl text-center text-xs font-bold border transition ${
+                className={`p-1.5 rounded-xl text-center text-[11px] font-bold border transition ${
                   currentModule === "wastage" ? "bg-teal-700 text-white" : "bg-slate-50 text-slate-700"
                 }`}
               >
-                📉 Wastage
+                📉 Waste
               </Link>
+              {!isStaff && (
+                <Link
+                  href="/app/menu-costing"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`p-1.5 rounded-xl text-center text-[11px] font-bold border transition ${
+                    currentModule === "costing" ? "bg-emerald-700 text-white" : "bg-slate-50 text-slate-700"
+                  }`}
+                >
+                  🍽️ Costing
+                </Link>
+              )}
               {!isStaff && (
                 <Link
                   href="/app/account"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`p-2 rounded-xl text-center text-xs font-bold border transition ${
+                  className={`p-1.5 rounded-xl text-center text-[11px] font-bold border transition ${
                     currentModule === "account" ? "bg-blue-600 text-white" : "bg-slate-50 text-slate-700"
                   }`}
                 >
@@ -523,7 +572,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 Navigation
               </div>
 
-              {(currentModule === "sop" ? sopNavItems : currentModule === "wastage" ? wastageNavItems : currentModule === "account" ? accountNavItems : []).map((item) => (
+              {(currentModule === "sop" ? sopNavItems : currentModule === "wastage" ? wastageNavItems : currentModule === "costing" ? costingNavItems : currentModule === "account" ? accountNavItems : []).map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}

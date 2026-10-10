@@ -14,6 +14,7 @@ import {
   TrendingDown,
   ShieldCheck,
   Zap,
+  UtensilsCrossed,
 } from "lucide-react";
 import { formatCurrency, formatLocalDateToYMD } from "@/lib/utils";
 
@@ -23,6 +24,10 @@ export default function RestaurantOperationsHub() {
   const [todayChecklist, setTodayChecklist] = useState<any>(null);
   const [wastageMetrics, setWastageMetrics] = useState<any>(null);
   const [usersCount, setUsersCount] = useState<number>(1);
+  const [costingStats, setCostingStats] = useState<{ menuItemsCount: number; ingredientsCount: number }>({
+    menuItemsCount: 0,
+    ingredientsCount: 0,
+  });
 
   useEffect(() => {
     fetchHubData();
@@ -55,6 +60,26 @@ export default function RestaurantOperationsHub() {
       if (usersRes.ok) {
         const uData = await usersRes.json();
         if (uData?.users) setUsersCount(uData.users.length);
+      }
+
+      // Fetch Menu Costing stats for non-staff
+      if (authData?.user?.role !== "staff") {
+        try {
+          const [mRes, iRes] = await Promise.all([
+            fetch("/api/menu-costing/menu-items"),
+            fetch("/api/menu-costing/ingredients"),
+          ]);
+          if (mRes.ok && iRes.ok) {
+            const mData = await mRes.json();
+            const iData = await iRes.json();
+            setCostingStats({
+              menuItemsCount: Array.isArray(mData) ? mData.length : 0,
+              ingredientsCount: Array.isArray(iData) ? iData.length : 0,
+            });
+          }
+        } catch (cErr) {
+          console.error("Failed to fetch costing stats:", cErr);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -157,7 +182,7 @@ export default function RestaurantOperationsHub() {
           </span>
         </div>
 
-        <div className={`grid gap-5 ${isStaff ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
+        <div className={`grid gap-5 ${isStaff ? "md:grid-cols-2" : "md:grid-cols-2 lg:grid-cols-4"}`}>
           {/* CARD 1: DAILY CHECKLISTS & SOP */}
           <div className="group bg-white rounded-3xl border-2 border-slate-200 hover:border-emerald-500 p-5 sm:p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
             {/* Top gradient accent glow */}
@@ -270,7 +295,61 @@ export default function RestaurantOperationsHub() {
             </div>
           </div>
 
-          {/* CARD 3: RESTAURANT SETTINGS & STAFF (ADMIN ONLY) */}
+          {/* CARD 3: MENU COSTING & RECIPES (OWNER & MANAGER ONLY) */}
+          {!isStaff && (
+            <div className="group bg-white rounded-3xl border-2 border-slate-200 hover:border-emerald-500 p-5 sm:p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
+              {/* Top gradient accent glow */}
+              <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-emerald-600 via-teal-500 to-amber-500" />
+
+              <div className="space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-center font-bold shadow-xs group-hover:scale-105 group-hover:bg-emerald-700 group-hover:text-white transition-all duration-300">
+                    <UtensilsCrossed className="w-6 h-6" />
+                  </div>
+                  <span className="text-[11px] font-extrabold px-3 py-1 rounded-full bg-emerald-50 text-emerald-900 border border-emerald-300 shadow-2xs">
+                    {costingStats.menuItemsCount} Dishes Costed
+                  </span>
+                </div>
+
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-emerald-800 transition">
+                    Menu Costing & Margins
+                  </h3>
+                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                    Accurate portion ingredient costs, preparation SOP steps, gross margin & price impact simulation.
+                  </p>
+                </div>
+
+                {/* Recipe & Ingredients Metric Card */}
+                <div className="p-3.5 rounded-2xl bg-slate-50/90 border border-slate-200/80 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Ingredients Library
+                    </span>
+                    <div className="text-lg font-black text-slate-900">
+                      {costingStats.ingredientsCount} Items
+                    </div>
+                  </div>
+                  <span className="text-xs font-extrabold text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded-lg">
+                    Live Margins
+                  </span>
+                </div>
+              </div>
+
+              {/* High-impact Action Button */}
+              <div className="mt-5 pt-3 border-t border-slate-100">
+                <Link
+                  href="/app/menu-costing"
+                  className="w-full py-2.5 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-700/20 active:scale-98 transition group/btn"
+                >
+                  <span>Open Menu Costing</span>
+                  <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* CARD 4: RESTAURANT SETTINGS & STAFF (ADMIN ONLY) */}
           {!isStaff && (
             <div className="group bg-white rounded-3xl border-2 border-slate-200 hover:border-slate-800 p-5 sm:p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
               {/* Top gradient accent glow */}
