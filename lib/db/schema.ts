@@ -23,6 +23,9 @@ export const restaurants = pgTable(
     email: varchar("email", { length: 255 }).notNull().unique(),
     phone: varchar("phone", { length: 50 }).notNull(),
     address: text("address"),
+    city: varchar("city", { length: 100 }),
+    state: varchar("state", { length: 100 }),
+    pincode: varchar("pincode", { length: 20 }),
     currency: varchar("currency", { length: 10 }).default("INR").notNull(),
     timezone: varchar("timezone", { length: 100 }).default("Asia/Kolkata").notNull(),
     accountStatus: varchar("account_status", { length: 50 })

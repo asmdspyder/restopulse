@@ -48,6 +48,9 @@ function AccountManagementContent() {
   const [contactName, setContactName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [pincode, setPincode] = useState("");
   const [timezone, setTimezone] = useState("Asia/Kolkata");
   const [currency, setCurrency] = useState("INR");
 
@@ -122,6 +125,9 @@ function AccountManagementContent() {
         setContactName(authData.restaurant.contactName || "");
         setPhone(authData.restaurant.phone || "");
         setAddress(authData.restaurant.address || "");
+        setCity(authData.restaurant.city || "");
+        setState(authData.restaurant.state || "");
+        setPincode(authData.restaurant.pincode || "");
         setTimezone(authData.restaurant.timezone || "Asia/Kolkata");
         setCurrency(authData.restaurant.currency || "INR");
         setShiftsEnabled(authData.restaurant.shiftsEnabled || false);
@@ -150,6 +156,9 @@ function AccountManagementContent() {
           contactName,
           phone,
           address,
+          city,
+          state,
+          pincode,
           timezone,
           currency,
           shiftsEnabled,
@@ -594,13 +603,92 @@ function AccountManagementContent() {
 
             <div className="sm:col-span-2">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                Physical Address
+                Physical / Street Address
               </label>
               <textarea
                 rows={2}
                 disabled={!isAdmin}
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
+                placeholder="Building, street, or landmark"
+                className="w-full p-3 rounded-xl border border-slate-200 text-sm font-semibold focus:border-emerald-500 focus:outline-hidden"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                City
+              </label>
+              <input
+                type="text"
+                disabled={!isAdmin}
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="e.g. Mumbai"
+                className="w-full p-3 rounded-xl border border-slate-200 text-sm font-semibold focus:border-emerald-500 focus:outline-hidden"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                State
+              </label>
+              <input
+                type="text"
+                list="account-indian-states"
+                disabled={!isAdmin}
+                value={state}
+                onChange={(e) => setState(e.target.value)}
+                placeholder="e.g. Maharashtra"
+                className="w-full p-3 rounded-xl border border-slate-200 text-sm font-semibold focus:border-emerald-500 focus:outline-hidden"
+              />
+              <datalist id="account-indian-states">
+                <option value="Andhra Pradesh" />
+                <option value="Arunachal Pradesh" />
+                <option value="Assam" />
+                <option value="Bihar" />
+                <option value="Chhattisgarh" />
+                <option value="Goa" />
+                <option value="Gujarat" />
+                <option value="Haryana" />
+                <option value="Himachal Pradesh" />
+                <option value="Jharkhand" />
+                <option value="Karnataka" />
+                <option value="Kerala" />
+                <option value="Madhya Pradesh" />
+                <option value="Maharashtra" />
+                <option value="Manipur" />
+                <option value="Meghalaya" />
+                <option value="Mizoram" />
+                <option value="Nagaland" />
+                <option value="Odisha" />
+                <option value="Punjab" />
+                <option value="Rajasthan" />
+                <option value="Sikkim" />
+                <option value="Tamil Nadu" />
+                <option value="Telangana" />
+                <option value="Tripura" />
+                <option value="Uttar Pradesh" />
+                <option value="Uttarakhand" />
+                <option value="West Bengal" />
+                <option value="Delhi" />
+                <option value="Jammu and Kashmir" />
+                <option value="Ladakh" />
+                <option value="Puducherry" />
+                <option value="Chandigarh" />
+              </datalist>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                PIN Code
+              </label>
+              <input
+                type="text"
+                disabled={!isAdmin}
+                value={pincode}
+                onChange={(e) => setPincode(e.target.value)}
+                placeholder="e.g. 400001"
                 className="w-full p-3 rounded-xl border border-slate-200 text-sm font-semibold focus:border-emerald-500 focus:outline-hidden"
               />
             </div>

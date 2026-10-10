@@ -58,6 +58,9 @@ export async function initializeDatabaseSchema() {
           email VARCHAR(255) NOT NULL UNIQUE,
           phone VARCHAR(50) NOT NULL,
           address TEXT,
+          city VARCHAR(100),
+          state VARCHAR(100),
+          pincode VARCHAR(20),
           currency VARCHAR(10) DEFAULT 'INR' NOT NULL,
           timezone VARCHAR(100) DEFAULT 'Asia/Kolkata' NOT NULL,
           account_status VARCHAR(50) DEFAULT 'active' NOT NULL,
@@ -355,6 +358,11 @@ export async function initializeDatabaseSchema() {
         ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS previous_cost NUMERIC(10,2);
         ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS last_cost_change NUMERIC(10,2);
         ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS last_cost_change_at TIMESTAMPTZ;
+
+        -- Add Address Details Columns if not existing
+        ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS city VARCHAR(100);
+        ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS state VARCHAR(100);
+        ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS pincode VARCHAR(20);
 
         -- Performance Indexes
         CREATE INDEX IF NOT EXISTS idx_restaurants_status ON restaurants(account_status);

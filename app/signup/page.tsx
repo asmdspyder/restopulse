@@ -16,6 +16,9 @@ function SignupForm() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [pincode, setPincode] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -48,6 +51,9 @@ function SignupForm() {
           email,
           phone,
           address,
+          city,
+          state,
+          pincode,
           password,
           plan,
         }),
@@ -73,9 +79,9 @@ function SignupForm() {
       <div className="sm:mx-auto sm:w-full sm:max-w-xl text-center">
         <Link href="/" className="inline-flex items-center gap-2.5">
           <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold text-xl shadow-md shadow-emerald-500/20">
-            W
+            R
           </div>
-          <span className="text-2xl font-extrabold text-slate-900 tracking-tight">WasteFlow</span>
+          <span className="text-2xl font-extrabold text-slate-900 tracking-tight">Restopulse</span>
         </Link>
         <h2 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">
           Create your restaurant workspace
@@ -201,17 +207,94 @@ function SignupForm() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                Restaurant Address (Optional)
-              </label>
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Restaurant Address"
-                className="mt-1 block w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-hidden"
-              />
+            {/* Restaurant Location & Address Details */}
+            <div className="space-y-3 pt-1">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Restaurant Street Address
+                </label>
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Building, street or landmark"
+                  className="mt-1 block w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-hidden"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="e.g. Mumbai"
+                    className="mt-1 block w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                    State
+                  </label>
+                  <input
+                    type="text"
+                    list="indian-states"
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                    placeholder="e.g. Maharashtra"
+                    className="mt-1 block w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-hidden"
+                  />
+                  <datalist id="indian-states">
+                    <option value="Andhra Pradesh" />
+                    <option value="Arunachal Pradesh" />
+                    <option value="Assam" />
+                    <option value="Bihar" />
+                    <option value="Chhattisgarh" />
+                    <option value="Goa" />
+                    <option value="Gujarat" />
+                    <option value="Haryana" />
+                    <option value="Himachal Pradesh" />
+                    <option value="Jharkhand" />
+                    <option value="Karnataka" />
+                    <option value="Kerala" />
+                    <option value="Madhya Pradesh" />
+                    <option value="Maharashtra" />
+                    <option value="Manipur" />
+                    <option value="Meghalaya" />
+                    <option value="Mizoram" />
+                    <option value="Nagaland" />
+                    <option value="Odisha" />
+                    <option value="Punjab" />
+                    <option value="Rajasthan" />
+                    <option value="Sikkim" />
+                    <option value="Tamil Nadu" />
+                    <option value="Telangana" />
+                    <option value="Tripura" />
+                    <option value="Uttar Pradesh" />
+                    <option value="Uttarakhand" />
+                    <option value="West Bengal" />
+                    <option value="Delhi" />
+                  </datalist>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                    PIN Code
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={10}
+                    value={pincode}
+                    onChange={(e) => setPincode(e.target.value)}
+                    placeholder="e.g. 400001"
+                    className="mt-1 block w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-hidden"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4">

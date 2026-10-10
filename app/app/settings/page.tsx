@@ -25,6 +25,9 @@ export default function SettingsPage() {
   const [contactName, setContactName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [pincode, setPincode] = useState("");
   const [currency, setCurrency] = useState("INR");
   const [timezone, setTimezone] = useState("Asia/Kolkata");
 
@@ -53,6 +56,9 @@ export default function SettingsPage() {
         setContactName(data.restaurant.contactName || "");
         setPhone(data.restaurant.phone || "");
         setAddress(data.restaurant.address || "");
+        setCity(data.restaurant.city || "");
+        setState(data.restaurant.state || "");
+        setPincode(data.restaurant.pincode || "");
         setCurrency(data.restaurant.currency || "INR");
         setTimezone(data.restaurant.timezone || "Asia/Kolkata");
         setShiftsEnabled(Boolean(data.restaurant.shiftsEnabled));
@@ -95,6 +101,9 @@ export default function SettingsPage() {
           contactName,
           phone,
           address,
+          city,
+          state,
+          pincode,
           currency,
           timezone,
           shiftsEnabled,
@@ -239,13 +248,85 @@ export default function SettingsPage() {
         </div>
 
         <div className="text-xs">
-          <label className="block font-bold text-slate-700 mb-1">Address</label>
+          <label className="block font-bold text-slate-700 mb-1">Street Address</label>
           <input
             type="text"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
+            placeholder="Building, street or landmark"
             className="w-full p-2.5 rounded-xl border border-slate-300 text-sm text-slate-900"
           />
+        </div>
+
+        <div className="grid sm:grid-cols-3 gap-4 text-xs">
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">City</label>
+            <input
+              type="text"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="e.g. Mumbai"
+              className="w-full p-2.5 rounded-xl border border-slate-300 text-sm text-slate-900"
+            />
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">State</label>
+            <input
+              type="text"
+              list="settings-indian-states"
+              value={state}
+              onChange={(e) => setState(e.target.value)}
+              placeholder="e.g. Maharashtra"
+              className="w-full p-2.5 rounded-xl border border-slate-300 text-sm text-slate-900"
+            />
+            <datalist id="settings-indian-states">
+              <option value="Andhra Pradesh" />
+              <option value="Arunachal Pradesh" />
+              <option value="Assam" />
+              <option value="Bihar" />
+              <option value="Chhattisgarh" />
+              <option value="Goa" />
+              <option value="Gujarat" />
+              <option value="Haryana" />
+              <option value="Himachal Pradesh" />
+              <option value="Jharkhand" />
+              <option value="Karnataka" />
+              <option value="Kerala" />
+              <option value="Madhya Pradesh" />
+              <option value="Maharashtra" />
+              <option value="Manipur" />
+              <option value="Meghalaya" />
+              <option value="Mizoram" />
+              <option value="Nagaland" />
+              <option value="Odisha" />
+              <option value="Punjab" />
+              <option value="Rajasthan" />
+              <option value="Sikkim" />
+              <option value="Tamil Nadu" />
+              <option value="Telangana" />
+              <option value="Tripura" />
+              <option value="Uttar Pradesh" />
+              <option value="Uttarakhand" />
+              <option value="West Bengal" />
+              <option value="Delhi" />
+              <option value="Jammu and Kashmir" />
+              <option value="Ladakh" />
+              <option value="Puducherry" />
+              <option value="Chandigarh" />
+            </datalist>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">PIN Code</label>
+            <input
+              type="text"
+              value={pincode}
+              onChange={(e) => setPincode(e.target.value)}
+              placeholder="e.g. 400001"
+              className="w-full p-2.5 rounded-xl border border-slate-300 text-sm text-slate-900"
+            />
+          </div>
         </div>
 
         <hr className="border-slate-100" />
