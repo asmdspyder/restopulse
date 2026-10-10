@@ -1494,42 +1494,42 @@ export default function MenuCostingPage() {
       )}
 
       {/* ========================================================= */}
-      {/* MODAL 4: RECIPE BUILDER (SLEEK, CLEAN & INTUITIVE)        */}
+      {/* MODAL 4: RECIPE BUILDER (MINIMALIST, COMPACT & INTUITIVE) */}
       {/* ========================================================= */}
       {isItemModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150 flex flex-col max-h-[90vh]">
+          <div className="bg-white rounded-2xl max-w-xl sm:max-w-2xl w-full shadow-2xl border border-slate-300 overflow-hidden animate-in fade-in zoom-in duration-150 flex flex-col max-h-[90vh]">
             {/* Header */}
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+            <div className="px-4 py-3 border-b border-slate-200 bg-slate-50/80 flex items-center justify-between shrink-0">
               <div>
-                <h3 className="text-base font-black text-slate-900">
+                <h3 className="text-sm font-black text-slate-900">
                   {editingItem ? `Edit Recipe: ${editingItem.name}` : "Create Dish Recipe"}
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-[11px] text-slate-500 mt-0.5">
                   Set dish name, price & ingredients per serving
                 </p>
               </div>
               <button
                 onClick={() => setIsItemModalOpen(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+                className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-lg cursor-pointer transition"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSaveMenuItem} className="flex-1 overflow-y-auto p-4 space-y-4">
+            <form onSubmit={handleSaveMenuItem} className="flex-1 overflow-y-auto p-3.5 space-y-3">
               {itemError && (
-                <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 shrink-0" />
                   <span>{itemError}</span>
                 </div>
               )}
 
               {/* Dish Name & Selling Price */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div className="sm:col-span-2">
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
                     Dish Name <span className="text-rose-500">*</span>
                   </label>
                   <input
@@ -1538,16 +1538,16 @@ export default function MenuCostingPage() {
                     value={itemForm.name}
                     onChange={(e) => setItemForm((p) => ({ ...p, name: e.target.value }))}
                     required
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900 font-semibold"
+                    className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-700 text-slate-900 font-semibold"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
                     Selling Price (₹) <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">
                       ₹
                     </span>
                     <input
@@ -1560,244 +1560,267 @@ export default function MenuCostingPage() {
                         setItemForm((p) => ({ ...p, sellingPrice: e.target.value }))
                       }
                       required
-                      className="w-full pl-7 pr-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900 font-bold"
+                      className="w-full pl-6 pr-2.5 py-1.5 text-xs rounded-lg bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-700 text-slate-900 font-bold"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Category: Dropdown Suggestions + Free Typing */}
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">
-                  Category (Select existing or type new)
-                </label>
-                <div className="space-y-1.5">
+              {/* Category (Compact Inline) */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pt-0.5">
+                <div className="flex items-center gap-2 flex-1">
+                  <label className="text-[11px] font-bold text-slate-600 shrink-0">
+                    Category:
+                  </label>
                   <input
                     type="text"
                     list="category-suggestions"
-                    placeholder="Select or type new category..."
+                    placeholder="Select or type category..."
                     value={itemForm.category}
                     onChange={(e) => setItemForm((p) => ({ ...p, category: e.target.value }))}
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900 font-semibold"
+                    className="flex-1 max-w-xs px-2 py-1 text-xs rounded-lg bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-700 text-slate-900 font-semibold"
                   />
                   <datalist id="category-suggestions">
                     {categories.map((cat) => (
                       <option key={cat} value={cat} />
                     ))}
                   </datalist>
-
-                  {/* Quick-select chips */}
-                  {categories.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                      <span className="text-[10px] text-slate-400 font-bold">Existing:</span>
-                      {categories.map((cat) => (
-                        <button
-                          key={cat}
-                          type="button"
-                          onClick={() => setItemForm((p) => ({ ...p, category: cat }))}
-                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition cursor-pointer ${
-                            itemForm.category === cat
-                              ? "bg-emerald-700 text-white border-emerald-700"
-                              : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
-                          }`}
-                        >
-                          {cat}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
+
+                {categories.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1">
+                    {categories.slice(0, 4).map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setItemForm((p) => ({ ...p, category: cat }))}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold border transition cursor-pointer ${
+                          itemForm.category === cat
+                            ? "bg-emerald-700 text-white border-emerald-700"
+                            : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Recipe Ingredients Section */}
-              <div className="pt-1">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">
-                      Recipe Ingredients (1 Serving)
-                    </h4>
-                  </div>
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black text-slate-900 uppercase tracking-wider">
+                    Recipe Ingredients (1 Serving)
+                  </span>
                   <button
                     type="button"
                     onClick={handleAddIngredientRow}
-                    className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center gap-1 cursor-pointer"
+                    className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center gap-1 cursor-pointer transition border border-emerald-200/80"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>Add Row</span>
+                    <span>Add Ingredient</span>
                   </button>
                 </div>
 
                 {itemForm.ingredients.length === 0 ? (
-                  <div className="p-6 rounded-2xl border-2 border-dashed border-slate-200 text-center bg-slate-50/60">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto mb-2">
+                  <div className="p-5 rounded-xl border-2 border-dashed border-slate-200 text-center bg-slate-50/50">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto mb-1.5">
                       <Layers className="w-4 h-4" />
                     </div>
-                    <p className="text-xs font-semibold text-slate-600 mb-1">No ingredients added yet</p>
-                    <p className="text-[11px] text-slate-400 max-w-xs mx-auto mb-3">Add the ingredients used to prepare one serving of this dish</p>
+                    <p className="text-xs font-semibold text-slate-600 mb-0.5">
+                      No ingredients added yet
+                    </p>
+                    <p className="text-[11px] text-slate-400 mb-2.5">
+                      Add raw ingredients to calculate exact portion cost
+                    </p>
                     <button
                       type="button"
                       onClick={handleAddIngredientRow}
-                      className="px-3.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-sm shadow-emerald-700/20"
+                      className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer shadow-2xs"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Add Ingredient</span>
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-1.5">
-                    {itemForm.ingredients.map((row, idx) => {
-                      const selectedIng = ingredients.find((i) => i.id === row.ingredientId);
-                      const compatibleUnits = selectedIng
-                        ? getCompatibleUnits(selectedIng.purchaseUnit)
-                        : ["kg", "g", "L", "ml", "pcs"];
+                  <div className="rounded-xl border border-slate-200/90 overflow-hidden bg-slate-50/40">
+                    {/* Table Column Headers */}
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100/90 border-b border-slate-200 text-[10px] uppercase font-black tracking-wider text-slate-500">
+                      <div className="flex-1">Raw Ingredient</div>
+                      <div className="w-20 text-center">Portion Qty</div>
+                      <div className="w-16 text-center">Unit</div>
+                      <div className="w-20 text-right">Cost</div>
+                      <div className="w-7 text-center" />
+                    </div>
 
-                      let portionCost = 0;
-                      if (selectedIng && parseFloat(row.quantity as string) > 0) {
-                        try {
-                          portionCost = calculatePortionCost(
-                            parseFloat(row.quantity as string),
-                            row.unit,
-                            selectedIng.costPerBaseUnit,
-                            selectedIng.purchaseUnit
-                          );
-                        } catch {
-                          portionCost = 0;
+                    {/* Table Rows */}
+                    <div className="divide-y divide-slate-100 p-1 space-y-0.5">
+                      {itemForm.ingredients.map((row, idx) => {
+                        const selectedIng = ingredients.find((i) => i.id === row.ingredientId);
+                        const compatibleUnits = selectedIng
+                          ? getCompatibleUnits(selectedIng.purchaseUnit)
+                          : ["kg", "g", "L", "ml", "pcs"];
+
+                        let portionCost = 0;
+                        if (selectedIng && parseFloat(row.quantity as string) > 0) {
+                          try {
+                            portionCost = calculatePortionCost(
+                              parseFloat(row.quantity as string),
+                              row.unit,
+                              selectedIng.costPerBaseUnit,
+                              selectedIng.purchaseUnit
+                            );
+                          } catch {
+                            portionCost = 0;
+                          }
                         }
-                      }
 
-                      return (
-                        <div
-                          key={idx}
-                          className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/90 flex flex-col sm:flex-row items-center gap-2"
-                        >
-                          {/* Ingredient Select */}
-                          <div className="flex-1 w-full sm:w-auto">
-                            <select
-                              value={row.ingredientId}
-                              onChange={(e) =>
-                                handleIngredientRowChange(idx, "ingredientId", e.target.value)
-                              }
-                              className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-white border border-slate-200 font-semibold text-slate-900 focus:outline-none"
-                            >
-                              {ingredients.map((ing) => (
-                                <option key={ing.id} value={ing.id}>
-                                  {ing.name} ({ing.standardCostDisplay})
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {/* Quantity */}
-                          <div className="w-full sm:w-24">
-                            <input
-                              type="number"
-                              step="any"
-                              min="0"
-                              placeholder="Qty"
-                              value={row.quantity}
-                              onChange={(e) =>
-                                handleIngredientRowChange(idx, "quantity", e.target.value)
-                              }
-                              className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-white border border-slate-200 text-slate-900 font-semibold focus:outline-none"
-                            />
-                          </div>
-
-                          {/* Unit */}
-                          <div className="w-full sm:w-20">
-                            <select
-                              value={row.unit}
-                              onChange={(e) =>
-                                handleIngredientRowChange(idx, "unit", e.target.value)
-                              }
-                              className="w-full px-2 py-1.5 text-xs rounded-lg bg-white border border-slate-200 text-slate-900 font-bold focus:outline-none"
-                            >
-                              {compatibleUnits.map((u) => (
-                                <option key={u} value={u}>
-                                  {u}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {/* Portion Cost */}
-                          <div className="w-full sm:w-24 text-right font-black text-xs text-slate-900 shrink-0">
-                            {formatCurrency(portionCost)}
-                          </div>
-
-                          {/* Remove */}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveIngredientRow(idx)}
-                            className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
-                            title="Remove Ingredient"
+                        return (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white transition"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      );
-                    })}
+                            {/* Ingredient select */}
+                            <div className="flex-1 min-w-0">
+                              <select
+                                value={row.ingredientId}
+                                onChange={(e) =>
+                                  handleIngredientRowChange(idx, "ingredientId", e.target.value)
+                                }
+                                className="w-full px-2 py-1 text-xs rounded-lg bg-white border border-slate-200 font-semibold text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-600 truncate"
+                              >
+                                {ingredients.map((ing) => (
+                                  <option key={ing.id} value={ing.id}>
+                                    {ing.name} ({ing.standardCostDisplay})
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Quantity */}
+                            <div className="w-20 shrink-0">
+                              <input
+                                type="number"
+                                step="any"
+                                min="0"
+                                placeholder="0"
+                                value={row.quantity}
+                                onChange={(e) =>
+                                  handleIngredientRowChange(idx, "quantity", e.target.value)
+                                }
+                                className="w-full px-2 py-1 text-xs rounded-lg bg-white border border-slate-200 text-center font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                              />
+                            </div>
+
+                            {/* Unit */}
+                            <div className="w-16 shrink-0">
+                              <select
+                                value={row.unit}
+                                onChange={(e) =>
+                                  handleIngredientRowChange(idx, "unit", e.target.value)
+                                }
+                                className="w-full px-1.5 py-1 text-xs rounded-lg bg-white border border-slate-200 text-center font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                              >
+                                {compatibleUnits.map((u) => (
+                                  <option key={u} value={u}>
+                                    {u}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Portion Cost */}
+                            <div className="w-20 shrink-0 text-right font-black text-xs text-slate-900 pr-1">
+                              {formatCurrency(portionCost)}
+                            </div>
+
+                            {/* Remove */}
+                            <div className="w-7 shrink-0 text-center">
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveIngredientRow(idx)}
+                                className="p-1 text-slate-400 hover:text-rose-600 rounded cursor-pointer transition"
+                                title="Remove"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* LIVE MARGIN & SUMMARY BANNER */}
-              <div className="p-3.5 rounded-2xl bg-slate-900 text-white space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-emerald-400">Financial Summary</span>
+              {/* Sleek, Compact Live Economics Bar */}
+              <div className="p-3 rounded-xl bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-sm">
+                <div className="grid grid-cols-3 gap-3 text-center sm:text-left flex-1">
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+                      Making Cost
+                    </span>
+                    <span className="text-sm font-black text-emerald-400">
+                      {formatCurrency(itemModalEconomics.totalIngredientCost)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+                      Net Profit
+                    </span>
+                    <span
+                      className={`text-sm font-black ${
+                        itemModalEconomics.grossProfit >= 0 ? "text-white" : "text-rose-400"
+                      }`}
+                    >
+                      {formatCurrency(itemModalEconomics.grossProfit)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+                      Gross Margin
+                    </span>
+                    <span className="text-sm font-black text-emerald-300">
+                      {itemModalEconomics.grossMarginPercent}%
+                    </span>
+                  </div>
+                </div>
+
+                <div className="shrink-0 text-center sm:text-right sm:border-l sm:border-white/10 sm:pl-3">
                   {itemModalEconomics.hasSellingPrice && itemModalEconomics.totalIngredientCost > 0 ? (
                     <span
-                      className={`font-black px-2 py-0.5 rounded-full text-[10px] ${
+                      className={`inline-block font-black px-2.5 py-1 rounded-lg text-xs ${
                         itemModalEconomics.foodCostPercent <= 30
-                          ? "bg-emerald-500/20 text-emerald-300"
+                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                           : itemModalEconomics.foodCostPercent <= 40
-                          ? "bg-amber-500/20 text-amber-300"
-                          : "bg-rose-500/20 text-rose-300"
+                          ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                          : "bg-rose-500/20 text-rose-300 border border-rose-500/30"
                       }`}
                     >
                       {itemModalEconomics.foodCostPercent}% Food Cost
                     </span>
                   ) : (
-                    <span className="font-bold px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-400">
-                      Live Preview
+                    <span className="inline-block font-bold px-2 py-0.5 rounded-lg text-[10px] bg-white/10 text-slate-400">
+                      Live Summary
                     </span>
                   )}
-                </div>
-
-                <div className="grid grid-cols-3 gap-2 text-center pt-1 border-t border-white/10 text-xs">
-                  <div>
-                    <span className="text-[10px] text-slate-400 block">Prep Cost</span>
-                    <span className="font-black text-emerald-400 text-sm">
-                      {formatCurrency(itemModalEconomics.totalIngredientCost)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block">You Make</span>
-                    <span className="font-black text-white text-sm">
-                      {formatCurrency(itemModalEconomics.grossProfit)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block">Margin</span>
-                    <span className="font-black text-emerald-300 text-sm">
-                      {itemModalEconomics.grossMarginPercent}%
-                    </span>
-                  </div>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-2 flex items-center justify-end gap-2 shrink-0">
+              <div className="pt-1 flex items-center justify-end gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsItemModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100 font-bold text-xs cursor-pointer transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={savingItem}
-                  className="px-5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="px-4 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-sm shadow-emerald-700/20 flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition"
                 >
                   {savingItem ? (
                     <>
@@ -1815,99 +1838,123 @@ export default function MenuCostingPage() {
       )}
 
       {/* ========================================================= */}
-      {/* MODAL 5: COOKING SOP STEPS MODAL                          */}
+      {/* MODAL 5: COOKING SOP STEPS MODAL (SLEEK & MINIMALIST)     */}
       {/* ========================================================= */}
       {isStepsModalOpen && activeStepsItem && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-150 flex flex-col max-h-[85vh]">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-300 overflow-hidden animate-in fade-in zoom-in duration-150 flex flex-col max-h-[85vh]">
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-slate-200 bg-slate-50/80 flex items-center justify-between shrink-0">
               <div>
                 <h3 className="text-sm font-black text-slate-900">
                   Cooking SOP: {activeStepsItem.name}
                 </h3>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  Step-by-step instructions for kitchen staff
+                  Step-by-step instructions for kitchen staff • {recipeSteps.length}{" "}
+                  {recipeSteps.length === 1 ? "step" : "steps"}
                 </p>
               </div>
               <button
                 onClick={() => setIsStepsModalOpen(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+                className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-lg cursor-pointer transition"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
+            {/* Steps List */}
+            <div className="flex-1 overflow-y-auto p-3.5 space-y-2">
               {recipeSteps.length === 0 ? (
-                <div className="p-5 text-center text-xs text-slate-500">
-                  No cooking steps added yet.
+                <div className="p-6 rounded-xl border-2 border-dashed border-slate-200 text-center bg-slate-50/50">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto mb-1.5">
+                    <BookOpen className="w-4 h-4" />
+                  </div>
+                  <p className="text-xs font-semibold text-slate-600 mb-0.5">
+                    No cooking steps added yet
+                  </p>
+                  <p className="text-[11px] text-slate-400 mb-2.5">
+                    Document how kitchen staff should prepare this dish
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleAddStep}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer shadow-2xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Step 1</span>
+                  </button>
                 </div>
               ) : (
                 recipeSteps.map((step, idx) => (
                   <div
                     key={idx}
-                    className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5"
+                    className="flex items-start gap-2.5 p-2 rounded-xl bg-slate-50/80 hover:bg-slate-50 border border-slate-200/90 transition group"
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-black text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded-md">
-                        Step {step.stepNumber}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => handleMoveStep(idx, "up")}
-                          disabled={idx === 0}
-                          className="p-1 text-slate-400 hover:text-slate-700 disabled:opacity-30 cursor-pointer"
-                          title="Move step up"
-                        >
-                          <MoveUp className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleMoveStep(idx, "down")}
-                          disabled={idx === recipeSteps.length - 1}
-                          className="p-1 text-slate-400 hover:text-slate-700 disabled:opacity-30 cursor-pointer"
-                          title="Move step down"
-                        >
-                          <MoveDown className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveStep(idx)}
-                          className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
-                          title="Delete step"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
+                    {/* Step Number Badge */}
+                    <span className="w-6 h-6 rounded-lg bg-emerald-700 text-white font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                      {step.stepNumber}
+                    </span>
 
+                    {/* Instruction Textarea */}
                     <textarea
                       rows={2}
-                      placeholder={`Step ${step.stepNumber} instruction...`}
+                      placeholder={`Instruction for step ${step.stepNumber}...`}
                       value={step.instruction}
                       onChange={(e) => handleStepInstructionChange(idx, e.target.value)}
-                      className="w-full p-2 text-xs rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900 resize-none font-medium"
+                      className="flex-1 p-2 text-xs rounded-lg bg-white border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-600 focus:border-emerald-600 text-slate-900 resize-none font-medium leading-relaxed placeholder-slate-400"
                     />
+
+                    {/* Compact Actions */}
+                    <div className="flex flex-col items-center gap-0.5 shrink-0 pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => handleMoveStep(idx, "up")}
+                        disabled={idx === 0}
+                        className="p-1 text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer rounded hover:bg-slate-200/60 transition"
+                        title="Move up"
+                      >
+                        <MoveUp className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMoveStep(idx, "down")}
+                        disabled={idx === recipeSteps.length - 1}
+                        className="p-1 text-slate-400 hover:text-slate-700 disabled:opacity-20 cursor-pointer rounded hover:bg-slate-200/60 transition"
+                        title="Move down"
+                      >
+                        <MoveDown className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveStep(idx)}
+                        className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer rounded hover:bg-rose-50 transition"
+                        title="Delete step"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
 
-              <button
-                type="button"
-                onClick={handleAddStep}
-                className="w-full py-2 rounded-xl border border-dashed border-emerald-400/80 bg-emerald-50/50 hover:bg-emerald-50 text-emerald-800 font-bold text-xs flex items-center justify-center gap-1 transition cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Next Step</span>
-              </button>
+              {recipeSteps.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleAddStep}
+                  className="w-full py-2 rounded-xl border border-dashed border-emerald-400/80 bg-emerald-50/40 hover:bg-emerald-50 text-emerald-800 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Next Step</span>
+                </button>
+              )}
             </div>
 
-            <div className="p-3 border-t border-slate-100 flex items-center justify-end gap-2 bg-slate-50 shrink-0">
+            {/* Footer */}
+            <div className="p-3 border-t border-slate-200 flex items-center justify-end gap-2 bg-slate-50/80 shrink-0">
               <button
                 type="button"
                 onClick={() => setIsStepsModalOpen(false)}
-                className="px-3.5 py-1.5 rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs cursor-pointer"
+                className="px-3.5 py-1.5 rounded-lg text-slate-600 hover:bg-slate-200/60 font-bold text-xs cursor-pointer transition"
               >
                 Cancel
               </button>
@@ -1915,7 +1962,7 @@ export default function MenuCostingPage() {
                 type="button"
                 onClick={handleSaveSteps}
                 disabled={savingSteps}
-                className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-700/20 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="px-4 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-2xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition"
               >
                 {savingSteps ? (
                   <>
