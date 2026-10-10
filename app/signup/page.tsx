@@ -75,7 +75,7 @@ function SignupForm() {
       const keyId =
         orderData.key_id ||
         process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
-        "rzp_test_TmAcAQ44tFd1V5";
+        "rzp_test_TmAtkRMQFdl2Qc";
 
       // 2. Open standard Razorpay modal
       const options = {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, initializeDatabaseSchema } from "@/lib/db";
 import { restaurants, users, subscriptions } from "@/lib/db/schema";
-import { hashPassword } from "@/lib/auth/password";
+import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { createSessionToken, setSessionCookie } from "@/lib/auth/session";
 import { seedRestaurantDefaults } from "@/lib/services/onboarding";
 import { PRICING_PLANS, PlanKey } from "@/lib/razorpay";
@@ -34,15 +34,57 @@ export async function POST(req: NextRequest) {
     const cleanEmail = email.trim().toLowerCase();
 
     // Check if user/restaurant email already exists
-    const existingUser = await db
-      .select()
+    const existingUsers = await db
+      .select({
+        user: users,
+        restaurant: restaurants,
+      })
       .from(users)
+      .leftJoin(restaurants, eq(users.restaurantId, restaurants.id))
       .where(eq(users.email, cleanEmail))
       .limit(1);
 
-    if (existingUser.length > 0) {
+    if (existingUsers.length > 0 && existingUsers[0].user) {
+      const existingUser = existingUsers[0].user;
+      const existingRestaurant = existingUsers[0].restaurant;
+
+      // Check if provided password matches
+      const isPasswordValid = await verifyPassword(
+        password,
+        existingUser.passwordHash
+      );
+
+      if (isPasswordValid && existingRestaurant) {
+        // Seamlessly log them in so they can complete checkout
+        const token = await createSessionToken({
+          userId: existingUser.id,
+          email: existingUser.email,
+          name: existingUser.name,
+          role: (existingUser.role as "admin" | "superadmin" | "staff") || "admin",
+          restaurantId: existingRestaurant.id,
+          businessName: existingRestaurant.businessName,
+        });
+
+        await setSessionCookie(token);
+
+        return NextResponse.json({
+          success: true,
+          alreadyExisted: true,
+          user: {
+            id: existingUser.id,
+            name: existingUser.name,
+            email: existingUser.email,
+            role: existingUser.role,
+          },
+          restaurant: {
+            id: existingRestaurant.id,
+            businessName: existingRestaurant.businessName,
+          },
+        });
+      }
+
       return NextResponse.json(
-        { error: "An account with this email already exists" },
+        { error: "An account with this email already exists. Please log in or use another email." },
         { status: 400 }
       );
     }
