@@ -201,22 +201,45 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+        <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="text-xs text-slate-500">
             {subscription?.status === "trial"
-              ? "Upgrade to a paid plan at any time to keep full access without interruption."
+              ? "You are currently on a 7-day free trial. Choose a plan to keep full uninterrupted access."
               : "Renew or update your subscription anytime using Razorpay Checkout."}
           </div>
-          <div className="flex items-center gap-2">
-            <RazorpayCheckoutButton
-              plan={subscription?.planType === "yearly" ? "yearly" : "monthly"}
-              buttonText={subscription?.status === "trial" ? "Activate Plan Now" : "Pay / Renew Plan"}
-              className="py-2.5 px-4 text-xs font-bold"
-              onSuccess={() => {
-                loadSettings();
-                setSuccessMessage("Payment verified successfully! Your subscription is active.");
-              }}
-            />
+          <div className="flex flex-wrap items-center gap-2">
+            {subscription?.status === "trial" ? (
+              <>
+                <RazorpayCheckoutButton
+                  plan="monthly"
+                  buttonText="Monthly (₹399/mo)"
+                  className="py-2 px-3.5 text-xs font-bold"
+                  onSuccess={() => {
+                    loadSettings();
+                    setSuccessMessage("Payment verified! Monthly subscription is now active.");
+                  }}
+                />
+                <RazorpayCheckoutButton
+                  plan="yearly"
+                  buttonText="Yearly (₹3,999/yr • Save ₹789)"
+                  className="py-2 px-3.5 text-xs font-bold bg-emerald-700 hover:bg-emerald-800"
+                  onSuccess={() => {
+                    loadSettings();
+                    setSuccessMessage("Payment verified! Annual subscription is now active.");
+                  }}
+                />
+              </>
+            ) : (
+              <RazorpayCheckoutButton
+                plan={subscription?.planType === "yearly" ? "yearly" : "monthly"}
+                buttonText="Pay / Renew Plan"
+                className="py-2.5 px-4 text-xs font-bold"
+                onSuccess={() => {
+                  loadSettings();
+                  setSuccessMessage("Payment verified successfully! Your subscription is active.");
+                }}
+              />
+            )}
           </div>
         </div>
       </div>

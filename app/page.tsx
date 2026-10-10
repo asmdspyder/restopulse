@@ -791,129 +791,224 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 10. PRICING SECTION WITH MONTHLY / YEARLY TOGGLE */}
-      <section id="pricing" className="py-20 bg-white border-b border-slate-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      {/* 10. PRICING SECTION: 3 CLEAR OPTIONS (FREE TRIAL, MONTHLY, YEARLY) */}
+      <section id="pricing" className="py-20 bg-slate-50 border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3.5 py-1 rounded-full border border-emerald-300">
-            Clear Pricing
+            Pricing & Plans
           </span>
           <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 mt-3">
-            One Simple Plan. Full Access to All Features.
+            Simple, Transparent Pricing for Every Kitchen
           </h2>
-          <p className="text-slate-600 mt-2 text-sm sm:text-base max-w-xl mx-auto font-medium">
-            No per-user fees, no hidden setup charges. Everything your restaurant needs for complete operations management.
+          <p className="text-slate-600 mt-2 text-sm sm:text-base max-w-2xl mx-auto font-medium">
+            Test everything completely free for 7 days, or subscribe directly with instant workspace activation. No per-user fees, no hidden setup charges.
           </p>
 
-          {/* Billing Cycle Selector Toggle */}
-          <div className="mt-8 inline-flex items-center p-1.5 rounded-2xl bg-slate-100 border-2 border-slate-200 shadow-inner">
-            <button
-              type="button"
-              onClick={() => setBillingCycle("monthly")}
-              className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer ${
-                billingCycle === "monthly"
-                  ? "bg-white text-slate-900 shadow-sm border border-slate-200"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              Monthly Billing
-            </button>
-            <button
-              type="button"
-              onClick={() => setBillingCycle("yearly")}
-              className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                billingCycle === "yearly"
-                  ? "bg-emerald-700 text-white shadow-sm"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <span>Yearly Billing</span>
-              <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
-                billingCycle === "yearly" ? "bg-emerald-900 text-emerald-100" : "bg-emerald-100 text-emerald-800"
-              }`}>
-                2 Months Free
-              </span>
-            </button>
-          </div>
+          <div className="mt-12 grid md:grid-cols-3 gap-6 lg:gap-8 items-stretch text-left">
+            {/* CARD 1: 7-DAY FREE TRIAL */}
+            <div className="bg-white rounded-3xl border-2 border-slate-200 p-6 sm:p-7 shadow-xs flex flex-col justify-between hover:border-slate-300 transition">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+                    Risk-Free Trial
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-black uppercase">
+                    7 Days
+                  </span>
+                </div>
 
-          <div className="mt-8 max-w-md mx-auto bg-white rounded-3xl border-2 border-emerald-600 p-6 sm:p-8 shadow-xl relative text-left">
-            <div className="absolute -top-3.5 right-6 px-3.5 py-0.5 rounded-full bg-emerald-700 text-white text-[11px] font-black uppercase tracking-wider shadow-sm">
-              All-In-One Plan
+                <h3 className="text-xl font-black text-slate-900 mt-2">7-Day Free Trial</h3>
+                <p className="text-xs text-slate-500 mt-1">Full access to explore checklists, wastage tracking, and dish costing.</p>
+
+                <div className="mt-6 pb-6 border-b border-slate-100 flex items-baseline gap-1.5">
+                  <span className="text-4xl font-black text-slate-900">₹0</span>
+                  <span className="text-xs font-bold text-slate-500">/ 7 days</span>
+                </div>
+
+                <ul className="mt-6 space-y-3 text-xs text-slate-700 font-semibold">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>7 Days Full Access to All Features</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Station Opening & Closing SOPs</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Live Back-Camera Photo Verification</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>10-Second Food Wastage Logging</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Exact Dish Recipe Costing & Margins</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Unlimited Staff Logins & Named Audit</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>No credit card required to start</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="mt-8 pt-4 border-t border-slate-100">
+                <Link
+                  href="/signup?plan=trial"
+                  className="w-full py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs flex items-center justify-center gap-2 transition"
+                >
+                  <span>Start 7-Day Free Trial</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+                <p className="text-center text-[10px] text-slate-400 mt-2">
+                  No payment today • Upgrade anytime
+                </p>
+              </div>
             </div>
 
-            <h3 className="text-xl font-extrabold text-slate-900">RestoPulse Pro</h3>
-            <p className="text-xs text-slate-500 mt-1">SOP Checklists + Food Waste Tracking + Menu Costing & Margins</p>
+            {/* CARD 2: MONTHLY PLAN */}
+            <div className="bg-white rounded-3xl border-2 border-slate-200 p-6 sm:p-7 shadow-xs flex flex-col justify-between hover:border-slate-300 transition">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+                    Monthly Plan
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-black uppercase">
+                    Direct Pay
+                  </span>
+                </div>
 
-            <div className="mt-5 pb-5 border-b border-slate-200 flex items-baseline gap-2">
-              {billingCycle === "monthly" ? (
-                <>
-                  <span className="text-4xl sm:text-5xl font-black text-slate-900">₹399</span>
-                  <span className="text-xs sm:text-sm font-bold text-slate-500">/ month</span>
-                </>
-              ) : (
-                <>
-                  <span className="text-4xl sm:text-5xl font-black text-slate-900">₹3,999</span>
-                  <span className="text-xs sm:text-sm font-bold text-slate-500">/ year</span>
-                  <span className="ml-2 text-xs font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                <h3 className="text-xl font-black text-slate-900 mt-2">Monthly Subscription</h3>
+                <p className="text-xs text-slate-500 mt-1">Flexible pay-as-you-go billing with instant workspace activation.</p>
+
+                <div className="mt-6 pb-6 border-b border-slate-100 flex items-baseline gap-1.5">
+                  <span className="text-4xl font-black text-slate-900">₹399</span>
+                  <span className="text-xs font-bold text-slate-500">/ month</span>
+                </div>
+
+                <ul className="mt-6 space-y-3 text-xs text-slate-700 font-semibold">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Everything in Free Trial</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Direct Razorpay Payment & Activation</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Uninterrupted Shift Continuity</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Monthly Food Wastage Analytics</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Ingredient Price Fluctuation Alerts</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Excel & CSV Report Downloads</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Cancel or renew anytime</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="mt-8 pt-4 border-t border-slate-100">
+                <Link
+                  href="/signup?plan=monthly"
+                  className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-2 transition shadow-md shadow-emerald-600/20"
+                >
+                  <span>Subscribe Monthly (₹399)</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+                <p className="text-center text-[10px] text-slate-400 mt-2">
+                  ₹399 billed monthly • Direct activation
+                </p>
+              </div>
+            </div>
+
+            {/* CARD 3: YEARLY PLAN (HIGHLIGHTED / BEST VALUE) */}
+            <div className="bg-white rounded-3xl border-2 border-emerald-600 p-6 sm:p-7 shadow-xl flex flex-col justify-between relative ring-2 ring-emerald-500/20">
+              <div className="absolute -top-3.5 right-6 px-3.5 py-0.5 rounded-full bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wider shadow-sm">
+                Best Value • 2 Months Free
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-800">
+                    Annual Plan
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-[10px] font-black uppercase border border-emerald-300">
                     Save ₹789
                   </span>
-                </>
-              )}
+                </div>
+
+                <h3 className="text-xl font-black text-slate-900 mt-2">Annual Subscription</h3>
+                <p className="text-xs text-slate-500 mt-1">1 full year of smooth, uninterrupted kitchen operations.</p>
+
+                <div className="mt-6 pb-6 border-b border-slate-100 flex items-baseline gap-1.5">
+                  <span className="text-4xl font-black text-slate-900">₹3,999</span>
+                  <span className="text-xs font-bold text-slate-500">/ year</span>
+                  <span className="ml-2 text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                    ₹333/mo
+                  </span>
+                </div>
+
+                <ul className="mt-6 space-y-3 text-xs text-slate-700 font-semibold">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Everything in Monthly Plan</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="text-emerald-950 font-bold">2 Months Completely Free (Save ₹789)</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Uninterrupted 365-Day Access</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Priority Onboarding & Setup</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Continuous Daily Operations & SOPs</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Direct Razorpay Payment & Activation</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Dedicated WhatsApp & Priority Support</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="mt-8 pt-4 border-t border-slate-100">
+                <Link
+                  href="/signup?plan=yearly"
+                  className="w-full py-3.5 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs flex items-center justify-center gap-2 transition shadow-md shadow-emerald-700/25"
+                >
+                  <span>Subscribe Yearly (₹3,999)</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+                <p className="text-center text-[10px] text-slate-400 mt-2">
+                  ₹3,999 billed annually • Save ₹789
+                </p>
+              </div>
             </div>
-
-            <ul className="mt-6 space-y-3 text-xs sm:text-sm text-slate-700 font-semibold">
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Station Opening & Closing SOP Checklists</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Live Back-Camera Photo Verification</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>10-Second Food Wastage Recording & Reasons</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Exact Dish Recipe Costing & Gross Margin %</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Ingredient Price Rise Impact Alerts</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Step-by-Step Kitchen Preparation SOPs</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Custom SOP Template & Recipe Builder</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Unlimited Staff Logins with Named Records</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Management Reports & Excel CSV Export</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Runs smoothly on any Android phone or iPhone</span>
-              </li>
-            </ul>
-
-            <Link
-              href={`/signup?plan=${billingCycle}`}
-              className="mt-8 w-full py-3.5 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-sm flex items-center justify-center gap-2 transition shadow-md shadow-emerald-700/20"
-            >
-              <span>Start 7-Day Free Trial</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-
-            <p className="text-center text-[11px] text-slate-500 mt-3 font-medium">
-              7-day free trial • Instant setup • Cancel anytime
-            </p>
           </div>
         </div>
       </section>

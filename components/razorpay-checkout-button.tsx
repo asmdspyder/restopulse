@@ -21,7 +21,7 @@ declare global {
 }
 
 // Helper to ensure Razorpay checkout script is loaded
-function loadRazorpayScript(): Promise<boolean> {
+export function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
     if (typeof window === "undefined") {
       resolve(false);

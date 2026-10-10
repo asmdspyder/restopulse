@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
     }
 
     const passwordHash = await hashPassword(password);
+    const isFreeTrial = plan === "trial";
     const selectedPlan = PRICING_PLANS[plan as PlanKey] || PRICING_PLANS.monthly;
 
     // 1. Create Restaurant Workspace
@@ -85,7 +86,7 @@ export async function POST(req: NextRequest) {
     // 3. Seed Default Categories, Units, Reasons
     await seedRestaurantDefaults(restaurant.id);
 
-    // 4. Create Initial Subscription Record (7-Day Free Trial)
+    // 4. Create Initial Subscription Record (7-Day Free Trial default buffer)
     const now = new Date();
     // Free trial is strictly for 7 days
     const trialEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -94,9 +95,9 @@ export async function POST(req: NextRequest) {
       .insert(subscriptions)
       .values({
         restaurantId: restaurant.id,
-        planType: plan,
-        billingInterval: selectedPlan.interval,
-        amount: selectedPlan.amount.toFixed(2),
+        planType: isFreeTrial ? "trial" : plan,
+        billingInterval: isFreeTrial ? "trial" : selectedPlan.interval,
+        amount: isFreeTrial ? "0.00" : selectedPlan.amount.toFixed(2),
         currency: "INR",
         status: "trial",
         currentPeriodStart: now,
