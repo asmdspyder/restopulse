@@ -310,6 +310,18 @@ export async function updateIngredient(
         const oldEcon = calculateMenuItemEconomics(sellingPrice, [oldTotalCost]);
         const newEcon = calculateMenuItemEconomics(sellingPrice, [newTotalCost]);
 
+        if (costChange !== 0) {
+          await db
+            .update(menuItems)
+            .set({
+              previousCost: oldTotalCost.toFixed(2),
+              lastCostChange: costChange.toFixed(2),
+              lastCostChangeAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .where(eq(menuItems.id, recipe.menuItemId));
+        }
+
         impactItems.push({
           menuItemId: recipe.menuItemId,
           menuItemName: recipe.menuItemName,
@@ -496,6 +508,9 @@ export async function getMenuItems(
       category: item.category,
       description: item.description,
       isActive: item.isActive,
+      previousCost: item.previousCost ? Number(item.previousCost) : null,
+      lastCostChange: item.lastCostChange ? Number(item.lastCostChange) : null,
+      lastCostChangeAt: item.lastCostChangeAt,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
       ingredientCount: itemIngredients.length,
@@ -582,6 +597,9 @@ export async function getMenuItemById(restaurantId: string, id: string) {
   return {
     ...item,
     sellingPrice,
+    previousCost: item.previousCost ? Number(item.previousCost) : null,
+    lastCostChange: item.lastCostChange ? Number(item.lastCostChange) : null,
+    lastCostChangeAt: item.lastCostChangeAt,
     ingredients: ingredientsWithCost,
     steps: steps.map((s) => ({
       id: s.id,

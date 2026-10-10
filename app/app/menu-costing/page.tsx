@@ -72,6 +72,9 @@ interface MenuItem {
   isActive: boolean;
   ingredientCount: number;
   stepCount: number;
+  previousCost?: number | null;
+  lastCostChange?: number | null;
+  lastCostChangeAt?: string | Date | null;
   ingredients?: MenuItemIngredientRow[];
   steps?: MenuItemStep[];
   economics: {
@@ -421,13 +424,7 @@ export default function MenuCostingPage() {
       sellingPrice: "",
       category: categories[0] || "",
       description: "",
-      ingredients: [
-        {
-          ingredientId: ingredients[0]?.id || "",
-          quantity: "100",
-          unit: ingredients[0] ? getCompatibleUnits(ingredients[0].purchaseUnit)[0] : "g",
-        },
-      ],
+      ingredients: [],
     });
     setItemError("");
     setIsItemModalOpen(true);
@@ -472,7 +469,7 @@ export default function MenuCostingPage() {
         ...prev.ingredients,
         {
           ingredientId: firstIng.id,
-          quantity: "100",
+          quantity: "",
           unit: compatibleUnits[0] || firstIng.purchaseUnit,
         },
       ],
@@ -911,7 +908,7 @@ export default function MenuCostingPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredMenuItems.map((item) => {
               const econ = item.economics;
               const isHealthy = econ.foodCostPercent <= 30;
@@ -920,7 +917,7 @@ export default function MenuCostingPage() {
               return (
                 <div
                   key={item.id}
-                  className="bg-white rounded-2xl border border-slate-200 hover:border-emerald-500 p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group"
+                  className="bg-white rounded-2xl border-2 border-slate-200/90 hover:border-emerald-600 p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group"
                 >
                   <div className="space-y-3">
                     {/* Top Row: Dish Name + Category & Margin Pill */}
@@ -957,7 +954,7 @@ export default function MenuCostingPage() {
                     </div>
 
                     {/* Compact 3-Column Financial Grid */}
-                    <div className="grid grid-cols-3 gap-1.5 p-2 rounded-xl bg-slate-50 border border-slate-200/70 text-center">
+                    <div className="grid grid-cols-3 gap-1.5 p-2 rounded-xl bg-slate-50 border border-slate-200 text-center">
                       <div>
                         <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">
                           Selling Price
@@ -988,6 +985,33 @@ export default function MenuCostingPage() {
                       </div>
                     </div>
 
+                    {/* Recent Cost Impact Indicator (if ingredient price updated recently) */}
+                    {item.lastCostChange !== null &&
+                      item.lastCostChange !== undefined &&
+                      item.lastCostChange !== 0 && (
+                        <div className="flex items-center justify-between text-[10px] font-bold px-2.5 py-1 rounded-lg bg-amber-50/90 text-amber-900 border border-amber-200/80">
+                          <div className="flex items-center gap-1.5 min-w-0 truncate">
+                            <span>{item.lastCostChange > 0 ? "📈" : "📉"}</span>
+                            <span className="truncate">
+                              Prep cost {item.lastCostChange > 0 ? "+" : ""}{formatCurrency(item.lastCostChange)}
+                            </span>
+                            {item.previousCost !== null && item.previousCost !== undefined && (
+                              <span className="text-amber-700/80 font-semibold shrink-0">
+                                (was {formatCurrency(item.previousCost)})
+                              </span>
+                            )}
+                          </div>
+                          {item.lastCostChangeAt && (
+                            <span className="text-amber-700/70 text-[9px] font-medium shrink-0 ml-1">
+                              • {new Date(item.lastCostChangeAt).toLocaleDateString("en-IN", {
+                                day: "numeric",
+                                month: "short",
+                              })}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
                     {/* Summary Counter Pill */}
                     <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
                       <span>{item.ingredientCount} ingredients</span>
@@ -1001,7 +1025,7 @@ export default function MenuCostingPage() {
                   </div>
 
                   {/* Compact Actions Footer */}
-                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-1.5">
+                  <div className="mt-3 pt-2.5 border-t border-slate-200/80 flex items-center justify-between gap-1.5">
                     <button
                       onClick={() => openStepsModal(item)}
                       className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 font-bold text-xs flex items-center gap-1 transition cursor-pointer"
@@ -1582,14 +1606,19 @@ export default function MenuCostingPage() {
                 </div>
 
                 {itemForm.ingredients.length === 0 ? (
-                  <div className="p-5 rounded-2xl border border-dashed border-slate-200 text-center bg-slate-50">
-                    <p className="text-xs text-slate-500 mb-2">No ingredients added to this recipe yet.</p>
+                  <div className="p-6 rounded-2xl border-2 border-dashed border-slate-200 text-center bg-slate-50/60">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto mb-2">
+                      <Layers className="w-4 h-4" />
+                    </div>
+                    <p className="text-xs font-semibold text-slate-600 mb-1">No ingredients added yet</p>
+                    <p className="text-[11px] text-slate-400 max-w-xs mx-auto mb-3">Add the ingredients used to prepare one serving of this dish</p>
                     <button
                       type="button"
                       onClick={handleAddIngredientRow}
-                      className="px-3 py-1.5 rounded-xl bg-emerald-700 text-white font-bold text-xs"
+                      className="px-3.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-sm shadow-emerald-700/20"
                     >
-                      Add First Ingredient
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Ingredient</span>
                     </button>
                   </div>
                 ) : (
@@ -1693,17 +1722,23 @@ export default function MenuCostingPage() {
               <div className="p-3.5 rounded-2xl bg-slate-900 text-white space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-bold text-emerald-400">Financial Summary</span>
-                  <span
-                    className={`font-black px-2 py-0.5 rounded-full text-[10px] ${
-                      itemModalEconomics.foodCostPercent <= 30
-                        ? "bg-emerald-500/20 text-emerald-300"
-                        : itemModalEconomics.foodCostPercent <= 40
-                        ? "bg-amber-500/20 text-amber-300"
-                        : "bg-rose-500/20 text-rose-300"
-                    }`}
-                  >
-                    {itemModalEconomics.foodCostPercent}% Food Cost
-                  </span>
+                  {itemModalEconomics.hasSellingPrice && itemModalEconomics.totalIngredientCost > 0 ? (
+                    <span
+                      className={`font-black px-2 py-0.5 rounded-full text-[10px] ${
+                        itemModalEconomics.foodCostPercent <= 30
+                          ? "bg-emerald-500/20 text-emerald-300"
+                          : itemModalEconomics.foodCostPercent <= 40
+                          ? "bg-amber-500/20 text-amber-300"
+                          : "bg-rose-500/20 text-rose-300"
+                      }`}
+                    >
+                      {itemModalEconomics.foodCostPercent}% Food Cost
+                    </span>
+                  ) : (
+                    <span className="font-bold px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-400">
+                      Live Preview
+                    </span>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 text-center pt-1 border-t border-white/10 text-xs">

@@ -351,6 +351,11 @@ export async function initializeDatabaseSchema() {
           updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
         );
 
+        -- Add Cost Change Tracking Columns if not existing
+        ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS previous_cost NUMERIC(10,2);
+        ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS last_cost_change NUMERIC(10,2);
+        ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS last_cost_change_at TIMESTAMPTZ;
+
         -- Performance Indexes
         CREATE INDEX IF NOT EXISTS idx_restaurants_status ON restaurants(account_status);
         CREATE INDEX IF NOT EXISTS idx_restaurants_created_at ON restaurants(created_at DESC);
