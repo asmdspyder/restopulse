@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { db } from "@/lib/db";
 import { restaurants, subscriptions, users } from "@/lib/db/schema";
 import { PRICING_PLANS } from "@/lib/razorpay";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 // Helper to find associated restaurant from webhook data
 async function findRestaurant(

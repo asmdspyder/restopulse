@@ -4,7 +4,7 @@ import { getAuthContext } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { subscriptions, restaurants } from "@/lib/db/schema";
 import { PRICING_PLANS, PlanKey } from "@/lib/razorpay";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
   try {
