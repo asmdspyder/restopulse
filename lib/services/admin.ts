@@ -39,7 +39,8 @@ export async function getAdminOverviewMetrics() {
 }
 
 export async function getAdminAccounts(search?: string, statusFilter?: string) {
-  let query = db
+  // Query all restaurants
+  const allRestaurants = await db
     .select({
       id: restaurants.id,
       businessName: restaurants.businessName,
@@ -48,16 +49,52 @@ export async function getAdminAccounts(search?: string, statusFilter?: string) {
       phone: restaurants.phone,
       accountStatus: restaurants.accountStatus,
       createdAt: restaurants.createdAt,
-      subPlan: subscriptions.planType,
-      subStatus: subscriptions.status,
-      subAmount: subscriptions.amount,
-      subExpiry: subscriptions.currentPeriodEnd,
     })
     .from(restaurants)
-    .leftJoin(subscriptions, eq(restaurants.id, subscriptions.restaurantId))
     .orderBy(desc(restaurants.createdAt));
 
-  const rows = await query;
+  // Query all subscriptions ordered by created_at DESC
+  const allSubscriptions = await db
+    .select({
+      restaurantId: subscriptions.restaurantId,
+      planType: subscriptions.planType,
+      status: subscriptions.status,
+      amount: subscriptions.amount,
+      currentPeriodEnd: subscriptions.currentPeriodEnd,
+    })
+    .from(subscriptions)
+    .orderBy(desc(subscriptions.createdAt));
+
+  // Map each restaurant to its single latest/active subscription
+  const latestSubMap = new Map<string, (typeof allSubscriptions)[0]>();
+  for (const sub of allSubscriptions) {
+    if (!latestSubMap.has(sub.restaurantId)) {
+      latestSubMap.set(sub.restaurantId, sub);
+    } else {
+      const current = latestSubMap.get(sub.restaurantId)!;
+      // Prefer active subscription over trial
+      if (current.status !== "active" && sub.status === "active") {
+        latestSubMap.set(sub.restaurantId, sub);
+      }
+    }
+  }
+
+  const rows = allRestaurants.map((r) => {
+    const sub = latestSubMap.get(r.id);
+    return {
+      id: r.id,
+      businessName: r.businessName,
+      contactName: r.contactName,
+      email: r.email,
+      phone: r.phone,
+      accountStatus: r.accountStatus,
+      createdAt: r.createdAt,
+      subPlan: sub?.planType || null,
+      subStatus: sub?.status || null,
+      subAmount: sub?.amount ? parseFloat(sub.amount) : null,
+      subExpiry: sub?.currentPeriodEnd || null,
+    };
+  });
 
   let filtered = rows;
 

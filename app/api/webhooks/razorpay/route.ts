@@ -148,14 +148,34 @@ export async function POST(req: NextRequest) {
             periodEnd.setMonth(periodEnd.getMonth() + 1);
           }
 
-          // Idempotency check: see if payment was already recorded
-          const [existingPaymentSub] = await db
+          // Check if subscription already exists for this restaurant
+          const [existingSub] = await db
             .select()
             .from(subscriptions)
-            .where(eq(subscriptions.razorpayPaymentId, paymentId))
+            .where(eq(subscriptions.restaurantId, restaurant.id))
+            .orderBy(desc(subscriptions.createdAt))
             .limit(1);
 
-          if (!existingPaymentSub) {
+          if (existingSub) {
+            // Update existing subscription record in place
+            await db
+              .update(subscriptions)
+              .set({
+                razorpayPaymentId: paymentId,
+                razorpaySubscriptionId: orderId || existingSub.razorpaySubscriptionId,
+                planType,
+                billingInterval: planConfig.interval,
+                amount: (amountPaise / 100).toFixed(2),
+                currency: payment.currency || "INR",
+                status: "active",
+                currentPeriodStart: now,
+                currentPeriodEnd: periodEnd,
+                nextBillingAt: periodEnd,
+                updatedAt: new Date(),
+              })
+              .where(eq(subscriptions.id, existingSub.id));
+          } else {
+            // Insert only if no subscription exists
             await db.insert(subscriptions).values({
               restaurantId: restaurant.id,
               razorpayPaymentId: paymentId,

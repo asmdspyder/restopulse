@@ -77,25 +77,56 @@ export async function POST(req: NextRequest) {
         periodEnd.setMonth(periodEnd.getMonth() + 1);
       }
 
-      // 1. Insert new active subscription record
-      const [newSub] = await db
-        .insert(subscriptions)
-        .values({
-          restaurantId: auth.restaurant.id,
-          razorpayPaymentId: payment_id,
-          razorpaySubscriptionId: order_id,
-          planType: plan,
-          billingInterval: planConfig.interval,
-          amount: planConfig.amount.toFixed(2),
-          currency: "INR",
-          status: "active",
-          currentPeriodStart: now,
-          currentPeriodEnd: periodEnd,
-          nextBillingAt: periodEnd,
-        })
-        .returning();
+      // 1. Check if subscription already exists for this restaurant
+      const [existingSub] = await db
+        .select()
+        .from(subscriptions)
+        .where(eq(subscriptions.restaurantId, auth.restaurant.id))
+        .orderBy(desc(subscriptions.createdAt))
+        .limit(1);
 
-      subscriptionRecord = newSub;
+      if (existingSub) {
+        // Update existing subscription record in place
+        const [updatedSub] = await db
+          .update(subscriptions)
+          .set({
+            razorpayPaymentId: payment_id,
+            razorpaySubscriptionId: order_id,
+            planType: plan,
+            billingInterval: planConfig.interval,
+            amount: planConfig.amount.toFixed(2),
+            currency: "INR",
+            status: "active",
+            currentPeriodStart: now,
+            currentPeriodEnd: periodEnd,
+            nextBillingAt: periodEnd,
+            updatedAt: new Date(),
+          })
+          .where(eq(subscriptions.id, existingSub.id))
+          .returning();
+
+        subscriptionRecord = updatedSub;
+      } else {
+        // Insert new subscription record if none exists
+        const [newSub] = await db
+          .insert(subscriptions)
+          .values({
+            restaurantId: auth.restaurant.id,
+            razorpayPaymentId: payment_id,
+            razorpaySubscriptionId: order_id,
+            planType: plan,
+            billingInterval: planConfig.interval,
+            amount: planConfig.amount.toFixed(2),
+            currency: "INR",
+            status: "active",
+            currentPeriodStart: now,
+            currentPeriodEnd: periodEnd,
+            nextBillingAt: periodEnd,
+          })
+          .returning();
+
+        subscriptionRecord = newSub;
+      }
 
       // 2. Mark restaurant account as active
       await db
