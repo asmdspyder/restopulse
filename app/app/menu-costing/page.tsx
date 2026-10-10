@@ -829,7 +829,7 @@ export default function MenuCostingPage() {
             }`}
           >
             <UtensilsCrossed className="w-4 h-4" />
-            <span>Menu Items & Margins ({menuItems.length})</span>
+            <span>Dishes & Recipes ({menuItems.length})</span>
           </button>
 
           <button
@@ -841,7 +841,7 @@ export default function MenuCostingPage() {
             }`}
           >
             <Layers className="w-4 h-4" />
-            <span>Ingredients Library ({ingredients.length})</span>
+            <span>Raw Ingredients ({ingredients.length})</span>
           </button>
         </div>
 
@@ -967,21 +967,21 @@ export default function MenuCostingPage() {
                 >
                   <div className="space-y-4">
                     {/* Header: Title, Category, Status */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="min-w-0 flex-1">
                         {item.category && (
                           <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md inline-block mb-1 border border-emerald-200/60">
                             {item.category}
                           </span>
                         )}
-                        <h3 className="text-base font-black text-slate-900 group-hover:text-emerald-800 transition line-clamp-1">
+                        <h3 className="text-base font-black text-slate-900 group-hover:text-emerald-800 transition truncate">
                           {item.name}
                         </h3>
                       </div>
 
                       {econ.isComplete ? (
                         <span
-                          className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border shrink-0 ${
+                          className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border shrink-0 ${
                             isHealthy
                               ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                               : isModerate
@@ -989,10 +989,11 @@ export default function MenuCostingPage() {
                               : "bg-rose-50 text-rose-800 border-rose-200"
                           }`}
                         >
+                          {isHealthy ? "🟢 " : isModerate ? "🟡 " : "🔴 "}
                           {econ.foodCostPercent}% Food Cost
                         </span>
                       ) : (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                        <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
                           Incomplete Recipe
                         </span>
                       )}
@@ -1017,7 +1018,7 @@ export default function MenuCostingPage() {
                         </div>
                         <div>
                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                            Ingredient Cost
+                            Kitchen Prep Cost
                           </span>
                           <span className="text-sm font-black text-emerald-800">
                             {econ.isComplete ? formatCurrency(econ.totalIngredientCost) : "—"}
@@ -1028,7 +1029,7 @@ export default function MenuCostingPage() {
                       <div className="pt-2 border-t border-slate-200/70 grid grid-cols-2 gap-2 text-xs">
                         <div>
                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                            Gross Profit
+                            You Keep (Profit)
                           </span>
                           <span
                             className={`text-sm font-black ${
@@ -1040,7 +1041,7 @@ export default function MenuCostingPage() {
                         </div>
                         <div>
                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                            Gross Margin %
+                            Profit Margin
                           </span>
                           <span
                             className={`text-sm font-black ${
@@ -1059,11 +1060,11 @@ export default function MenuCostingPage() {
 
                     {/* Recipe & SOP summary pills */}
                     <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-                      <span className="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-md text-[11px]">
+                      <span className="inline-flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded-md text-[11px]">
                         <Layers className="w-3 h-3 text-slate-400" />
                         {item.ingredientCount} {item.ingredientCount === 1 ? "ingredient" : "ingredients"}
                       </span>
-                      <span className="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-md text-[11px]">
+                      <span className="inline-flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded-md text-[11px]">
                         <BookOpen className="w-3 h-3 text-slate-400" />
                         {item.stepCount} {item.stepCount === 1 ? "step" : "steps"}
                       </span>
@@ -1078,7 +1079,7 @@ export default function MenuCostingPage() {
                       title="View & Edit Preparation SOP Steps"
                     >
                       <BookOpen className="w-3.5 h-3.5" />
-                      <span>Prep SOP</span>
+                      <span>Cooking SOP ({item.stepCount})</span>
                     </button>
 
                     <div className="flex items-center gap-1.5">
@@ -1088,7 +1089,7 @@ export default function MenuCostingPage() {
                         title="Edit Dish Recipe & Selling Price"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
-                        <span>Recipe</span>
+                        <span>Recipe & Cost</span>
                       </button>
                       <button
                         onClick={() => handleDeleteMenuItem(item)}
@@ -1144,11 +1145,11 @@ export default function MenuCostingPage() {
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase font-black tracking-wider text-slate-500">
                   <tr>
-                    <th className="py-3 px-4">Ingredient</th>
-                    <th className="py-3 px-4">Purchase Spec</th>
+                    <th className="py-3 px-4">Ingredient Name</th>
+                    <th className="py-3 px-4">Bought Package</th>
                     <th className="py-3 px-4">Purchase Price</th>
-                    <th className="py-3 px-4">Standard Unit Cost</th>
-                    <th className="py-3 px-4">Recipe Usage</th>
+                    <th className="py-3 px-4">Unit Rate</th>
+                    <th className="py-3 px-4">Dish Usage</th>
                     <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
