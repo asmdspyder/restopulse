@@ -23,6 +23,7 @@ import {
   ArrowLeft,
   Sliders,
   Sparkles,
+  Clock,
 } from "lucide-react";
 import QuickRecordModal from "@/components/app/quick-record-modal";
 
@@ -227,6 +228,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-3">
+            {authContext?.isTrial && authContext?.trialDaysRemaining !== undefined && (
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 text-amber-900 border border-amber-300 text-xs font-bold shadow-2xs">
+                <Clock className="w-3.5 h-3.5 text-amber-700" />
+                <span>
+                  7-Day Trial ({authContext.trialDaysRemaining}{" "}
+                  {authContext.trialDaysRemaining === 1 ? "day" : "days"} left)
+                </span>
+              </span>
+            )}
             <button
               onClick={() => setIsQuickRecordOpen(true)}
               className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-md shadow-emerald-700/20 flex items-center gap-1.5 cursor-pointer transition"

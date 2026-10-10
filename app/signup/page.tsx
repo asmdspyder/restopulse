@@ -8,7 +8,7 @@ import { ArrowRight, CheckCircle2, AlertCircle, Loader2, ShieldCheck, Sparkles }
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialPlan = (searchParams.get("plan") as "monthly" | "yearly") || "yearly";
+  const initialPlan = (searchParams.get("plan") as "monthly" | "yearly") || "monthly";
 
   const [plan, setPlan] = useState<"monthly" | "yearly">(initialPlan);
   const [businessName, setBusinessName] = useState("");
@@ -106,44 +106,63 @@ function SignupForm() {
           <form className="space-y-5" onSubmit={handleSubmit}>
             {/* Plan Selector */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                Choose Subscription Plan
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Choose Subscription Plan
+                </label>
+                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  7-Day Free Trial
+                </span>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
+                  onClick={() => setPlan("monthly")}
+                  className={`p-3.5 rounded-xl border text-left transition relative cursor-pointer ${
+                    plan === "monthly"
+                      ? "border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500/20"
+                      : "border-slate-200 bg-white hover:bg-slate-50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-sm text-slate-900">Monthly Plan</span>
+                    <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                      Standard
+                    </span>
+                  </div>
+                  <div className="text-xl font-black text-slate-900 mt-1">
+                    ₹399<span className="text-xs font-normal text-slate-500"> / month</span>
+                  </div>
+                  <span className="text-[11px] text-slate-600 font-medium block mt-0.5">Flexible monthly billing</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => setPlan("yearly")}
-                  className={`p-3.5 rounded-xl border text-left transition relative ${
+                  className={`p-3.5 rounded-xl border text-left transition relative cursor-pointer ${
                     plan === "yearly"
-                      ? "border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20"
+                      ? "border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500/20"
                       : "border-slate-200 bg-white hover:bg-slate-50"
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-sm text-slate-900">Annual Plan</span>
                     <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                      Save 17%
+                      Save ₹789
                     </span>
                   </div>
-                  <div className="text-lg font-extrabold text-slate-900 mt-1">₹1,999<span className="text-xs font-normal text-slate-500">/year</span></div>
-                  <span className="text-[11px] text-emerald-700 font-medium block">₹166 / month billed yearly</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPlan("monthly")}
-                  className={`p-3.5 rounded-xl border text-left transition ${
-                    plan === "monthly"
-                      ? "border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20"
-                      : "border-slate-200 bg-white hover:bg-slate-50"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm text-slate-900">Monthly Plan</span>
+                  <div className="text-xl font-black text-slate-900 mt-1">
+                    ₹3,999<span className="text-xs font-normal text-slate-500"> / year</span>
                   </div>
-                  <div className="text-lg font-extrabold text-slate-900 mt-1">₹199<span className="text-xs font-normal text-slate-500">/month</span></div>
-                  <span className="text-[11px] text-slate-500 font-medium block">Flexible monthly billing</span>
+                  <span className="text-[11px] text-emerald-700 font-semibold block mt-0.5">2 Months Free (₹333/mo)</span>
                 </button>
+              </div>
+
+              <div className="mt-2.5 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200/80 text-[11px] text-emerald-900 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>
+                  <strong>7-Day Free Trial:</strong> Full access to all features. Your card will not be charged today.
+                </span>
               </div>
             </div>
 
@@ -329,7 +348,7 @@ function SignupForm() {
 
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Includes 14-day trial & automatic starter configuration.</span>
+              <span>Includes 7-day free trial. Full access to your workspace.</span>
             </div>
 
             <button
@@ -344,7 +363,7 @@ function SignupForm() {
                 </>
               ) : (
                 <>
-                  <span>Create Workspace ({plan === "yearly" ? "₹1,999/yr" : "₹199/mo"})</span>
+                  <span>Start 7-Day Free Trial ({plan === "yearly" ? "₹3,999/yr" : "₹399/mo"})</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}

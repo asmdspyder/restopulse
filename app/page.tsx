@@ -103,7 +103,7 @@ export default function LandingPage() {
               href="/signup"
               className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-emerald-700 text-white font-extrabold text-base shadow-lg shadow-emerald-700/30 hover:bg-emerald-800 transition flex items-center justify-center gap-2"
             >
-              <span>Start Free 14-Day Trial</span>
+              <span>Start Free 7-Day Trial</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
             <a
@@ -716,15 +716,15 @@ export default function LandingPage() {
             </ul>
 
             <Link
-              href="/signup"
+              href={`/signup?plan=${billingCycle}`}
               className="mt-8 w-full py-3.5 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-sm flex items-center justify-center gap-2 transition shadow-md shadow-emerald-700/20"
             >
-              <span>Start 14-Day Free Trial</span>
+              <span>Start 7-Day Free Trial</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
 
             <p className="text-center text-[11px] text-slate-500 mt-3 font-medium">
-              Instant setup • Cancel anytime with 1 click
+              7-day free trial • Instant setup • Cancel anytime
             </p>
           </div>
         </div>

@@ -16,6 +16,8 @@ export async function GET() {
     isSubscriptionActive: auth.isSubscriptionActive,
     canAccessApp: auth.canAccessApp,
     blockReason: auth.blockReason,
+    isTrial: auth.isTrial,
+    trialDaysRemaining: auth.trialDaysRemaining,
     isImpersonating: auth.isImpersonating,
     impersonatorAdminId: auth.impersonatorAdminId,
   });

@@ -85,14 +85,10 @@ export async function POST(req: NextRequest) {
     // 3. Seed Default Categories, Units, Reasons
     await seedRestaurantDefaults(restaurant.id);
 
-    // 4. Create Initial Subscription Record (Active period for test / checkout flow)
+    // 4. Create Initial Subscription Record (7-Day Free Trial)
     const now = new Date();
-    const periodEnd = new Date(now);
-    if (plan === "yearly") {
-      periodEnd.setFullYear(periodEnd.getFullYear() + 1);
-    } else {
-      periodEnd.setMonth(periodEnd.getMonth() + 1);
-    }
+    // Free trial is strictly for 7 days
+    const trialEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     const [sub] = await db
       .insert(subscriptions)
@@ -102,10 +98,10 @@ export async function POST(req: NextRequest) {
         billingInterval: selectedPlan.interval,
         amount: selectedPlan.amount.toFixed(2),
         currency: "INR",
-        status: "active",
+        status: "trial",
         currentPeriodStart: now,
-        currentPeriodEnd: periodEnd,
-        nextBillingAt: periodEnd,
+        currentPeriodEnd: trialEnd,
+        nextBillingAt: trialEnd,
       })
       .returning();
 

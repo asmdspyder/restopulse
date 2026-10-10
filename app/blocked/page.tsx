@@ -3,12 +3,12 @@
 import { Suspense, useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertOctagon, CreditCard, ShieldAlert, LogOut, Loader2, CheckCircle2 } from "lucide-react";
+import { CreditCard, ShieldAlert, LogOut, Loader2, CheckCircle2, Clock, Sparkles } from "lucide-react";
 
 function BlockedContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const reasonParam = searchParams.get("reason") || "deactivated";
+  const reasonParam = searchParams.get("reason") || "trial_expired";
 
   const [loading, setLoading] = useState(false);
   const [authStatus, setAuthStatus] = useState<any>(null);
@@ -44,43 +44,102 @@ function BlockedContent() {
       const orderData = await orderRes.json();
 
       if (!orderRes.ok) {
-        throw new Error(orderData.error || "Failed to initialize renewal payment");
+        throw new Error(orderData.error || "Failed to initialize payment");
       }
 
-      // 2. Verify / activate subscription
-      const verifyRes = await fetch("/api/razorpay/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderId: orderData.orderId,
-          paymentId: `pay_renew_${Date.now()}`,
-          signature: "simulated_valid_signature",
-          plan,
-        }),
-      });
+      // 2. Open Razorpay Checkout modal if live SDK is available, else simulated fallback
+      if (
+        typeof window !== "undefined" &&
+        (window as any).Razorpay &&
+        !orderData.isSimulated &&
+        orderData.key &&
+        !orderData.key.includes("placeholder")
+      ) {
+        const rzpInstance = new (window as any).Razorpay({
+          key: orderData.key,
+          amount: orderData.amount,
+          currency: orderData.currency || "INR",
+          name: "RestoPulse",
+          description: orderData.planName || "Restaurant Workspace Subscription",
+          order_id: orderData.orderId,
+          handler: async function (response: any) {
+            try {
+              const verifyRes = await fetch("/api/razorpay/verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  orderId: response.razorpay_order_id || orderData.orderId,
+                  paymentId: response.razorpay_payment_id,
+                  signature: response.razorpay_signature,
+                  plan,
+                }),
+              });
+              const verifyData = await verifyRes.json();
+              if (!verifyRes.ok) throw new Error(verifyData.error || "Payment verification failed");
+              router.push("/app/dashboard");
+              router.refresh();
+            } catch (e: any) {
+              setError(e.message || "Failed to verify payment");
+              setLoading(false);
+            }
+          },
+          theme: { color: "#047857" },
+          modal: {
+            ondismiss: function () {
+              setLoading(false);
+            },
+          },
+        });
+        rzpInstance.open();
+      } else {
+        // Simulated / Sandbox activation
+        const verifyRes = await fetch("/api/razorpay/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId: orderData.orderId,
+            paymentId: `pay_sub_${Date.now()}`,
+            signature: "simulated_valid_signature",
+            plan,
+          }),
+        });
 
-      const verifyData = await verifyRes.json();
-      if (!verifyRes.ok) {
-        throw new Error(verifyData.error || "Payment verification failed");
+        const verifyData = await verifyRes.json();
+        if (!verifyRes.ok) {
+          throw new Error(verifyData.error || "Payment verification failed");
+        }
+
+        router.push("/app/dashboard");
+        router.refresh();
       }
-
-      // Redirect to dashboard
-      router.push("/app/dashboard");
-      router.refresh();
     } catch (err: any) {
-      setError(err.message || "Failed to renew subscription");
+      setError(err.message || "Failed to activate subscription");
       setLoading(false);
     }
   };
 
   const isDeactivated = reasonParam === "deactivated" || authStatus?.isDeactivated;
+  const isTrialExpired =
+    reasonParam === "trial_expired" ||
+    authStatus?.blockReason === "trial_expired" ||
+    (!isDeactivated && authStatus?.isTrial && !authStatus?.isSubscriptionActive);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center py-12 sm:px-6 lg:px-8 selection:bg-indigo-100 selection:text-indigo-900 font-sans">
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 selection:bg-emerald-100 selection:text-emerald-900 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        {/* Brand Header */}
+        <div className="text-center mb-6">
+          <Link href="/" className="inline-flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-emerald-700 flex items-center justify-center text-white font-black text-xl shadow-md shadow-emerald-700/20">
+              R
+            </div>
+            <span className="text-2xl font-black text-slate-900 tracking-tight">RestoPulse</span>
+          </Link>
+        </div>
+
         <div className="bg-white py-10 px-6 shadow-xl shadow-slate-200/50 sm:rounded-3xl sm:px-10 border border-slate-200 text-center">
           {isDeactivated ? (
-            /* MANUAL DEACTIVATION STATE (NO PAYMENT OPTION) */
+            /* MANUAL DEACTIVATION STATE */
             <>
               <div className="w-16 h-16 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-5">
                 <ShieldAlert className="w-9 h-9" />
@@ -90,11 +149,11 @@ function BlockedContent() {
               </h2>
               <div className="mt-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-700 leading-relaxed text-left">
                 <p className="font-semibold text-slate-900 mb-1">
-                  Your account has been deactivated by the administrator.
+                  Your restaurant account has been deactivated by the administrator.
                 </p>
                 <p className="text-xs text-slate-600">
-                  Please contact the administrator or your support team at{" "}
-                  <span className="font-mono text-indigo-700 font-semibold">support@restopulse.io</span> to continue using the application.
+                  Please contact the administrator or support at{" "}
+                  <span className="font-mono text-emerald-700 font-semibold">support@restopulse.io</span> to reactivate your account.
                 </p>
               </div>
 
@@ -109,16 +168,18 @@ function BlockedContent() {
               </div>
             </>
           ) : (
-            /* SUBSCRIPTION INACTIVE / EXPIRED STATE */
+            /* TRIAL EXPIRED OR SUBSCRIPTION INACTIVE STATE */
             <>
-              <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-5 border border-amber-200">
-                <CreditCard className="w-9 h-9" />
+              <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center mx-auto mb-5 border border-amber-200">
+                {isTrialExpired ? <Clock className="w-9 h-9" /> : <CreditCard className="w-9 h-9" />}
               </div>
               <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                Your subscription is inactive
+                {isTrialExpired ? "Your 7-Day Free Trial Has Ended" : "Subscription Inactive"}
               </h2>
-              <p className="mt-3 text-sm text-slate-600 leading-relaxed">
-                Your subscription payment was not completed or your subscription has expired. Please renew your subscription to continue using the application.
+              <p className="mt-3 text-xs sm:text-sm text-slate-600 leading-relaxed">
+                {isTrialExpired
+                  ? "Your 7-day free trial period has concluded. To reactivate your restaurant workspace and continue using daily SOP checklists, food waste tracking, and recipe costing, please choose a plan below."
+                  : "Your subscription payment was not completed or your subscription has expired. Please choose a plan below to reactivate your workspace."}
               </p>
 
               {error && (
@@ -128,32 +189,43 @@ function BlockedContent() {
               )}
 
               {/* Plan Choice for Renewal */}
-              <div className="mt-6 grid grid-cols-2 gap-2 text-left">
+              <div className="mt-6 grid grid-cols-2 gap-3 text-left">
                 <button
                   type="button"
                   onClick={() => setPlan("monthly")}
-                  className={`p-3 rounded-2xl border text-xs transition cursor-pointer ${
+                  className={`p-3.5 rounded-2xl border text-xs transition cursor-pointer ${
                     plan === "monthly"
-                      ? "border-indigo-600 bg-indigo-50/50 ring-2 ring-indigo-500/20"
+                      ? "border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500/20"
                       : "border-slate-200 hover:bg-slate-50"
                   }`}
                 >
-                  <span className="font-bold text-slate-900 block">Monthly</span>
-                  <span className="text-slate-700 font-extrabold text-sm">₹399 / mo</span>
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-900 block">Monthly</span>
+                    <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                      Standard
+                    </span>
+                  </div>
+                  <div className="text-lg font-black text-slate-900 mt-1">₹399<span className="text-xs font-normal text-slate-500"> / mo</span></div>
+                  <span className="text-[10px] text-slate-500 mt-0.5 block">Flexible monthly</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setPlan("yearly")}
-                  className={`p-3 rounded-2xl border text-xs transition relative cursor-pointer ${
+                  className={`p-3.5 rounded-2xl border text-xs transition relative cursor-pointer ${
                     plan === "yearly"
-                      ? "border-indigo-600 bg-indigo-50/50 ring-2 ring-indigo-500/20"
+                      ? "border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500/20"
                       : "border-slate-200 hover:bg-slate-50"
                   }`}
                 >
-                  <span className="font-bold text-slate-900 block">Annual</span>
-                  <span className="text-indigo-700 font-extrabold text-sm">₹3,999 / yr</span>
-                  <span className="text-[9px] uppercase font-bold text-emerald-800 bg-emerald-100 px-1 py-0.2 rounded">Save ₹789</span>
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-900 block">Annual</span>
+                    <span className="text-[9px] uppercase font-bold text-emerald-800 bg-emerald-100 px-1 py-0.5 rounded">
+                      Save ₹789
+                    </span>
+                  </div>
+                  <div className="text-lg font-black text-slate-900 mt-1">₹3,999<span className="text-xs font-normal text-slate-500"> / yr</span></div>
+                  <span className="text-[10px] text-emerald-700 font-semibold mt-0.5 block">2 Months Free</span>
                 </button>
               </div>
 
@@ -161,24 +233,27 @@ function BlockedContent() {
                 <button
                   onClick={handleRenew}
                   disabled={loading}
-                  className="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-500/20 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
+                  className="w-full py-3.5 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-sm shadow-md shadow-emerald-700/20 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
                 >
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Processing Renewal...</span>
+                      <span>Activating Workspace...</span>
                     </>
                   ) : (
                     <>
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>Renew Subscription ({plan === "yearly" ? "₹3,999/yr" : "₹399/mo"})</span>
+                      <span>
+                        {isTrialExpired ? "Subscribe & Unlock Workspace" : "Renew Subscription"} (
+                        {plan === "yearly" ? "₹3,999/yr" : "₹399/mo"})
+                      </span>
                     </>
                   )}
                 </button>
 
                 <button
                   onClick={handleLogout}
-                  className="w-full py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 font-semibold text-xs hover:bg-slate-50 transition flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Sign Out</span>
@@ -194,7 +269,13 @@ function BlockedContent() {
 
 export default function BlockedPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /></div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-emerald-700" />
+        </div>
+      }
+    >
       <BlockedContent />
     </Suspense>
   );

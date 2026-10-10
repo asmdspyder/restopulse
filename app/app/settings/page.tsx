@@ -168,8 +168,12 @@ export default function SettingsPage() {
               <span className="text-xs text-slate-500">Managed via Razorpay Subscriptions</span>
             </div>
           </div>
-          <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold capitalize">
-            {subscription?.status || "Active"}
+          <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${
+            subscription?.status === "trial"
+              ? "bg-amber-100 text-amber-900 border border-amber-300"
+              : "bg-emerald-100 text-emerald-800"
+          }`}>
+            {subscription?.status === "trial" ? "7-Day Free Trial" : (subscription?.status || "Active")}
           </span>
         </div>
 
@@ -183,11 +187,13 @@ export default function SettingsPage() {
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
             <span className="text-slate-400 font-bold uppercase block mb-1">Billing Amount</span>
             <span className="text-sm font-extrabold text-slate-900">
-              {formatCurrency(subscription?.amount || 199)} / {subscription?.planType === "yearly" ? "year" : "month"}
+              {formatCurrency(subscription?.amount || (subscription?.planType === "yearly" ? 3999 : 399))} / {subscription?.planType === "yearly" ? "year" : "month"}
             </span>
           </div>
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
-            <span className="text-slate-400 font-bold uppercase block mb-1">Next Renewal</span>
+            <span className="text-slate-400 font-bold uppercase block mb-1">
+              {subscription?.status === "trial" ? "Trial Ends On" : "Next Renewal"}
+            </span>
             <span className="text-sm font-extrabold text-slate-900">
               {subscription?.currentPeriodEnd ? formatDate(subscription.currentPeriodEnd) : "Active"}
             </span>

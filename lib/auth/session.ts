@@ -50,7 +50,9 @@ export interface AuthContext {
   isDeactivated: boolean;
   isSubscriptionActive: boolean;
   canAccessApp: boolean;
-  blockReason?: "deactivated" | "subscription_inactive";
+  blockReason?: "deactivated" | "subscription_inactive" | "trial_expired";
+  isTrial?: boolean;
+  trialDaysRemaining?: number;
   isImpersonating?: boolean;
   impersonatorAdminId?: string;
 }
@@ -133,7 +135,7 @@ export async function getAuthContext(): Promise<AuthContext | null> {
     const userRecord = userWithRestaurant.user;
     const restaurantRecord = userWithRestaurant.restaurant;
 
-    // Fetch active subscription in 1 query
+    // Fetch latest subscription
     const [latestSub] = await db
       .select()
       .from(subscriptions)
@@ -142,20 +144,52 @@ export async function getAuthContext(): Promise<AuthContext | null> {
       .limit(1);
 
     const isDeactivated = restaurantRecord.accountStatus === "manually_deactivated";
-    
-    // Active if not deactivated and either active account or active subscription
-    const isSubscriptionActive = !isDeactivated && (
-      restaurantRecord.accountStatus === "active" ||
-      (latestSub &&
-        (latestSub.status === "active" || latestSub.status === "authenticated" || latestSub.status === "created") &&
-        (!latestSub.currentPeriodEnd || new Date(latestSub.currentPeriodEnd) > new Date()))
-    );
 
-    let blockReason: "deactivated" | "subscription_inactive" | undefined;
+    let isSubscriptionActive = false;
+    let blockReason: "deactivated" | "subscription_inactive" | "trial_expired" | undefined;
+    let isTrial = false;
+    let trialDaysRemaining: number | undefined;
+
     if (isDeactivated) {
+      isSubscriptionActive = false;
       blockReason = "deactivated";
-    } else if (!isSubscriptionActive) {
-      blockReason = "subscription_inactive";
+    } else if (latestSub) {
+      const now = new Date();
+      const periodEnd = latestSub.currentPeriodEnd ? new Date(latestSub.currentPeriodEnd) : null;
+      const isPeriodValid = periodEnd ? periodEnd > now : false;
+
+      if (latestSub.status === "trial") {
+        isTrial = true;
+        if (isPeriodValid) {
+          isSubscriptionActive = true;
+          if (periodEnd) {
+            const diffMs = periodEnd.getTime() - now.getTime();
+            trialDaysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+          }
+        } else {
+          // Free trial has ended after 7 days: account deactivated/blocked for payment
+          isSubscriptionActive = false;
+          blockReason = "trial_expired";
+        }
+      } else if (["active", "authenticated", "created"].includes(latestSub.status)) {
+        if (!periodEnd || isPeriodValid) {
+          isSubscriptionActive = true;
+        } else {
+          isSubscriptionActive = false;
+          blockReason = "subscription_inactive";
+        }
+      } else {
+        isSubscriptionActive = false;
+        blockReason = "subscription_inactive";
+      }
+    } else {
+      // Fallback for accounts without subscriptions record
+      if (restaurantRecord.accountStatus === "active") {
+        isSubscriptionActive = true;
+      } else {
+        isSubscriptionActive = false;
+        blockReason = "subscription_inactive";
+      }
     }
 
     return {
@@ -197,6 +231,8 @@ export async function getAuthContext(): Promise<AuthContext | null> {
       isSubscriptionActive,
       canAccessApp: session.isImpersonating ? true : (!isDeactivated && isSubscriptionActive),
       blockReason: session.isImpersonating ? undefined : blockReason,
+      isTrial,
+      trialDaysRemaining,
       isImpersonating: Boolean(session.isImpersonating),
       impersonatorAdminId: session.impersonatorAdminId,
     };
