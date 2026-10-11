@@ -1095,7 +1095,7 @@ export default function MenuCostingPage() {
             }`}
           >
             <Building2 className="w-3.5 h-3.5" />
-            <span>Operating Expenses</span>
+            <span>Overhead & Bills</span>
             {opExConfig?.effectivePercentage !== null && opExConfig?.effectivePercentage !== undefined ? (
               <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-black">
                 {opExConfig.effectivePercentage}% Active
@@ -1112,7 +1112,7 @@ export default function MenuCostingPage() {
           <Info className="w-3.5 h-3.5" />
           <span>
             {activeTab === "expenses"
-              ? "Operating expense % is allocated across all menu dishes automatically."
+              ? "Overhead % covers your rent, staff & bills across all dishes."
               : "Changing ingredient prices automatically updates all dish margins."}
           </span>
         </div>
@@ -1222,7 +1222,7 @@ export default function MenuCostingPage() {
                 <div className="flex items-center gap-2 text-xs text-emerald-950">
                   <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse shrink-0" />
                   <span>
-                    <strong className="font-bold">Operating Expense Allocation: {opExConfig.effectivePercentage}%</strong> is applied to every dish ({opExConfig.mode === "manual" ? "Manually entered rate" : `Calculated from ${formatCurrency(opExConfig.totalMonthlyExpenses)}/month expenses`}).
+                    <strong className="font-bold">Overhead Rate: {opExConfig.effectivePercentage}%</strong> applied to every dish ({opExConfig.mode === "manual" ? "Fixed rate" : `from ${formatCurrency(opExConfig.totalMonthlyExpenses)}/mo bills`}).
                   </span>
                 </div>
                 <button
@@ -1230,7 +1230,7 @@ export default function MenuCostingPage() {
                   onClick={() => handleTabChange("expenses")}
                   className="px-2.5 py-1 rounded-lg bg-white hover:bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold text-xs shrink-0 self-start sm:self-auto cursor-pointer shadow-2xs transition"
                 >
-                  Adjust Operating Expenses
+                  Adjust Overhead
                 </button>
               </div>
             ) : (
@@ -1238,7 +1238,7 @@ export default function MenuCostingPage() {
                 <div className="flex items-center gap-2 text-xs text-slate-700">
                   <span className="text-base shrink-0">💡</span>
                   <span>
-                    <strong className="text-slate-900">Operating Expenses not configured:</strong> Add monthly expenses (rent, salaries, utilities) or enter a percentage to see estimated remaining amount after overheads.
+                    <strong className="text-slate-900">Want to see true profit after rent & staff?</strong> Add your monthly running costs or enter a % rate.
                   </span>
                 </div>
                 <button
@@ -1246,7 +1246,7 @@ export default function MenuCostingPage() {
                   onClick={() => handleTabChange("expenses")}
                   className="px-3 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shrink-0 self-start sm:self-auto cursor-pointer shadow-2xs transition"
                 >
-                  Configure Operating Expenses
+                  Set Overhead %
                 </button>
               </div>
             )}
@@ -1324,86 +1324,84 @@ export default function MenuCostingPage() {
                         {/* Profitability & Operating Expenses Breakdown */}
                         {opExConfig?.effectivePercentage !== null && opExConfig?.effectivePercentage !== undefined ? (
                           <div className="space-y-1.5">
-                            {/* Profit Before OpEx & Food Cost */}
-                            <div className="flex items-center justify-between px-2.5 py-1 rounded-lg bg-white border border-slate-200/80 text-[11px] shadow-2xs">
-                              <div className="flex items-center gap-1">
-                                <span className="font-bold text-slate-500">Profit Before Operating Expenses:</span>
+                            {/* Food Margin & Overhead (2 Side-by-side compact tiles) */}
+                            <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                              <div className="p-1.5 px-2 rounded-lg bg-white border border-slate-200/80 flex flex-col justify-between">
+                                <span className="text-[10px] font-semibold text-slate-400">Food Margin</span>
+                                <div className="flex items-baseline justify-between mt-0.5">
+                                  <span className={`font-black ${econ.grossProfit >= 0 ? "text-slate-800" : "text-rose-600"}`}>
+                                    {econ.isComplete ? formatCurrency(econ.grossProfit) : "—"}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 font-medium">
+                                    {econ.isComplete ? `${econ.foodCostPercent}% cost` : ""}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="p-1.5 px-2 rounded-lg bg-white border border-slate-200/80 flex flex-col justify-between">
+                                <span className="text-[10px] font-semibold text-slate-400">Overhead ({opExConfig.effectivePercentage}%)</span>
+                                <div className="flex items-baseline justify-between mt-0.5">
+                                  <span className="font-black text-slate-800">
+                                    {econ.isComplete && econ.estimatedOperatingExpense !== null && econ.estimatedOperatingExpense !== undefined
+                                      ? formatCurrency(econ.estimatedOperatingExpense)
+                                      : "—"}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 font-medium">rent/bills</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Est. Net Take-Home Highlight Tile */}
+                            <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200/90 flex items-center justify-between shadow-2xs">
+                              <div>
+                                <span className="text-[11px] font-black text-emerald-950 block">Est. Take-Home Profit</span>
+                                <span className="text-[10px] text-emerald-700 font-medium">After food & running costs</span>
+                              </div>
+                              <div className="text-right">
                                 <span
-                                  className={`font-black ${
-                                    econ.grossProfit >= 0 ? "text-slate-900" : "text-rose-600"
+                                  className={`text-sm font-black ${
+                                    (econ.estimatedAmountRemaining ?? 0) >= 0 ? "text-emerald-900" : "text-rose-600"
                                   }`}
                                 >
-                                  {econ.isComplete ? formatCurrency(econ.grossProfit) : "—"}
+                                  {econ.isComplete && econ.estimatedAmountRemaining !== null && econ.estimatedAmountRemaining !== undefined
+                                    ? formatCurrency(econ.estimatedAmountRemaining)
+                                    : "—"}
                                 </span>
+                                {econ.isComplete && item.sellingPrice > 0 && (
+                                  <span className="text-[10px] text-emerald-700 font-bold block">
+                                    {Math.round(((econ.estimatedAmountRemaining ?? 0) / item.sellingPrice) * 100)}% net
+                                  </span>
+                                )}
                               </div>
-                              <div className="flex items-center gap-1 font-semibold text-slate-500 text-[10px]">
-                                <span>{econ.isComplete ? `${econ.foodCostPercent}% Food Cost` : "No Recipe"}</span>
-                              </div>
-                            </div>
-
-                            {/* Estimated Operating Expense Allocation */}
-                            <div className="flex items-center justify-between px-2.5 py-1 rounded-lg bg-white border border-slate-200/80 text-[11px] shadow-2xs">
-                              <span className="font-bold text-slate-500">
-                                Estimated Operating Expense ({opExConfig.effectivePercentage}%):
-                              </span>
-                              <span className="font-black text-slate-700">
-                                {econ.isComplete && econ.estimatedOperatingExpense !== null && econ.estimatedOperatingExpense !== undefined
-                                  ? formatCurrency(econ.estimatedOperatingExpense)
-                                  : "—"}
-                              </span>
-                            </div>
-
-                            {/* Estimated Amount Remaining After Operating Expenses (Highlighted Final Tile) */}
-                            <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-emerald-50/90 border border-emerald-200/90 text-xs shadow-2xs">
-                              <div className="flex flex-col">
-                                <span className="font-black text-[10px] uppercase tracking-wider text-emerald-950">
-                                  Estimated Amount Remaining
-                                </span>
-                                <span className="text-[10px] font-semibold text-emerald-700">
-                                  After operating expenses
-                                </span>
-                              </div>
-                              <span
-                                className={`text-sm font-black ${
-                                  (econ.estimatedAmountRemaining ?? 0) >= 0 ? "text-emerald-900" : "text-rose-600"
-                                }`}
-                              >
-                                {econ.isComplete && econ.estimatedAmountRemaining !== null && econ.estimatedAmountRemaining !== undefined
-                                  ? formatCurrency(econ.estimatedAmountRemaining)
-                                  : "—"}
-                              </span>
                             </div>
                           </div>
                         ) : (
                           <div className="space-y-1.5">
-                            {/* Profit Before Operating Expenses (Unconfigured state) */}
-                            <div className="flex items-center justify-between px-2.5 py-1 rounded-lg bg-white border border-slate-200/80 text-[11px] shadow-2xs">
-                              <div className="flex items-center gap-1">
-                                <span className="font-bold text-slate-500">Profit Before Operating Expenses:</span>
-                                <span
-                                  className={`font-black ${
-                                    econ.grossProfit >= 0 ? "text-slate-900" : "text-rose-600"
-                                  }`}
-                                >
+                            {/* Food Margin without Overhead */}
+                            <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-white border border-slate-200/80 text-xs shadow-2xs">
+                              <div>
+                                <span className="font-bold text-slate-800 block text-[11px]">Food Profit</span>
+                                <span className="text-[10px] text-slate-400">Price − food cost</span>
+                              </div>
+                              <div className="text-right">
+                                <span className={`font-black ${econ.grossProfit >= 0 ? "text-slate-900" : "text-rose-600"}`}>
                                   {econ.isComplete ? formatCurrency(econ.grossProfit) : "—"}
                                 </span>
-                              </div>
-                              <div className="flex items-center gap-1 font-semibold text-slate-500 text-[10px]">
-                                <span>{econ.isComplete ? `${econ.foodCostPercent}% Food Cost` : "No Recipe"}</span>
+                                <span className="text-[10px] text-slate-500 font-medium block">
+                                  {econ.isComplete ? `${econ.grossMarginPercent}% margin` : ""}
+                                </span>
                               </div>
                             </div>
 
                             {/* Unobtrusive prompt to configure */}
-                            <div className="px-2.5 py-1 rounded-lg bg-white/70 border border-dashed border-slate-300 text-[10px] text-slate-500 flex items-center justify-between gap-1 shadow-2xs">
-                              <span className="truncate">Add operating expenses to see estimated amount remaining.</span>
-                              <button
-                                type="button"
-                                onClick={() => handleTabChange("expenses")}
-                                className="font-bold text-emerald-700 hover:text-emerald-800 shrink-0 underline cursor-pointer"
-                              >
-                                Configure
-                              </button>
-                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleTabChange("expenses")}
+                              className="w-full py-1.5 px-2 rounded-lg bg-slate-50 hover:bg-emerald-50 text-slate-600 hover:text-emerald-800 border border-dashed border-slate-200 hover:border-emerald-300 text-[10px] font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                              <Building2 className="w-3 h-3 text-slate-400" />
+                              <span>+ Factor in rent & bills to see true profit</span>
+                            </button>
                           </div>
                         )}
 
@@ -1632,167 +1630,115 @@ export default function MenuCostingPage() {
           )}
 
           {/* Section Introduction & Explanatory Callout */}
-          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-2">
-            <div className="flex items-start justify-between gap-3">
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center font-bold">
                   <Building2 className="w-5 h-5" />
                 </div>
                 <div>
                   <h2 className="text-base font-black text-slate-900 tracking-tight">
-                    Operating Expenses
+                    Restaurant Overheads & Bills
                   </h2>
                   <p className="text-xs text-slate-500">
-                    Account for restaurant overheads not included in menu-item ingredient costs.
+                    Factor in rent, staff salaries & utilities to calculate your true take-home profit per dish.
                   </p>
                 </div>
               </div>
 
               {opExConfig?.effectivePercentage !== null && opExConfig?.effectivePercentage !== undefined && (
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 text-xs font-black shrink-0">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 text-xs font-black shrink-0 self-start sm:self-auto">
                   <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-                  <span>{opExConfig.effectivePercentage}% Active</span>
+                  <span>{opExConfig.effectivePercentage}% Overhead Active</span>
                 </div>
               )}
             </div>
 
-            {/* Mandatory Notes */}
-            <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-600 space-y-1">
+            {/* Friendly Tip (Zero Jargon) */}
+            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-600 flex items-start gap-2">
+              <span className="text-sm shrink-0">💡</span>
               <p className="leading-relaxed">
-                <strong className="text-slate-800">Note:</strong> Operating expenses are allocated using a percentage of the selling price. The resulting amount is an estimate, not your exact net profit.
-              </p>
-              <p className="leading-relaxed text-slate-500">
-                <strong className="text-slate-700">Important:</strong> Do not include ingredient purchase costs in this operating expense list. Ingredient costs are already calculated separately in each menu item&apos;s making cost.
+                <strong className="text-slate-800">Quick tip:</strong> Only enter fixed running bills here (rent, staff salaries, electricity, etc.). Raw ingredient costs are already calculated automatically in your dish recipes.
               </p>
             </div>
           </div>
 
-          {/* Method Selection Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Option A Card */}
-            <div
+          {/* Simple 2-Way Pill Switch */}
+          <div className="flex p-1 bg-slate-200/70 rounded-xl max-w-md">
+            <button
+              type="button"
               onClick={() => {
                 setOpExMode("calculated");
                 setOpExFeedback(null);
               }}
-              className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
+              className={`flex-1 py-2 px-3 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer ${
                 opExMode === "calculated"
-                  ? "bg-emerald-50/60 border-emerald-700 shadow-sm"
-                  : "bg-white border-slate-200 hover:border-slate-300 shadow-2xs"
+                  ? "bg-white text-emerald-900 shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Calculator className={`w-4 h-4 ${opExMode === "calculated" ? "text-emerald-800" : "text-slate-500"}`} />
-                  <span className="text-xs font-black text-slate-900">
-                    Calculate from Monthly Expenses & Sales
-                  </span>
-                </div>
-                <input
-                  type="radio"
-                  name="opExMode"
-                  checked={opExMode === "calculated"}
-                  onChange={() => setOpExMode("calculated")}
-                  className="accent-emerald-700 mt-0.5 cursor-pointer"
-                />
-              </div>
-              <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
-                Add your monthly expenses (rent, salaries, electricity, etc.) and monthly sales revenue to calculate your percentage automatically.
-              </p>
-            </div>
+              <Calculator className="w-3.5 h-3.5" />
+              <span>Auto-Calculate (From Bills)</span>
+            </button>
 
-            {/* Option B Card */}
-            <div
+            <button
+              type="button"
               onClick={() => {
                 setOpExMode("manual");
                 setOpExFeedback(null);
               }}
-              className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
+              className={`flex-1 py-2 px-3 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer ${
                 opExMode === "manual"
-                  ? "bg-emerald-50/60 border-emerald-700 shadow-sm"
-                  : "bg-white border-slate-200 hover:border-slate-300 shadow-2xs"
+                  ? "bg-white text-emerald-900 shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Percent className={`w-4 h-4 ${opExMode === "manual" ? "text-emerald-800" : "text-slate-500"}`} />
-                  <span className="text-xs font-black text-slate-900">
-                    Enter Percentage Manually
-                  </span>
-                </div>
-                <input
-                  type="radio"
-                  name="opExMode"
-                  checked={opExMode === "manual"}
-                  onChange={() => setOpExMode("manual")}
-                  className="accent-emerald-700 mt-0.5 cursor-pointer"
-                />
-              </div>
-              <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
-                Directly enter an approximate operating expense percentage (e.g., 20%) if you already know your rate. No expense list required.
-              </p>
-            </div>
+              <Percent className="w-3.5 h-3.5" />
+              <span>Enter Fixed % (e.g. 20%)</span>
+            </button>
           </div>
 
           {/* METHOD 1: CALCULATED VIEW */}
           {opExMode === "calculated" && (
             <div className="space-y-4">
-              {/* Formula & Live Calculation Result Banner */}
+              {/* Clean Live Rate & Example Card */}
               <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-md">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 block">
-                      Automatic Formula
+                      Calculated Overhead Rate
                     </span>
-                    <h3 className="text-sm font-bold text-slate-100 mt-0.5">
-                      Operating Expense % = (Total Monthly Expenses ÷ Monthly Sales Revenue) × 100
-                    </h3>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] font-semibold text-slate-400 block">
-                      Operating Expense Percentage
-                    </span>
-                    <div className="text-2xl font-black text-emerald-400">
-                      {liveCalculatedPercentage !== null ? `${liveCalculatedPercentage}%` : "—"}
+                    <div className="flex items-baseline gap-2 mt-0.5">
+                      <span className="text-3xl font-black text-emerald-400">
+                        {liveCalculatedPercentage !== null ? `${liveCalculatedPercentage}%` : "—"}
+                      </span>
+                      <span className="text-xs text-slate-300">
+                        {liveCalculatedPercentage !== null
+                          ? `applied to dish prices (${formatCurrency(totalExpenseAmount)} bills ÷ ${monthlySalesRevenueInput ? formatCurrency(Number(monthlySalesRevenueInput)) : "₹0"} sales)`
+                          : "Enter monthly sales below to calculate"}
+                      </span>
                     </div>
                   </div>
-                </div>
 
-                {/* Numbers Breakdown */}
-                <div className="mt-3 pt-3 border-t border-slate-700/80 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-                  <div>
-                    <span className="text-[10px] text-slate-400 block">Total Monthly Expenses</span>
-                    <span className="font-extrabold text-slate-200">
-                      {formatCurrency(totalExpenseAmount)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block">Monthly Sales Revenue</span>
-                    <span className="font-extrabold text-slate-200">
-                      {monthlySalesRevenueInput && Number(monthlySalesRevenueInput) > 0
-                        ? formatCurrency(Number(monthlySalesRevenueInput))
-                        : "Not entered"}
-                    </span>
-                  </div>
-                  <div className="col-span-2 sm:col-span-1">
-                    <span className="text-[10px] text-slate-400 block">Status</span>
-                    <span className={`font-bold ${liveCalculatedPercentage !== null ? "text-emerald-400" : "text-amber-300"}`}>
-                      {liveCalculatedPercentage !== null
-                        ? `Ready (${liveCalculatedPercentage}%)`
-                        : "Enter revenue > ₹0"}
-                    </span>
-                  </div>
+                  {liveCalculatedPercentage !== null && (
+                    <div className="text-xs bg-white/10 px-3.5 py-2 rounded-xl border border-white/10 shrink-0">
+                      <span className="text-[10px] text-slate-300 block">Sample ₹240 Dish Breakdown:</span>
+                      <span className="font-bold text-emerald-400">
+                        Overhead share = {formatCurrency(240 * (liveCalculatedPercentage / 100))}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Field 1: Estimated Monthly Sales Revenue */}
+              {/* Step 1: Estimated Monthly Sales Revenue */}
               <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs space-y-2">
                 <div>
                   <label className="text-xs font-black text-slate-900 block">
-                    Estimated Monthly Sales Revenue <span className="text-rose-500">*</span>
+                    1. Average Monthly Sales Revenue <span className="text-rose-500">*</span>
                   </label>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    Enter your restaurant&apos;s total estimated sales revenue for the same month.
+                    Approximately how much total sales does your restaurant make in a month?
                   </p>
                 </div>
 
@@ -1804,7 +1750,7 @@ export default function MenuCostingPage() {
                     type="number"
                     min="1"
                     step="any"
-                    placeholder="e.g. 1150000"
+                    placeholder="e.g. 1000000"
                     value={monthlySalesRevenueInput}
                     onChange={(e) => setMonthlySalesRevenueInput(e.target.value)}
                     className="w-full pl-7 pr-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-slate-900 font-bold"
@@ -1814,40 +1760,40 @@ export default function MenuCostingPage() {
                 {monthlySalesRevenueInput !== "" && Number(monthlySalesRevenueInput) <= 0 && (
                   <p className="text-[11px] font-bold text-rose-600 flex items-center gap-1 mt-1">
                     <AlertTriangle className="w-3.5 h-3.5" />
-                    Monthly sales revenue must be greater than zero to calculate the percentage.
+                    Monthly sales revenue must be greater than zero.
                   </p>
                 )}
               </div>
 
-              {/* Field 2: Monthly Operating Expenses List */}
+              {/* Step 2: Monthly Running Bills List */}
               <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <h3 className="text-xs font-black text-slate-900">
-                      Monthly Operating Expenses ({expenseItems.length})
+                      2. Monthly Running Bills & Staff Costs ({expenseItems.length})
                     </h3>
                     <p className="text-[11px] text-slate-500 mt-0.5">
-                      All amounts must be monthly costs.
+                      Fixed costs like rent, staff salaries, electricity, gas, internet, maintenance.
                     </p>
                   </div>
-                  <div className="text-xs font-extrabold text-slate-900">
-                    Total: <span className="text-emerald-700 font-black">{formatCurrency(totalExpenseAmount)}</span> / month
+                  <div className="text-xs font-extrabold text-slate-900 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
+                    Total Bills: <span className="text-emerald-700 font-black">{formatCurrency(totalExpenseAmount)}</span> / mo
                   </div>
                 </div>
 
                 {/* Quick Add Presets */}
                 <div className="space-y-1.5">
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
-                    Quick Preset Categories:
+                    1-Click Add Common Bills:
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {[
                       { name: "Rent", category: "Rent" },
                       { name: "Staff salaries", category: "Salaries" },
-                      { name: "Electricity and gas", category: "Utilities" },
-                      { name: "Water and internet", category: "Utilities" },
+                      { name: "Electricity & Gas", category: "Utilities" },
+                      { name: "Water & Internet", category: "Utilities" },
                       { name: "Maintenance", category: "Maintenance" },
-                      { name: "Other operating expenses", category: "Other" },
+                      { name: "Other running costs", category: "Other" },
                     ].map((preset) => (
                       <button
                         key={preset.name}
@@ -1867,13 +1813,13 @@ export default function MenuCostingPage() {
                   onSubmit={handleAddExpense}
                   className="p-3 rounded-xl bg-slate-50/90 border border-slate-200/90 grid grid-cols-1 sm:grid-cols-12 gap-2 items-end"
                 >
-                  <div className="sm:col-span-5">
+                  <div className="sm:col-span-6">
                     <label className="text-[10px] font-bold text-slate-600 block mb-0.5">
-                      Expense Name
+                      Bill / Expense Name
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. Rent, Staff salaries, Electricity"
+                      placeholder="e.g. Rent, Kitchen Staff, Electricity"
                       value={newExpenseName}
                       onChange={(e) => setNewExpenseName(e.target.value)}
                       className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-white border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-700 text-slate-900 font-medium"
@@ -1882,7 +1828,7 @@ export default function MenuCostingPage() {
 
                   <div className="sm:col-span-4">
                     <label className="text-[10px] font-bold text-slate-600 block mb-0.5">
-                      Monthly Amount (₹)
+                      Monthly Cost (₹)
                     </label>
                     <div className="relative">
                       <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
@@ -1900,25 +1846,25 @@ export default function MenuCostingPage() {
                     </div>
                   </div>
 
-                  <div className="sm:col-span-3">
+                  <div className="sm:col-span-2">
                     <button
                       type="submit"
                       disabled={!newExpenseName.trim() || !newExpenseAmount}
                       className="w-full py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-2xs transition cursor-pointer disabled:opacity-40"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      <span>Add Expense</span>
+                      <span>Add</span>
                     </button>
                   </div>
                 </form>
 
                 {/* Added Expenses List */}
                 {expenseItems.length === 0 ? (
-                  <div className="py-8 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/40">
-                    <Receipt className="w-7 h-7 text-slate-300 mx-auto mb-1.5" />
-                    <p className="text-xs font-semibold text-slate-600">No monthly expenses added yet</p>
+                  <div className="py-7 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/40">
+                    <Receipt className="w-6 h-6 text-slate-300 mx-auto mb-1" />
+                    <p className="text-xs font-semibold text-slate-600">No monthly bills added yet</p>
                     <p className="text-[11px] text-slate-400 mt-0.5">
-                      Click any of the quick preset categories above or type an expense name to get started.
+                      Click any 1-click button above or enter an expense name to add your bills.
                     </p>
                   </div>
                 ) : (
@@ -2020,10 +1966,10 @@ export default function MenuCostingPage() {
             <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
               <div>
                 <label className="text-xs font-black text-slate-900 block">
-                  Operating Expense Percentage <span className="text-rose-500">*</span>
+                  Fixed Overhead Percentage (%) <span className="text-rose-500">*</span>
                 </label>
                 <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                  Enter your approximate restaurant operating overhead percentage. This is a manually provided estimate that will be allocated across all menu items.
+                  Enter an estimated percentage to cover running costs (rent, staff, electricity). Most restaurants average between 15% and 25%.
                 </p>
               </div>
 
@@ -2050,44 +1996,22 @@ export default function MenuCostingPage() {
                 </p>
               )}
 
-              {/* Illustrative Example */}
+              {/* Clean live example */}
               <div className="p-3.5 rounded-xl bg-emerald-50/80 border border-emerald-200/90 text-xs text-emerald-950 space-y-1 shadow-2xs">
-                <span className="font-black text-[11px] uppercase tracking-wider text-emerald-900 block">
-                  Live Allocation Preview:
+                <span className="font-bold text-[11px] text-emerald-900 block">
+                  How this works on a sample ₹240 dish:
                 </span>
-                <p className="text-[11px] leading-relaxed">
-                  For a dish with a selling price of <strong>₹240</strong>:
-                </p>
-                <ul className="text-[11px] list-disc list-inside space-y-0.5 text-emerald-900">
-                  <li>
-                    Estimated operating overhead (
-                    {manualPercentageInput && !isNaN(Number(manualPercentageInput)) ? manualPercentageInput : "20"}
-                    %):{" "}
-                    <strong>
-                      {formatCurrency(
-                        240 *
-                          ((manualPercentageInput && !isNaN(Number(manualPercentageInput))
-                            ? Number(manualPercentageInput)
-                            : 20) /
-                            100)
-                      )}
-                    </strong>
-                  </li>
-                  <li>
-                    If making cost is ₹84, estimated amount remaining after operating expenses will be:{" "}
-                    <strong>
-                      {formatCurrency(
-                        240 -
-                          84 -
-                          240 *
-                            ((manualPercentageInput && !isNaN(Number(manualPercentageInput))
-                              ? Number(manualPercentageInput)
-                              : 20) /
-                              100)
-                      )}
-                    </strong>
-                  </li>
-                </ul>
+                <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px]">
+                  <span>Customer pays: <strong>₹240</strong></span>
+                  <span>•</span>
+                  <span>Food cost: <strong>₹84</strong></span>
+                  <span>•</span>
+                  <span>Overhead ({manualPercentageInput && !isNaN(Number(manualPercentageInput)) ? manualPercentageInput : "20"}%): <strong>{formatCurrency(240 * ((Number(manualPercentageInput) || 20) / 100))}</strong></span>
+                  <span>•</span>
+                  <span className="text-emerald-900 font-black">
+                    Est. Take-Home Profit: <strong>{formatCurrency(240 - 84 - 240 * ((Number(manualPercentageInput) || 20) / 100))}</strong>
+                  </span>
+                </div>
               </div>
             </div>
           )}
@@ -2096,10 +2020,10 @@ export default function MenuCostingPage() {
           <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <span className="text-xs font-black text-slate-900 block">
-                Save & Apply to Menu Dishes
+                Apply Overhead to Menu Costing
               </span>
               <p className="text-[11px] text-slate-500">
-                Updating your operating expenses recalculates the overhead allocation for every dish on your menu.
+                Saving will immediately update overhead and take-home profit on all dishes.
               </p>
             </div>
 
@@ -2111,7 +2035,7 @@ export default function MenuCostingPage() {
                   disabled={savingOpEx}
                   className="px-3.5 py-2 rounded-xl text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 text-xs font-bold transition cursor-pointer disabled:opacity-50"
                 >
-                  Clear / Disable
+                  Disable Overhead
                 </button>
               )}
 
@@ -2129,7 +2053,7 @@ export default function MenuCostingPage() {
                 ) : (
                   <>
                     <Check className="w-4 h-4" />
-                    <span>Save Operating Expenses</span>
+                    <span>Save & Apply to All Dishes</span>
                   </>
                 )}
               </button>
