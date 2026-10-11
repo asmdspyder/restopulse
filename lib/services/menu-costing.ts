@@ -4,6 +4,7 @@ import {
   menuItems,
   menuItemIngredients,
   menuItemSteps,
+  operatingExpensesConfig,
 } from "@/lib/db/schema";
 import { eq, and, desc, asc, sql, ilike, inArray } from "drizzle-orm";
 import {
@@ -476,6 +477,9 @@ export async function getMenuItems(
     recipesMap.set(row.menuItemId, list);
   }
 
+  // Fetch operating expenses config
+  const opEx = await getOperatingExpensesConfig(restaurantId);
+
   return itemsList.map((item) => {
     const sellingPrice = Number(item.sellingPrice);
     const itemIngredients = recipesMap.get(item.id) || [];
@@ -497,7 +501,8 @@ export async function getMenuItems(
 
     const economics: MenuItemEconomics = calculateMenuItemEconomics(
       sellingPrice,
-      portionCosts
+      portionCosts,
+      opEx.effectivePercentage
     );
 
     return {
@@ -588,10 +593,12 @@ export async function getMenuItemById(restaurantId: string, id: string) {
     .where(eq(menuItemSteps.menuItemId, id))
     .orderBy(asc(menuItemSteps.stepNumber));
 
+  const opEx = await getOperatingExpensesConfig(restaurantId);
   const sellingPrice = Number(item.sellingPrice);
   const economics = calculateMenuItemEconomics(
     sellingPrice,
-    ingredientsWithCost.map((i) => i.portionCost)
+    ingredientsWithCost.map((i) => i.portionCost),
+    opEx.effectivePercentage
   );
 
   return {
@@ -809,4 +816,161 @@ export async function updateMenuItemSteps(
     .from(menuItemSteps)
     .where(eq(menuItemSteps.menuItemId, menuItemId))
     .orderBy(asc(menuItemSteps.stepNumber));
+}
+
+// ==========================================
+// OPERATING EXPENSES CONFIGURATION & OVERHEADS
+// ==========================================
+
+export interface OperatingExpenseItem {
+  id: string;
+  name: string;
+  amount: number;
+  category?: string;
+}
+
+export interface OperatingExpensesData {
+  mode: "calculated" | "manual";
+  manualPercentage: number | null;
+  monthlySalesRevenue: number | null;
+  expenses: OperatingExpenseItem[];
+  isEnabled: boolean;
+  totalMonthlyExpenses: number;
+  effectivePercentage: number | null;
+}
+
+/**
+ * Get operating expenses configuration and effective percentage for a restaurant
+ */
+export async function getOperatingExpensesConfig(restaurantId: string): Promise<OperatingExpensesData> {
+  const [config] = await db
+    .select()
+    .from(operatingExpensesConfig)
+    .where(eq(operatingExpensesConfig.restaurantId, restaurantId))
+    .limit(1);
+
+  if (!config) {
+    return {
+      mode: "calculated",
+      manualPercentage: null,
+      monthlySalesRevenue: null,
+      expenses: [],
+      isEnabled: true,
+      totalMonthlyExpenses: 0,
+      effectivePercentage: null,
+    };
+  }
+
+  const rawExpenses = (config.expenses as OperatingExpenseItem[]) || [];
+  const expenses: OperatingExpenseItem[] = rawExpenses.map((e, idx) => ({
+    id: e.id || `exp_${idx}`,
+    name: e.name || "Expense",
+    amount: Number(e.amount) || 0,
+    category: e.category,
+  }));
+
+  const totalMonthlyExpenses = Number(
+    expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0).toFixed(2)
+  );
+
+  const monthlySalesRevenue =
+    config.monthlySalesRevenue !== null && config.monthlySalesRevenue !== undefined
+      ? Number(config.monthlySalesRevenue)
+      : null;
+
+  const manualPercentage =
+    config.manualPercentage !== null && config.manualPercentage !== undefined
+      ? Number(config.manualPercentage)
+      : null;
+
+  let effectivePercentage: number | null = null;
+
+  if (config.isEnabled) {
+    if (config.mode === "manual") {
+      if (manualPercentage !== null && !isNaN(manualPercentage) && manualPercentage >= 0) {
+        effectivePercentage = manualPercentage;
+      }
+    } else {
+      // Calculated mode: (totalMonthlyExpenses / monthlySalesRevenue) * 100
+      if (monthlySalesRevenue !== null && monthlySalesRevenue > 0 && totalMonthlyExpenses >= 0) {
+        effectivePercentage = Number(((totalMonthlyExpenses / monthlySalesRevenue) * 100).toFixed(2));
+      }
+    }
+  }
+
+  return {
+    mode: (config.mode as "calculated" | "manual") || "calculated",
+    manualPercentage,
+    monthlySalesRevenue,
+    expenses,
+    isEnabled: config.isEnabled,
+    totalMonthlyExpenses,
+    effectivePercentage,
+  };
+}
+
+/**
+ * Save / Update operating expenses configuration for a restaurant
+ */
+export async function saveOperatingExpensesConfig(
+  restaurantId: string,
+  payload: {
+    mode: "calculated" | "manual";
+    manualPercentage?: number | null;
+    monthlySalesRevenue?: number | null;
+    expenses?: OperatingExpenseItem[];
+    isEnabled?: boolean;
+  }
+): Promise<OperatingExpensesData> {
+  const mode = payload.mode === "manual" ? "manual" : "calculated";
+  const isEnabled = payload.isEnabled !== false;
+  const rawExpenses = Array.isArray(payload.expenses) ? payload.expenses : [];
+
+  const expenses: OperatingExpenseItem[] = rawExpenses.map((e, idx) => ({
+    id: e.id || `exp_${Date.now()}_${idx}`,
+    name: String(e.name || "").trim() || "Operating Expense",
+    amount: Math.max(0, Number(e.amount) || 0),
+    category: e.category ? String(e.category).trim() : undefined,
+  }));
+
+  const monthlySalesRevenue =
+    payload.monthlySalesRevenue !== undefined && payload.monthlySalesRevenue !== null
+      ? Math.max(0, Number(payload.monthlySalesRevenue))
+      : null;
+
+  const manualPercentage =
+    payload.manualPercentage !== undefined && payload.manualPercentage !== null
+      ? Math.max(0, Number(payload.manualPercentage))
+      : null;
+
+  const [existing] = await db
+    .select({ id: operatingExpensesConfig.id })
+    .from(operatingExpensesConfig)
+    .where(eq(operatingExpensesConfig.restaurantId, restaurantId))
+    .limit(1);
+
+  if (existing) {
+    await db
+      .update(operatingExpensesConfig)
+      .set({
+        mode,
+        manualPercentage: manualPercentage !== null ? manualPercentage.toString() : null,
+        monthlySalesRevenue: monthlySalesRevenue !== null ? monthlySalesRevenue.toString() : null,
+        expenses,
+        isEnabled,
+        updatedAt: new Date(),
+      })
+      .where(eq(operatingExpensesConfig.id, existing.id));
+  } else {
+    await db.insert(operatingExpensesConfig).values({
+      restaurantId,
+      mode,
+      manualPercentage: manualPercentage !== null ? manualPercentage.toString() : null,
+      monthlySalesRevenue: monthlySalesRevenue !== null ? monthlySalesRevenue.toString() : null,
+      expenses,
+      isEnabled,
+    });
+  }
+
+  return getOperatingExpensesConfig(restaurantId);
 }

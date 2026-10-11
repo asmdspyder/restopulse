@@ -97,6 +97,19 @@ async function migrate() {
       CREATE INDEX IF NOT EXISTS idx_menu_item_ing_ing ON menu_item_ingredients(ingredient_id);
       CREATE INDEX IF NOT EXISTS idx_menu_item_steps_item ON menu_item_steps(menu_item_id);
       CREATE INDEX IF NOT EXISTS idx_menu_item_steps_order ON menu_item_steps(menu_item_id, step_number);
+
+      CREATE TABLE IF NOT EXISTS operating_expenses_config (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        restaurant_id UUID NOT NULL UNIQUE REFERENCES restaurants(id) ON DELETE CASCADE,
+        mode VARCHAR(50) DEFAULT 'calculated' NOT NULL,
+        manual_percentage NUMERIC(5,2),
+        monthly_sales_revenue NUMERIC(12,2),
+        expenses JSONB DEFAULT '[]'::jsonb NOT NULL,
+        is_enabled BOOLEAN DEFAULT true NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+        updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_opex_config_restaurant ON operating_expenses_config(restaurant_id);
     `);
     console.log("Menu costing tables and indexes successfully created in database!");
   } catch (err) {

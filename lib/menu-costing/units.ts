@@ -202,17 +202,22 @@ export function getStandardCostDisplay(
  * Calculates complete menu item financial economics
  */
 export interface MenuItemEconomics {
-  totalIngredientCost: number;
-  grossProfit: number;
+  totalIngredientCost: number; // Making Cost
+  grossProfit: number; // Profit Before Operating Expenses (Selling Price - Making Cost)
   grossMarginPercent: number;
   foodCostPercent: number;
   isComplete: boolean;
   hasSellingPrice: boolean;
+  // Operating Expenses calculations
+  operatingExpensePercent?: number | null; // e.g. 20
+  estimatedOperatingExpense?: number | null; // Selling Price * (operatingExpensePercent / 100)
+  estimatedAmountRemaining?: number | null; // Selling Price - Making Cost - estimatedOperatingExpense
 }
 
 export function calculateMenuItemEconomics(
   sellingPrice: number,
-  ingredientPortionCosts: number[]
+  ingredientPortionCosts: number[],
+  operatingExpensePercent?: number | null
 ): MenuItemEconomics {
   const totalIngredientCost = Number(
     ingredientPortionCosts.reduce((sum, cost) => sum + cost, 0).toFixed(2)
@@ -231,6 +236,20 @@ export function calculateMenuItemEconomics(
     foodCostPercent = Number(((totalIngredientCost / sellingPrice) * 100).toFixed(1));
   }
 
+  let estimatedOperatingExpense: number | null = null;
+  let estimatedAmountRemaining: number | null = null;
+
+  if (
+    hasSellingPrice &&
+    operatingExpensePercent !== null &&
+    operatingExpensePercent !== undefined &&
+    !isNaN(operatingExpensePercent) &&
+    operatingExpensePercent >= 0
+  ) {
+    estimatedOperatingExpense = Number((sellingPrice * (operatingExpensePercent / 100)).toFixed(2));
+    estimatedAmountRemaining = Number((grossProfit - estimatedOperatingExpense).toFixed(2));
+  }
+
   return {
     totalIngredientCost,
     grossProfit,
@@ -238,5 +257,8 @@ export function calculateMenuItemEconomics(
     foodCostPercent,
     isComplete,
     hasSellingPrice,
+    operatingExpensePercent: operatingExpensePercent ?? null,
+    estimatedOperatingExpense,
+    estimatedAmountRemaining,
   };
 }

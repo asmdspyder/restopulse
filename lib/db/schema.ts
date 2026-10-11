@@ -579,8 +579,36 @@ export const menuItemSteps = pgTable(
   ]
 );
 
+// 22. OPERATING EXPENSES CONFIGURATION (MENU COSTING MODULE)
+export const operatingExpensesConfig = pgTable(
+  "operating_expenses_config",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    restaurantId: uuid("restaurant_id")
+      .references(() => restaurants.id, { onDelete: "cascade" })
+      .notNull()
+      .unique(),
+    mode: varchar("mode", { length: 50 }).default("calculated").notNull(), // 'calculated' | 'manual'
+    manualPercentage: numeric("manual_percentage", { precision: 5, scale: 2 }),
+    monthlySalesRevenue: numeric("monthly_sales_revenue", { precision: 12, scale: 2 }),
+    expenses: json("expenses").$type<Array<{
+      id: string;
+      name: string;
+      amount: number;
+      category?: string;
+    }>>().default([]).notNull(),
+    isEnabled: boolean("is_enabled").default(true).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("idx_opex_config_restaurant").on(table.restaurantId),
+  ]
+);
+
 // RELATIONS
-export const restaurantsRelations = relations(restaurants, ({ many }) => ({
+export const restaurantsRelations = relations(restaurants, ({ one, many }) => ({
+  operatingExpensesConfig: one(operatingExpensesConfig),
   users: many(users),
   subscriptions: many(subscriptions),
   categories: many(categories),
@@ -791,6 +819,13 @@ export const menuItemStepsRelations = relations(menuItemSteps, ({ one }) => ({
   menuItem: one(menuItems, {
     fields: [menuItemSteps.menuItemId],
     references: [menuItems.id],
+  }),
+}));
+
+export const operatingExpensesConfigRelations = relations(operatingExpensesConfig, ({ one }) => ({
+  restaurant: one(restaurants, {
+    fields: [operatingExpensesConfig.restaurantId],
+    references: [restaurants.id],
   }),
 }));
 
