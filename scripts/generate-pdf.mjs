@@ -24,7 +24,7 @@ async function generatePDF() {
   const imgOverhead = getBase64Image('2b_overhead.png');
   const imgWastage = getBase64Image('3_wastage.png');
 
-  console.log('Generating revised sleek HTML presentation template...');
+  console.log('Generating revised clean executive HTML template...');
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -59,7 +59,7 @@ async function generatePDF() {
       width: 210mm;
       min-height: 297mm;
       height: 297mm;
-      padding: 16mm 18mm 14mm 18mm;
+      padding: 15mm 18mm 13mm 18mm;
       position: relative;
       background: #ffffff;
       page-break-after: always;
@@ -127,122 +127,155 @@ async function generatePDF() {
       color: #047857;
     }
 
-    /* ================= COVER PAGE ================= */
-    .cover-page {
-      background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #022c22 100%);
-      color: #ffffff;
-      padding: 22mm 20mm 18mm 20mm;
+    /* ======================================================== */
+    /* NEW CLEAN, BRIGHT & UNDERSTANDABLE COVER PAGE            */
+    /* ======================================================== */
+    .cover-clean-page {
+      background: #ffffff;
+      padding: 16mm 18mm 14mm 18mm;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      position: relative;
     }
-    .cover-top {
+    .cover-top-accent {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4mm;
+      background: linear-gradient(90deg, #047857 0%, #10b981 50%, #064e3b 100%);
+    }
+    .cover-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      margin-top: 2mm;
+      padding-bottom: 3.5mm;
+      border-bottom: 1.5px solid #e2e8f0;
     }
-    .cover-badge-pill {
-      background: rgba(255, 255, 255, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      padding: 1.5mm 4mm;
-      border-radius: 20mm;
+    .cover-app-tag {
       font-size: 8pt;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      color: #a7f3d0;
-    }
-    .cover-center {
-      margin-top: 6mm;
-      margin-bottom: 6mm;
-    }
-    .cover-tagline-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 1.5mm;
-      background: rgba(52, 211, 153, 0.2);
-      border: 1px solid rgba(52, 211, 153, 0.4);
-      color: #a7f3d0;
-      font-size: 8.5pt;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.8px;
-      padding: 1.5mm 3.5mm;
-      border-radius: 1.5mm;
-      margin-bottom: 3.5mm;
-    }
-    .cover-title {
-      font-size: 30pt;
-      font-weight: 900;
-      line-height: 1.15;
-      letter-spacing: -1px;
-      color: #ffffff;
-      margin-bottom: 3.5mm;
-    }
-    .cover-title span {
-      color: #34d399;
-    }
-    .cover-intro {
-      font-size: 11pt;
-      font-weight: 500;
-      color: #d1fae5;
-      line-height: 1.45;
-      max-width: 165mm;
-      margin-bottom: 6mm;
+      color: #047857;
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      padding: 1mm 3mm;
+      border-radius: 10mm;
     }
 
-    /* 3 Big Pillars Grid on Cover */
-    .cover-pillars {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 3.5mm;
+    .cover-hero-section {
+      margin: 4.5mm 0 3.5mm 0;
     }
-    .pillar-card {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 3mm;
-      padding: 4mm 3.5mm;
-      backdrop-filter: blur(10px);
-    }
-    .pillar-number {
-      font-size: 8pt;
-      font-weight: 900;
-      color: #34d399;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 1.5mm;
-      display: flex;
+    .cover-pill-label {
+      display: inline-flex;
       align-items: center;
       gap: 1.5mm;
-    }
-    .pillar-title {
-      font-size: 10.5pt;
-      font-weight: 900;
-      color: #ffffff;
-      margin-bottom: 1.5mm;
-      line-height: 1.25;
-    }
-    .pillar-desc {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      padding: 1mm 2.8mm;
+      border-radius: 1.5mm;
       font-size: 8pt;
-      color: #a7f3d0;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 2.5mm;
+    }
+    .cover-hero-title {
+      font-size: 24pt;
+      font-weight: 900;
+      line-height: 1.15;
+      letter-spacing: -0.8px;
+      color: #0f172a;
+      margin-bottom: 2mm;
+    }
+    .cover-hero-title span {
+      color: #047857;
+    }
+    .cover-hero-desc {
+      font-size: 10pt;
+      color: #475569;
+      line-height: 1.45;
+      max-width: 165mm;
+    }
+
+    /* Hero Preview Screenshot Frame on Cover */
+    .cover-screenshot-box {
+      border: 1.5px solid #cbd5e1;
+      border-radius: 3mm;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+      background: #f8fafc;
+      margin: 2.5mm 0 3.5mm 0;
+    }
+    .cover-screenshot-box img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* 3 Core Module Cards on Cover */
+    .cover-features-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 3mm;
+      margin-top: 1mm;
+    }
+    .cf-card {
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 2.5mm;
+      padding: 3mm 3.2mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+    .cf-card:hover {
+      border-color: #a7f3d0;
+    }
+    .cf-icon-title {
+      display: flex;
+      align-items: center;
+      gap: 1.8mm;
+      margin-bottom: 1.5mm;
+    }
+    .cf-icon {
+      font-size: 12pt;
+    }
+    .cf-title {
+      font-size: 9pt;
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1.2;
+    }
+    .cf-desc {
+      font-size: 8pt;
+      color: #475569;
       line-height: 1.35;
     }
 
-    .cover-bottom {
-      border-top: 1px solid rgba(255, 255, 255, 0.2);
-      padding-top: 3.5mm;
+    .cover-footer-banner {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 8.5pt;
-      color: #d1fae5;
+      border-top: 1.5px solid #e2e8f0;
+      padding-top: 3.5mm;
+      font-size: 8pt;
+      color: #64748b;
+      font-weight: 600;
+    }
+    .cover-footer-banner strong {
+      color: #047857;
     }
 
     /* ================= INNER PAGES LAYOUT ================= */
     .module-hero {
-      margin-bottom: 2.5mm;
+      margin-bottom: 2mm;
     }
-    .priority-badge {
+    .feature-tag {
       display: inline-flex;
       align-items: center;
       gap: 1.5mm;
@@ -250,33 +283,16 @@ async function generatePDF() {
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.6px;
-      padding: 1mm 2.5mm;
+      padding: 0.8mm 2.5mm;
       border-radius: 1mm;
       margin-bottom: 1mm;
-    }
-    .priority-badge.p1 {
-      background: #fef3c7;
-      color: #92400e;
-      border: 1px solid #fde68a;
-    }
-    .priority-badge.p2 {
       background: #ecfdf5;
       color: #065f46;
       border: 1px solid #a7f3d0;
     }
-    .priority-badge.p3 {
-      background: #fee2e2;
-      color: #991b1b;
-      border: 1px solid #fecaca;
-    }
-    .priority-badge.hub {
-      background: #e0f2fe;
-      color: #0369a1;
-      border: 1px solid #bae6fd;
-    }
 
     .module-title {
-      font-size: 17pt;
+      font-size: 16pt;
       font-weight: 900;
       letter-spacing: -0.5px;
       color: #0f172a;
@@ -285,7 +301,7 @@ async function generatePDF() {
     .module-summary {
       font-size: 9.5pt;
       color: #475569;
-      margin-top: 1mm;
+      margin-top: 0.8mm;
       line-height: 1.35;
     }
 
@@ -294,11 +310,11 @@ async function generatePDF() {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 3mm;
-      margin: 2.5mm 0 3.5mm 0;
+      margin: 2.2mm 0 3mm 0;
     }
     .ps-card {
       border-radius: 2.5mm;
-      padding: 2.5mm 3.5mm;
+      padding: 2.5mm 3.2mm;
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
@@ -339,7 +355,7 @@ async function generatePDF() {
       border: 1.5px solid #cbd5e1;
       overflow: hidden;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-      margin: 2.5mm 0;
+      margin: 2mm 0;
       background: #f8fafc;
     }
     .screenshot-frame img {
@@ -353,23 +369,23 @@ async function generatePDF() {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 3mm;
-      margin-top: 2.5mm;
+      margin-top: 2mm;
     }
     .bottom-card {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
       border-radius: 2.5mm;
-      padding: 3mm 3.5mm;
+      padding: 2.8mm 3.2mm;
     }
     .bottom-card.highlight {
       background: #ecfdf5;
       border-color: #a7f3d0;
     }
     .bottom-card-title {
-      font-size: 9pt;
+      font-size: 8.5pt;
       font-weight: 800;
       color: #0f172a;
-      margin-bottom: 1.5mm;
+      margin-bottom: 1.2mm;
       display: flex;
       align-items: center;
       gap: 1.5mm;
@@ -382,7 +398,7 @@ async function generatePDF() {
     .step-list {
       display: flex;
       flex-direction: column;
-      gap: 1.5mm;
+      gap: 1.3mm;
     }
     .step-row {
       display: flex;
@@ -393,8 +409,8 @@ async function generatePDF() {
       line-height: 1.35;
     }
     .step-num {
-      width: 4.5mm;
-      height: 4.5mm;
+      width: 4.2mm;
+      height: 4.2mm;
       border-radius: 50%;
       background: #047857;
       color: #ffffff;
@@ -415,29 +431,29 @@ async function generatePDF() {
       background: #dcfce7;
       color: #166534;
       border: 1px solid #86efac;
-      padding: 0.8mm 2.5mm;
+      padding: 0.6mm 2.2mm;
       border-radius: 1mm;
       font-size: 7.5pt;
       font-weight: 800;
-      margin-bottom: 1.5mm;
+      margin-bottom: 1.2mm;
     }
 
-    /* ================= FINAL SUMMARY PAGE ================= */
+    /* ================= SUMMARY PAGE ================= */
     .summary-table {
       width: 100%;
       border-collapse: collapse;
-      margin: 3mm 0;
+      margin: 2.5mm 0;
       font-size: 8.5pt;
     }
     .summary-table th {
       background: #0f172a;
       color: #ffffff;
-      padding: 2.5mm 3.5mm;
+      padding: 2.2mm 3.2mm;
       text-align: left;
       font-weight: 800;
     }
     .summary-table td {
-      padding: 2.5mm 3.5mm;
+      padding: 2.2mm 3.2mm;
       border-bottom: 1px solid #e2e8f0;
       vertical-align: top;
     }
@@ -464,38 +480,38 @@ async function generatePDF() {
       background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
       color: #ffffff;
       border-radius: 3mm;
-      padding: 5mm 6mm;
+      padding: 4.5mm 6mm;
       text-align: center;
-      margin-top: 3.5mm;
+      margin-top: 2.5mm;
     }
     .closing-title {
-      font-size: 14pt;
+      font-size: 13pt;
       font-weight: 900;
       color: #34d399;
-      margin-bottom: 1.5mm;
+      margin-bottom: 1.2mm;
     }
     .closing-desc {
-      font-size: 9pt;
+      font-size: 8.5pt;
       color: #cbd5e1;
       max-width: 145mm;
-      margin: 0 auto 3.5mm auto;
+      margin: 0 auto 3mm auto;
       line-height: 1.4;
     }
     .stats-row {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 3mm;
-      margin-top: 3mm;
+      margin-top: 2.5mm;
     }
     .stat-box {
       background: #ffffff;
       border: 1px solid #e2e8f0;
-      padding: 3mm;
+      padding: 2.5mm;
       border-radius: 2.5mm;
       text-align: center;
     }
     .stat-number {
-      font-size: 16pt;
+      font-size: 15pt;
       font-weight: 900;
       color: #047857;
       margin-bottom: 0.5mm;
@@ -510,72 +526,82 @@ async function generatePDF() {
 <body>
 
   <!-- ======================================================== -->
-  <!-- PAGE 1: REVISED CRYSTAL-CLEAR COVER PAGE                -->
+  <!-- PAGE 1: CLEAN, BRIGHT, PROFESSIONAL COVER PAGE           -->
   <!-- ======================================================== -->
-  <div class="page cover-page">
-    <div class="cover-top">
+  <div class="page cover-clean-page">
+    <div class="cover-top-accent"></div>
+
+    <!-- Header bar -->
+    <div class="cover-header">
       <div class="brand-logo">
-        <div class="brand-badge" style="background:#ffffff; color:#047857;">RP</div>
-        <div class="brand-name" style="color:#ffffff;">Resto<span>Pulse</span></div>
+        <div class="brand-badge">RP</div>
+        <div class="brand-name">Resto<span>Pulse</span></div>
       </div>
-      <div class="cover-badge-pill">Restaurant Operations & Profit Software</div>
+      <div class="cover-app-tag">Restaurant Kitchen Operations Platform</div>
     </div>
 
-    <div class="cover-center">
-      <div class="cover-tagline-chip">
-        ⚡ Built For Restaurant Owners & Kitchen Managers
+    <!-- Main Hero -->
+    <div class="cover-hero-section">
+      <div class="cover-pill-label">
+        Simple Software for Restaurant Owners & Chefs
       </div>
 
-      <h1 class="cover-title">
-        The Simple Kitchen App<br />
-        That <span>Stops Profit Leaks</span><br />
-        In Your Restaurant.
+      <h1 class="cover-hero-title">
+        Run a Consistent, Leak-Proof Kitchen.<br />
+        <span>Checklists. Recipe Costs. Zero Waste.</span>
       </h1>
 
-      <p class="cover-intro">
-        RestoPulse solves the 3 biggest operational headaches every restaurant owner faces: staff skipping cleaning duties, rising ingredient costs eating your margins, and food getting thrown in the bin.
+      <p class="cover-hero-desc">
+        RestoPulse is a simple kitchen operations app designed for restaurants. It keeps staff accountable with live camera checklists, calculates exact plate making costs with rent & bills, and stops food waste from eating your margins.
       </p>
+    </div>
 
-      <!-- The 3 Core Pillars in Clear Priority Order -->
-      <div class="cover-pillars">
-        <!-- Pillar 1: Checklists -->
-        <div class="pillar-card">
-          <div class="pillar-number">
-            <span>PRIORITY 1</span> • <span>HYGIENE</span>
-          </div>
-          <div class="pillar-title">Daily Kitchen Checklists & SOPs</div>
-          <div class="pillar-desc">
-            Staff tick opening/closing tasks with <strong>mandatory live camera photos</strong>. Guaranteed kitchen cleanliness & staff accountability.
-          </div>
-        </div>
+    <!-- Centerpiece: Real Software Preview -->
+    <div class="cover-screenshot-box">
+      <img src="${imgHub}" alt="RestoPulse App Overview - Operations Hub" />
+    </div>
 
-        <!-- Pillar 2: Dish Costing -->
-        <div class="pillar-card">
-          <div class="pillar-number">
-            <span>PRIORITY 2</span> • <span>MARGINS</span>
-          </div>
-          <div class="pillar-title">Dish Costing & Overheads</div>
-          <div class="pillar-desc">
-            Know exact ingredient making costs, food margins, and factor in monthly rent & staff to see <strong>true take-home profit</strong> per dish.
-          </div>
+    <!-- The 3 Core Modules in Clear Order -->
+    <div class="cover-features-row">
+      <!-- 1. Checklists -->
+      <div class="cf-card">
+        <div class="cf-icon-title">
+          <span class="cf-icon">📋</span>
+          <span class="cf-title">1. Kitchen Checklists</span>
         </div>
+        <p class="cf-desc">
+          Daily opening, hygiene, and closing SOPs with <strong>required live camera photos</strong>. Staff cannot fake cleaning duties.
+        </p>
+      </div>
 
-        <!-- Pillar 3: Food Waste -->
-        <div class="pillar-card">
-          <div class="pillar-number">
-            <span>PRIORITY 3</span> • <span>SAVINGS</span>
-          </div>
-          <div class="pillar-title">Food Wastage Recording</div>
-          <div class="pillar-desc">
-            Fast 10-second waste logging by shift and reason (burnt, spoiled, over-prepped). Cut kitchen waste by <strong>30% to 40%</strong>.
-          </div>
+      <!-- 2. Recipe Costing -->
+      <div class="cf-card">
+        <div class="cf-icon-title">
+          <span class="cf-icon">🍲</span>
+          <span class="cf-title">2. Dish Costing & Bills</span>
         </div>
+        <p class="cf-desc">
+          Know exact ingredient portion costs per plate. Factors in monthly rent & staff salaries to reveal <strong>real take-home profit</strong>.
+        </p>
+      </div>
+
+      <!-- 3. Food Waste -->
+      <div class="cf-card">
+        <div class="cf-icon-title">
+          <span class="cf-icon">🗑️</span>
+          <span class="cf-title">3. Food Waste Tracker</span>
+        </div>
+        <p class="cf-desc">
+          Fast 10-second waste logging by shift and reason (burnt, spoiled, over-prepped). Cut kitchen food waste by <strong>30% to 40%</strong>.
+        </p>
       </div>
     </div>
 
-    <div class="cover-bottom">
-      <div><strong>Product Walkthrough & Feature Demo Guide</strong></div>
-      <div>Works on Any Phone, Tablet or Laptop • Zero Complex Setup</div>
+    <!-- Footer Bar -->
+    <div class="cover-footer-banner">
+      <div>📱 <strong>Works on Any Phone, Tablet or Laptop</strong></div>
+      <div>⚡ <strong>Takes Staff &lt; 5 Minutes a Day</strong></div>
+      <div>🚀 <strong>Zero Complex POS Setup</strong></div>
     </div>
   </div>
 
@@ -594,7 +620,7 @@ async function generatePDF() {
       </div>
 
       <div class="module-hero">
-        <span class="priority-badge hub">Central Command Center</span>
+        <span class="feature-tag">Central Command Center</span>
         <h2 class="module-title">Restaurant Operations Hub</h2>
         <p class="module-summary">
           Your kitchen team's daily home screen. All operational modules are accessible in clean, visual cards with real-time status badges and today's progress.
@@ -659,7 +685,7 @@ async function generatePDF() {
 
 
   <!-- ======================================================== -->
-  <!-- PAGE 3: PRIORITY 1 — DAILY CHECKLISTS & SOPs             -->
+  <!-- PAGE 3: FEATURE 1 — DAILY CHECKLISTS & SOPs              -->
   <!-- ======================================================== -->
   <div class="page">
     <div>
@@ -668,11 +694,11 @@ async function generatePDF() {
           <div class="brand-badge">RP</div>
           <div class="brand-name">Resto<span>Pulse</span></div>
         </div>
-        <div class="header-tagline">Feature #1 • Staff Accountability & SOPs</div>
+        <div class="header-tagline">Module 1 • Daily Checklists & Staff SOPs</div>
       </div>
 
       <div class="module-hero">
-        <span class="priority-badge p1">Priority Feature 1</span>
+        <span class="feature-tag">Staff Accountability & Hygiene</span>
         <h2 class="module-title">Daily Kitchen Checklists with Live Camera Proof</h2>
         <p class="module-summary">
           Ensure opening prep, deep cleaning, oil quality, and gas shut-off are completed properly every shift—with mandatory live photo verification.
@@ -738,7 +764,7 @@ async function generatePDF() {
 
 
   <!-- ======================================================== -->
-  <!-- PAGE 4: PRIORITY 2 — DISH COSTING & RECIPES              -->
+  <!-- PAGE 4: FEATURE 2 — DISH COSTING & RECIPES               -->
   <!-- ======================================================== -->
   <div class="page">
     <div>
@@ -747,11 +773,11 @@ async function generatePDF() {
           <div class="brand-badge">RP</div>
           <div class="brand-name">Resto<span>Pulse</span></div>
         </div>
-        <div class="header-tagline">Feature #2 • Recipe Economics & Margin Control</div>
+        <div class="header-tagline">Module 2 • Dish Costing & Recipes</div>
       </div>
 
       <div class="module-hero">
-        <span class="priority-badge p2">Priority Feature 2</span>
+        <span class="feature-tag">Recipe Economics & Margin Control</span>
         <h2 class="module-title">Dish Costing & Standardized Recipes</h2>
         <p class="module-summary">
           Calculate the exact ingredient making cost and food margin % for every dish on your menu. Plus, store step-by-step cooking SOPs so any chef cooks with identical taste.
@@ -817,7 +843,7 @@ async function generatePDF() {
 
 
   <!-- ======================================================== -->
-  <!-- PAGE 5: PRIORITY 2 (PART B) — OVERHEADS & BILLS          -->
+  <!-- PAGE 5: FEATURE 2 (PART B) — OVERHEADS & BILLS           -->
   <!-- ======================================================== -->
   <div class="page">
     <div>
@@ -826,11 +852,11 @@ async function generatePDF() {
           <div class="brand-badge">RP</div>
           <div class="brand-name">Resto<span>Pulse</span></div>
         </div>
-        <div class="header-tagline">Feature #2 (Cont.) • Real Take-Home Cash</div>
+        <div class="header-tagline">Module 2 (Cont.) • Overheads & Running Bills</div>
       </div>
 
       <div class="module-hero">
-        <span class="priority-badge p2">Profit Protection</span>
+        <span class="feature-tag">True Take-Home Cash</span>
         <h2 class="module-title">Restaurant Overheads & Bills Allocation</h2>
         <p class="module-summary">
           Food cost is only half the story. Factor in your fixed monthly bills (rent, staff salaries, electricity) to calculate your true take-home profit on each plate.
@@ -892,7 +918,7 @@ async function generatePDF() {
 
 
   <!-- ======================================================== -->
-  <!-- PAGE 6: PRIORITY 3 — FOOD WASTAGE TRACKER                -->
+  <!-- PAGE 6: FEATURE 3 — FOOD WASTAGE TRACKER                 -->
   <!-- ======================================================== -->
   <div class="page">
     <div>
@@ -901,11 +927,11 @@ async function generatePDF() {
           <div class="brand-badge">RP</div>
           <div class="brand-name">Resto<span>Pulse</span></div>
         </div>
-        <div class="header-tagline">Feature #3 • Food Loss Prevention</div>
+        <div class="header-tagline">Module 3 • Daily Food Wastage Tracker</div>
       </div>
 
       <div class="module-hero">
-        <span class="priority-badge p3">Priority Feature 3</span>
+        <span class="feature-tag">Food Loss Prevention</span>
         <h2 class="module-title">Daily Food Wastage Tracker</h2>
         <p class="module-summary">
           Stop throwing thousands of rupees into the kitchen trash bin. Give staff a lightning-fast 10-second logger to track wasted food by shift and exact reason.
@@ -980,11 +1006,11 @@ async function generatePDF() {
           <div class="brand-badge">RP</div>
           <div class="brand-name">Resto<span>Pulse</span></div>
         </div>
-        <div class="header-tagline">Summary • Restaurant Owner ROI</div>
+        <div class="header-tagline">Summary • Restaurant Operations ROI</div>
       </div>
 
       <div class="module-hero">
-        <span class="priority-badge hub">Executive Overview</span>
+        <span class="feature-tag">Executive Overview</span>
         <h2 class="module-title">How RestoPulse Protects Your Restaurant</h2>
         <p class="module-summary">
           Three powerful modules working together to keep your kitchen clean, consistent, and profitable every single day.
@@ -1008,13 +1034,13 @@ async function generatePDF() {
           </tr>
           <tr>
             <td class="feat-col">2. Dish Costing & Overheads</td>
-            <td class="prob-col">Rising ingredient costs silently wipe out profits without owners realizing.</td>
+            <td class="prob-col">Rising ingredient costs silently wipe out margins without owners realizing.</td>
             <td class="sol-col">Real-time recipe portion costs, food margin %, and monthly bills allocation for true take-home profit.</td>
           </tr>
           <tr>
             <td class="feat-col">3. Food Wastage Tracker</td>
             <td class="prob-col">₹30,000–₹80,000/month lost into the kitchen bin due to spoilage and over-prep.</td>
-            <td class="sol-col">Fast 10-second waste logging by shift and reason. Recovers lost profit in the first 30 days.</td>
+            <td class="sol-col">Fast 10-second waste logging by shift and reason. Recovers lost food costs in the first 30 days.</td>
           </tr>
         </tbody>
       </table>
