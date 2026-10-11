@@ -26,25 +26,6 @@ async function capture() {
     .setExpirationTime('7d')
     .sign(secret);
 
-  console.log('Launching Chrome...');
-  const browser = await puppeteer.launch({
-    executablePath: CHROME_PATH,
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--window-size=1400,900']
-  });
-
-  const page = await browser.newPage();
-  await page.setViewport({ width: 1360, height: 860, deviceScaleFactor: 2 });
-
-  await page.setCookie({
-    name: 'wasteflow_session',
-    value: token,
-    domain: 'localhost',
-    path: '/',
-    httpOnly: true,
-  });
-
-  // First, set up realistic Overheads in the Demo Account so dish cards look super impressive
   console.log('Setting realistic demo overheads via API...');
   await fetch('http://localhost:3000/api/menu-costing/operating-expenses', {
     method: 'PUT',
@@ -65,17 +46,41 @@ async function capture() {
     })
   });
 
+  console.log('Launching Chrome...');
+  const browser = await puppeteer.launch({
+    executablePath: CHROME_PATH,
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--window-size=1400,900']
+  });
+
+  const page = await browser.newPage();
+  await page.setViewport({ width: 1360, height: 860, deviceScaleFactor: 2 });
+
+  await page.setCookie({
+    name: 'wasteflow_session',
+    value: token,
+    domain: 'localhost',
+    path: '/',
+    httpOnly: true,
+  });
+
   const captures = [
-    { url: 'http://localhost:3000/app/dashboard', filename: '1_dashboard.png', waitMs: 3500 },
-    { url: 'http://localhost:3000/app/wastage', filename: '2_wastage.png', waitMs: 3000 },
-    { url: 'http://localhost:3000/app/menu-costing', filename: '3_menu_costing.png', waitMs: 3000 },
-    { url: 'http://localhost:3000/app/checklists', filename: '4_checklists.png', waitMs: 3000 },
-    { url: 'http://localhost:3000/app/users', filename: '5_team.png', waitMs: 3000 },
+    { url: 'http://localhost:3000/app', filename: '0_operations_hub.png', waitMs: 3500 },
+    { url: 'http://localhost:3000/app/checklists', filename: '1_checklists.png', waitMs: 3500 },
+    { url: 'http://localhost:3000/app/menu-costing', filename: '2_menu_costing.png', waitMs: 3500 },
+    { url: 'http://localhost:3000/app/wastage', filename: '3_wastage.png', waitMs: 3500 },
   ];
 
   for (const c of captures) {
     console.log(`Navigating to ${c.url}...`);
     await page.goto(c.url, { waitUntil: 'networkidle2' });
+    if (c.url === 'http://localhost:3000/app') {
+      try {
+        await page.waitForSelector('.group, h2', { timeout: 15000 });
+      } catch (e) {
+        console.log('Timeout waiting for selector on /app');
+      }
+    }
     await new Promise(r => setTimeout(r, c.waitMs));
     const filePath = path.join(OUTPUT_DIR, c.filename);
     await page.screenshot({ path: filePath });
@@ -95,7 +100,7 @@ async function capture() {
       break;
     }
   }
-  const opexPath = path.join(OUTPUT_DIR, '3b_overhead_tab.png');
+  const opexPath = path.join(OUTPUT_DIR, '2b_overhead.png');
   await page.screenshot({ path: opexPath });
   console.log(`Saved screenshot: ${opexPath}`);
 
