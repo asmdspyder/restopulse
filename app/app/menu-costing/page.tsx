@@ -183,6 +183,7 @@ export default function MenuCostingPage() {
   const [activeStepsItem, setActiveStepsItem] = useState<MenuItem | null>(null);
   const [recipeSteps, setRecipeSteps] = useState<Array<{ stepNumber: number; instruction: string }>>([]);
   const [savingSteps, setSavingSteps] = useState(false);
+  const [loadingSteps, setLoadingSteps] = useState(false);
 
   // Initial Load
   useEffect(() => {
@@ -615,13 +616,14 @@ export default function MenuCostingPage() {
   const openStepsModal = async (item: MenuItem) => {
     setActiveStepsItem(item);
     setRecipeSteps([]);
+    setLoadingSteps(true);
     setIsStepsModalOpen(true);
 
     try {
       const res = await fetch(`/api/menu-costing/menu-items/${item.id}/steps`);
       if (res.ok) {
         const data = await res.json();
-        if (data.length > 0) {
+        if (data && data.length > 0) {
           setRecipeSteps(data);
         } else {
           setRecipeSteps([
@@ -633,6 +635,8 @@ export default function MenuCostingPage() {
     } catch (e) {
       console.error(e);
       setRecipeSteps([{ stepNumber: 1, instruction: "" }]);
+    } finally {
+      setLoadingSteps(false);
     }
   };
 
@@ -1850,8 +1854,17 @@ export default function MenuCostingPage() {
                   Cooking SOP: {activeStepsItem.name}
                 </h3>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  Step-by-step instructions for kitchen staff • {recipeSteps.length}{" "}
-                  {recipeSteps.length === 1 ? "step" : "steps"}
+                  {loadingSteps ? (
+                    <span className="inline-flex items-center gap-1.5 text-emerald-700 font-medium">
+                      <Loader2 className="w-3 h-3 animate-spin text-emerald-600" />
+                      Loading cooking steps...
+                    </span>
+                  ) : (
+                    <>
+                      Step-by-step instructions for kitchen staff • {recipeSteps.length}{" "}
+                      {recipeSteps.length === 1 ? "step" : "steps"}
+                    </>
+                  )}
                 </p>
               </div>
               <button
@@ -1864,7 +1877,33 @@ export default function MenuCostingPage() {
 
             {/* Steps List */}
             <div className="flex-1 overflow-y-auto p-3.5 space-y-2">
-              {recipeSteps.length === 0 ? (
+              {loadingSteps ? (
+                <div className="py-7 px-4 flex flex-col items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center mb-2.5 shadow-2xs">
+                    <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
+                  </div>
+                  <p className="text-xs font-bold text-slate-800">
+                    Loading Cooking SOP...
+                  </p>
+                  <p className="text-[11px] text-slate-400 mt-0.5 mb-4">
+                    Fetching recipe preparation instructions
+                  </p>
+                  <div className="w-full space-y-2">
+                    {[1, 2, 3].map((idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/70 animate-pulse"
+                      >
+                        <div className="w-6 h-6 rounded-lg bg-slate-200 shrink-0 mt-0.5" />
+                        <div className="flex-1 space-y-1.5 py-1">
+                          <div className="h-2.5 bg-slate-200 rounded w-3/4" />
+                          <div className="h-2 bg-slate-200 rounded w-1/2" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : recipeSteps.length === 0 ? (
                 <div className="p-6 rounded-xl border-2 border-dashed border-slate-200 text-center bg-slate-50/50">
                   <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto mb-1.5">
                     <BookOpen className="w-4 h-4" />
@@ -1937,7 +1976,7 @@ export default function MenuCostingPage() {
                 ))
               )}
 
-              {recipeSteps.length > 0 && (
+              {!loadingSteps && recipeSteps.length > 0 && (
                 <button
                   type="button"
                   onClick={handleAddStep}
@@ -1961,7 +2000,7 @@ export default function MenuCostingPage() {
               <button
                 type="button"
                 onClick={handleSaveSteps}
-                disabled={savingSteps}
+                disabled={savingSteps || loadingSteps}
                 className="px-4 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-2xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition"
               >
                 {savingSteps ? (
