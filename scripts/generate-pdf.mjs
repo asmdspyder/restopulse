@@ -128,10 +128,11 @@ async function generatePDF() {
     }
 
     /* ======================================================== */
-    /* NEW CLEAN, BRIGHT & UNDERSTANDABLE COVER PAGE            */
+    /* COMPLETE RICH GREEN COVER PAGE                           */
     /* ======================================================== */
     .cover-clean-page {
-      background: #ffffff;
+      background: linear-gradient(135deg, #064e3b 0%, #065f46 45%, #022c22 100%);
+      color: #ffffff;
       padding: 16mm 18mm 14mm 18mm;
       display: flex;
       flex-direction: column;
@@ -143,8 +144,8 @@ async function generatePDF() {
       top: 0;
       left: 0;
       right: 0;
-      height: 4mm;
-      background: linear-gradient(90deg, #047857 0%, #10b981 50%, #064e3b 100%);
+      height: 3.5mm;
+      background: linear-gradient(90deg, #34d399 0%, #10b981 50%, #059669 100%);
     }
     .cover-header {
       display: flex;
@@ -152,17 +153,28 @@ async function generatePDF() {
       justify-content: space-between;
       margin-top: 2mm;
       padding-bottom: 3.5mm;
-      border-bottom: 1.5px solid #e2e8f0;
+      border-bottom: 1.5px solid rgba(255, 255, 255, 0.18);
+    }
+    .cover-header .brand-badge {
+      background: #ffffff;
+      color: #064e3b;
+      font-weight: 900;
+    }
+    .cover-header .brand-name {
+      color: #ffffff;
+    }
+    .cover-header .brand-name span {
+      color: #34d399;
     }
     .cover-app-tag {
       font-size: 8pt;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.8px;
-      color: #047857;
-      background: #ecfdf5;
-      border: 1px solid #a7f3d0;
-      padding: 1mm 3mm;
+      color: #a7f3d0;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      padding: 1mm 3.5mm;
       border-radius: 10mm;
     }
 
@@ -173,10 +185,10 @@ async function generatePDF() {
       display: inline-flex;
       align-items: center;
       gap: 1.5mm;
-      background: #f1f5f9;
-      color: #475569;
-      border: 1px solid #cbd5e1;
-      padding: 1mm 2.8mm;
+      background: rgba(255, 255, 255, 0.12);
+      color: #6ee7b7;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      padding: 1mm 3mm;
       border-radius: 1.5mm;
       font-size: 8pt;
       font-weight: 800;
@@ -189,26 +201,26 @@ async function generatePDF() {
       font-weight: 900;
       line-height: 1.15;
       letter-spacing: -0.8px;
-      color: #0f172a;
+      color: #ffffff;
       margin-bottom: 2mm;
     }
     .cover-hero-title span {
-      color: #047857;
+      color: #34d399;
     }
     .cover-hero-desc {
       font-size: 10pt;
-      color: #475569;
+      color: #d1fae5;
       line-height: 1.45;
       max-width: 165mm;
     }
 
     /* Hero Preview Screenshot Frame on Cover */
     .cover-screenshot-box {
-      border: 1.5px solid #cbd5e1;
+      border: 1.5px solid rgba(255, 255, 255, 0.25);
       border-radius: 3mm;
       overflow: hidden;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
-      background: #f8fafc;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+      background: #022c22;
       margin: 2.5mm 0 3.5mm 0;
     }
     .cover-screenshot-box img {
@@ -225,16 +237,17 @@ async function generatePDF() {
       margin-top: 1mm;
     }
     .cf-card {
-      background: #f8fafc;
-      border: 1.5px solid #e2e8f0;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1.5px solid rgba(255, 255, 255, 0.18);
       border-radius: 2.5mm;
       padding: 3mm 3.2mm;
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
+      backdrop-filter: blur(8px);
     }
     .cf-card:hover {
-      border-color: #a7f3d0;
+      border-color: #34d399;
     }
     .cf-icon-title {
       display: flex;
@@ -248,27 +261,30 @@ async function generatePDF() {
     .cf-title {
       font-size: 9pt;
       font-weight: 900;
-      color: #0f172a;
+      color: #ffffff;
       line-height: 1.2;
     }
     .cf-desc {
       font-size: 8pt;
-      color: #475569;
+      color: #d1fae5;
       line-height: 1.35;
+    }
+    .cf-desc strong {
+      color: #ffffff;
     }
 
     .cover-footer-banner {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-top: 1.5px solid #e2e8f0;
+      border-top: 1.5px solid rgba(255, 255, 255, 0.18);
       padding-top: 3.5mm;
       font-size: 8pt;
-      color: #64748b;
+      color: #a7f3d0;
       font-weight: 600;
     }
     .cover-footer-banner strong {
-      color: #047857;
+      color: #ffffff;
     }
 
     /* ================= INNER PAGES LAYOUT ================= */
