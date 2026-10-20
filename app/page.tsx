@@ -25,6 +25,8 @@ import {
   Flame,
   Award,
   Calendar,
+  Menu,
+  X,
 } from "lucide-react";
 import RequestDemoModal from "@/components/landing/request-demo-modal";
 
@@ -32,6 +34,7 @@ export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
   const [demoModalOpen, setDemoModalOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const toggleFaq = (idx: number) => {
     setOpenFaq(openFaq === idx ? null : idx);
@@ -41,54 +44,133 @@ export default function LandingPage() {
     <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-emerald-600 selection:text-white font-sans">
       {/* 1. TOP NAVBAR */}
       <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-700 flex items-center justify-center text-white shadow-md shadow-emerald-700/20 font-black text-xl tracking-tight">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
+          {/* Brand Logo */}
+          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-700 flex items-center justify-center text-white shadow-md shadow-emerald-700/20 font-black text-xl tracking-tight transition group-hover:bg-emerald-800">
               R
             </div>
-            <div>
-              <span className="font-extrabold text-xl tracking-tight text-slate-900">RestoPulse</span>
-              <span className="hidden sm:inline-block ml-2 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">
-                Restaurant Operations Management
-              </span>
+            <div className="flex flex-col">
+              <span className="font-black text-xl tracking-tight text-slate-900 leading-none">RestoPulse</span>
+              <span className="text-[10px] font-bold text-emerald-700 tracking-wider uppercase mt-1">Kitchen Operations</span>
             </div>
-          </div>
+          </Link>
 
-          <nav className="hidden lg:flex items-center gap-6 text-sm font-bold text-slate-600">
-            <a href="#how-it-works" className="hover:text-emerald-700 transition">How It Works</a>
-            <a href="#checklists" className="hover:text-emerald-700 transition">SOP Checklists</a>
-            <a href="#camera-proof" className="hover:text-emerald-700 transition">Camera Proof</a>
-            <a href="#wastage" className="hover:text-emerald-700 transition">Wastage</a>
-            <a href="#menu-costing" className="hover:text-emerald-700 transition">Menu Costing</a>
-            <a href="#accountability" className="hover:text-emerald-700 transition">Accountability</a>
-            <a href="#pricing" className="hover:text-emerald-700 transition">Pricing</a>
-            <a href="#faq" className="hover:text-emerald-700 transition">FAQ</a>
+          {/* Desktop Nav Links */}
+          <nav className="hidden lg:flex items-center gap-5 xl:gap-7">
+            <a href="#story" className="whitespace-nowrap text-xs xl:text-sm font-bold text-slate-600 hover:text-emerald-700 transition">
+              How It Works
+            </a>
+            <a href="#checklists" className="whitespace-nowrap text-xs xl:text-sm font-bold text-slate-600 hover:text-emerald-700 transition">
+              SOP Checklists
+            </a>
+            <a href="#wastage" className="whitespace-nowrap text-xs xl:text-sm font-bold text-slate-600 hover:text-emerald-700 transition">
+              Food Wastage
+            </a>
+            <a href="#menu-costing" className="whitespace-nowrap text-xs xl:text-sm font-bold text-slate-600 hover:text-emerald-700 transition">
+              Menu Costing
+            </a>
+            <a href="#pricing" className="whitespace-nowrap text-xs xl:text-sm font-bold text-slate-600 hover:text-emerald-700 transition">
+              Pricing
+            </a>
+            <a href="#faq" className="whitespace-nowrap text-xs xl:text-sm font-bold text-slate-600 hover:text-emerald-700 transition">
+              FAQ
+            </a>
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Right Action Buttons */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <button
               type="button"
               onClick={() => setDemoModalOpen(true)}
-              className="text-xs sm:text-sm font-extrabold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-3 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              className="whitespace-nowrap text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
             >
               <Calendar className="w-3.5 h-3.5 text-emerald-700" />
               <span>Request Demo</span>
             </button>
             <Link
               href="/login"
-              className="text-xs sm:text-sm font-bold text-slate-700 hover:text-slate-900 px-3 py-2 rounded-xl hover:bg-slate-100 transition hidden sm:inline-block"
+              className="whitespace-nowrap text-xs font-bold text-slate-700 hover:text-slate-900 px-3 py-2.5 rounded-xl hover:bg-slate-100 transition hidden sm:inline-block"
             >
               Sign In
             </Link>
             <Link
               href="/signup"
-              className="text-xs sm:text-sm font-bold text-white bg-emerald-700 hover:bg-emerald-800 px-3.5 py-2 rounded-xl shadow-md shadow-emerald-700/20 transition flex items-center gap-1.5"
+              className="whitespace-nowrap text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 px-4 py-2.5 rounded-xl shadow-md shadow-emerald-700/20 transition flex items-center gap-1.5 hover:scale-105 active:scale-95"
             >
               <span>Get Started</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
+
+            {/* Mobile Hamburger Button */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              title="Toggle Menu"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Slide-down Menu */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden border-t border-slate-200 bg-white px-4 py-4 space-y-3 shadow-lg animate-in slide-in-from-top-2 duration-150">
+            <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+              <a
+                href="#story"
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2.5 rounded-xl hover:bg-slate-50 text-slate-700 hover:text-emerald-700 transition"
+              >
+                How It Works
+              </a>
+              <a
+                href="#checklists"
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2.5 rounded-xl hover:bg-slate-50 text-slate-700 hover:text-emerald-700 transition"
+              >
+                SOP Checklists
+              </a>
+              <a
+                href="#wastage"
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2.5 rounded-xl hover:bg-slate-50 text-slate-700 hover:text-emerald-700 transition"
+              >
+                Food Wastage
+              </a>
+              <a
+                href="#menu-costing"
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2.5 rounded-xl hover:bg-slate-50 text-slate-700 hover:text-emerald-700 transition"
+              >
+                Menu Costing
+              </a>
+              <a
+                href="#pricing"
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2.5 rounded-xl hover:bg-slate-50 text-slate-700 hover:text-emerald-700 transition"
+              >
+                Pricing
+              </a>
+              <a
+                href="#faq"
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2.5 rounded-xl hover:bg-slate-50 text-slate-700 hover:text-emerald-700 transition"
+              >
+                FAQ
+              </a>
+            </div>
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between sm:hidden">
+              <Link
+                href="/login"
+                className="text-xs font-bold text-slate-700 hover:text-slate-900 py-2 px-3 rounded-lg hover:bg-slate-50"
+              >
+                Sign In
+              </Link>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* 2. HERO SECTION */}

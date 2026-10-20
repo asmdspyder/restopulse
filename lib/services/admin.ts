@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { restaurants, users, subscriptions, wastageRecords, demoRequests } from "@/lib/db/schema";
 import { hashPassword } from "@/lib/auth/password";
 import { seedRestaurantDefaults } from "@/lib/services/onboarding";
-import { eq, desc, sql, ilike, or, and } from "drizzle-orm";
+import { eq, desc, sql, ilike, or, and, ne } from "drizzle-orm";
 
 export async function getAdminOverviewMetrics() {
   const [counts] = await db
@@ -354,6 +354,25 @@ export async function createDemoRequest(data: {
   referralSource?: string;
   notes?: string;
 }) {
+  // Prevent duplicate bookings on the exact same date and 1-hour slot
+  const [existing] = await db
+    .select({ id: demoRequests.id })
+    .from(demoRequests)
+    .where(
+      and(
+        eq(demoRequests.demoDate, data.demoDate.trim()),
+        eq(demoRequests.demoSlot, data.demoSlot.trim()),
+        ne(demoRequests.status, "cancelled")
+      )
+    )
+    .limit(1);
+
+  if (existing) {
+    throw new Error(
+      `The time slot "${data.demoSlot}" on ${data.demoDate} has already been reserved. Please choose a different slot or date.`
+    );
+  }
+
   const [created] = await db
     .insert(demoRequests)
     .values({
@@ -371,6 +390,20 @@ export async function createDemoRequest(data: {
     .returning();
 
   return created;
+}
+
+export async function getBookedDemoSlots(date: string): Promise<string[]> {
+  const records = await db
+    .select({ slot: demoRequests.demoSlot })
+    .from(demoRequests)
+    .where(
+      and(
+        eq(demoRequests.demoDate, date.trim()),
+        ne(demoRequests.status, "cancelled")
+      )
+    );
+
+  return records.map((r) => r.slot);
 }
 
 export async function getDemoRequests(search?: string, statusFilter?: string) {

@@ -53,6 +53,8 @@ export default function RequestDemoModal({ isOpen, onClose }: RequestDemoModalPr
   const [address, setAddress] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedSlot, setSelectedSlot] = useState("");
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
   const [referralSource, setReferralSource] = useState("");
   const [otherSourceDetail, setOtherSourceDetail] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -72,6 +74,41 @@ export default function RequestDemoModal({ isOpen, onClose }: RequestDemoModalPr
       setIsSuccess(false);
     }
   }, [isOpen]);
+
+  // Fetch already-booked slots whenever selectedDate changes
+  useEffect(() => {
+    if (!isOpen || !selectedDate) {
+      setBookedSlots([]);
+      return;
+    }
+
+    let active = true;
+    setLoadingSlots(true);
+    fetch(`/api/demo-request?date=${encodeURIComponent(selectedDate)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (active && data.bookedSlots) {
+          setBookedSlots(data.bookedSlots);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load booked slots:", err);
+      })
+      .finally(() => {
+        if (active) setLoadingSlots(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isOpen, selectedDate]);
+
+  // Clear selectedSlot if it is already booked
+  useEffect(() => {
+    if (selectedSlot && bookedSlots.includes(selectedSlot)) {
+      setSelectedSlot("");
+    }
+  }, [bookedSlots, selectedSlot]);
 
   if (!isOpen) return null;
 
@@ -146,6 +183,14 @@ export default function RequestDemoModal({ isOpen, onClose }: RequestDemoModalPr
 
       const data = await res.json();
       if (!res.ok) {
+        if (res.status === 409) {
+          fetch(`/api/demo-request?date=${encodeURIComponent(selectedDate)}`)
+            .then((r) => r.json())
+            .then((d) => {
+              if (d.bookedSlots) setBookedSlots(d.bookedSlots);
+            })
+            .catch(() => {});
+        }
         throw new Error(data.error || "Failed to submit demo request.");
       }
 
@@ -476,8 +521,13 @@ export default function RequestDemoModal({ isOpen, onClose }: RequestDemoModalPr
               {/* 1-Hour Time Slots Grid */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
-                  <span>
-                    Pick a 1-Hour Slot <span className="text-rose-500">*</span>
+                  <span className="flex items-center gap-2">
+                    <span>Pick a 1-Hour Slot <span className="text-rose-500">*</span></span>
+                    {loadingSlots && (
+                      <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 font-medium">
+                        <Loader2 className="w-3 h-3 animate-spin" /> Checking availability...
+                      </span>
+                    )}
                   </span>
                   {selectedSlot && (
                     <span className="text-[11px] font-extrabold text-emerald-800">
@@ -486,27 +536,43 @@ export default function RequestDemoModal({ isOpen, onClose }: RequestDemoModalPr
                   )}
                 </label>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-52 overflow-y-auto p-1 border border-slate-200 rounded-2xl bg-slate-50">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-56 overflow-y-auto p-1.5 border border-slate-200 rounded-2xl bg-slate-50">
                   {TIME_SLOTS.map((slot) => {
+                    const isBooked = bookedSlots.includes(slot.label);
                     const isPassed = isToday && slot.startHour <= currentHour;
+                    const isDisabled = isBooked || isPassed;
                     const isSelected = selectedSlot === slot.label;
 
                     return (
                       <button
                         key={slot.id}
                         type="button"
-                        disabled={isPassed}
+                        disabled={isDisabled}
                         onClick={() => setSelectedSlot(slot.label)}
-                        className={`p-2 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition text-center cursor-pointer ${
+                        className={`p-2.5 rounded-xl text-[11px] font-bold flex items-center justify-between gap-1.5 transition text-left cursor-pointer ${
                           isSelected
                             ? "bg-emerald-700 text-white shadow-md shadow-emerald-700/30 ring-2 ring-emerald-600"
+                            : isBooked
+                            ? "bg-rose-50/70 text-slate-400 border border-rose-200 cursor-not-allowed opacity-85"
                             : isPassed
-                            ? "bg-slate-200/60 text-slate-400 border border-slate-200 cursor-not-allowed line-through"
+                            ? "bg-slate-200/60 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60"
                             : "bg-white text-slate-700 border border-slate-200 hover:border-emerald-500 hover:text-emerald-800 hover:bg-emerald-50/50"
                         }`}
+                        title={isBooked ? "This slot is already booked" : isPassed ? "This slot has already passed" : slot.label}
                       >
-                        <Clock className={`w-3 h-3 shrink-0 ${isSelected ? "text-white" : "text-slate-400"}`} />
-                        <span>{slot.label}</span>
+                        <div className="flex items-center gap-1.5 truncate">
+                          <Clock className={`w-3 h-3 shrink-0 ${isSelected ? "text-white" : isBooked ? "text-rose-400" : isPassed ? "text-slate-400" : "text-emerald-700"}`} />
+                          <span className={isPassed || isBooked ? "line-through text-slate-500" : ""}>{slot.label}</span>
+                        </div>
+                        {isBooked ? (
+                          <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-rose-200/80 text-rose-800 border border-rose-300 shrink-0">
+                            Booked
+                          </span>
+                        ) : isPassed ? (
+                          <span className="text-[9px] font-semibold text-slate-400 shrink-0">
+                            Passed
+                          </span>
+                        ) : null}
                       </button>
                     );
                   })}

@@ -1,5 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createDemoRequest } from "@/lib/services/admin";
+import { createDemoRequest, getBookedDemoSlots } from "@/lib/services/admin";
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const date = searchParams.get("date");
+
+    if (!date || typeof date !== "string") {
+      return NextResponse.json({ bookedSlots: [] });
+    }
+
+    const bookedSlots = await getBookedDemoSlots(date.trim());
+    return NextResponse.json({ success: true, date, bookedSlots });
+  } catch (error: any) {
+    console.error("GET /api/demo-request error:", error);
+    return NextResponse.json({ bookedSlots: [] }, { status: 500 });
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -58,9 +75,10 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error("POST /api/demo-request error:", error);
+    const isConflict = error.message && error.message.includes("already been reserved");
     return NextResponse.json(
       { error: error.message || "Failed to submit demo request. Please try again." },
-      { status: 500 }
+      { status: isConflict ? 409 : 500 }
     );
   }
 }
