@@ -24,11 +24,14 @@ import {
   Check,
   Flame,
   Award,
+  Calendar,
 } from "lucide-react";
+import RequestDemoModal from "@/components/landing/request-demo-modal";
 
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
+  const [demoModalOpen, setDemoModalOpen] = useState(false);
 
   const toggleFaq = (idx: number) => {
     setOpenFaq(openFaq === idx ? null : idx);
@@ -62,16 +65,24 @@ export default function LandingPage() {
             <a href="#faq" className="hover:text-emerald-700 transition">FAQ</a>
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={() => setDemoModalOpen(true)}
+              className="text-xs sm:text-sm font-extrabold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-3 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            >
+              <Calendar className="w-3.5 h-3.5 text-emerald-700" />
+              <span>Request Demo</span>
+            </button>
             <Link
               href="/login"
-              className="text-xs sm:text-sm font-bold text-slate-700 hover:text-slate-900 px-3.5 py-2 rounded-xl hover:bg-slate-100 transition"
+              className="text-xs sm:text-sm font-bold text-slate-700 hover:text-slate-900 px-3 py-2 rounded-xl hover:bg-slate-100 transition hidden sm:inline-block"
             >
               Sign In
             </Link>
             <Link
               href="/signup"
-              className="text-xs sm:text-sm font-bold text-white bg-emerald-700 hover:bg-emerald-800 px-4 py-2 rounded-xl shadow-md shadow-emerald-700/20 transition flex items-center gap-1.5"
+              className="text-xs sm:text-sm font-bold text-white bg-emerald-700 hover:bg-emerald-800 px-3.5 py-2 rounded-xl shadow-md shadow-emerald-700/20 transition flex items-center gap-1.5"
             >
               <span>Get Started</span>
               <ArrowRight className="w-4 h-4" />
@@ -100,16 +111,24 @@ export default function LandingPage() {
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+            <button
+              type="button"
+              onClick={() => setDemoModalOpen(true)}
+              className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-base shadow-lg shadow-emerald-700/30 transition flex items-center justify-center gap-2.5 cursor-pointer hover:scale-105 active:scale-95"
+            >
+              <Calendar className="w-5 h-5" />
+              <span>Request a Live Demo</span>
+            </button>
             <Link
               href="/signup"
-              className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-emerald-700 text-white font-extrabold text-base shadow-lg shadow-emerald-700/30 hover:bg-emerald-800 transition flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-800 font-extrabold text-base hover:bg-emerald-100 transition flex items-center justify-center gap-2"
             >
               <span>Start Free 7-Day Trial</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
             <a
               href="#story"
-              className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white border border-slate-300 text-slate-700 font-bold text-base hover:bg-slate-50 transition flex items-center justify-center shadow-xs"
+              className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-white border border-slate-300 text-slate-700 font-bold text-base hover:bg-slate-50 transition flex items-center justify-center shadow-xs"
             >
               See How It Works
             </a>
@@ -1091,10 +1110,18 @@ export default function LandingPage() {
           <p className="text-slate-300 text-xs sm:text-base max-w-xl mx-auto leading-relaxed font-medium">
             Join smart restaurant and cafe operators running structured daily opening checklists, verifying tasks with photo proof, and tracking kitchen food waste with RestoPulse.
           </p>
-          <div className="pt-2">
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+            <button
+              type="button"
+              onClick={() => setDemoModalOpen(true)}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-black text-sm shadow-xl transition hover:scale-105 active:scale-95 cursor-pointer"
+            >
+              <Calendar className="w-4 h-4 text-emerald-700" />
+              <span>Book a Live Demo</span>
+            </button>
             <Link
               href="/signup"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm shadow-xl shadow-emerald-600/30 transition hover:scale-105 active:scale-95"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm shadow-xl shadow-emerald-600/30 transition hover:scale-105 active:scale-95"
             >
               <span>Get Started in 2 Minutes</span>
               <ArrowRight className="w-4 h-4" />
@@ -1114,11 +1141,24 @@ export default function LandingPage() {
             <span>• Restaurant Operations Management Platform</span>
           </div>
           <div className="flex items-center gap-4 text-slate-600">
+            <button
+              type="button"
+              onClick={() => setDemoModalOpen(true)}
+              className="hover:text-emerald-700 transition font-bold cursor-pointer"
+            >
+              Request Demo
+            </button>
             <Link href="/login" className="hover:text-emerald-700 transition">Sign In</Link>
             <Link href="/signup" className="hover:text-emerald-700 transition">Sign Up</Link>
           </div>
         </div>
       </footer>
+
+      {/* Request Demo Modal */}
+      <RequestDemoModal
+        isOpen={demoModalOpen}
+        onClose={() => setDemoModalOpen(false)}
+      />
     </div>
   );
 }

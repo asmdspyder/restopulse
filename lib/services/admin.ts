@@ -1,8 +1,8 @@
 import { db } from "@/lib/db";
-import { restaurants, users, subscriptions, wastageRecords } from "@/lib/db/schema";
+import { restaurants, users, subscriptions, wastageRecords, demoRequests } from "@/lib/db/schema";
 import { hashPassword } from "@/lib/auth/password";
 import { seedRestaurantDefaults } from "@/lib/services/onboarding";
-import { eq, desc, sql, ilike, or } from "drizzle-orm";
+import { eq, desc, sql, ilike, or, and } from "drizzle-orm";
 
 export async function getAdminOverviewMetrics() {
   const [counts] = await db
@@ -339,3 +339,108 @@ export async function resetAccountUserPassword(userId: string, newPassword: stri
 
   return updated;
 }
+
+// -------------------------------------------------------------
+// DEMO REQUESTS MANAGEMENT
+// -------------------------------------------------------------
+export async function createDemoRequest(data: {
+  name: string;
+  email: string;
+  phone: string;
+  restaurantName: string;
+  address: string;
+  demoDate: string;
+  demoSlot: string;
+  notes?: string;
+}) {
+  const [created] = await db
+    .insert(demoRequests)
+    .values({
+      name: data.name.trim(),
+      email: data.email.trim().toLowerCase(),
+      phone: data.phone.trim(),
+      restaurantName: data.restaurantName.trim(),
+      address: data.address.trim(),
+      demoDate: data.demoDate.trim(),
+      demoSlot: data.demoSlot.trim(),
+      notes: data.notes?.trim() || null,
+      status: "pending",
+    })
+    .returning();
+
+  return created;
+}
+
+export async function getDemoRequests(search?: string, statusFilter?: string) {
+  let query = db.select().from(demoRequests);
+  const conditions = [];
+
+  if (statusFilter && statusFilter !== "all") {
+    conditions.push(eq(demoRequests.status, statusFilter));
+  }
+
+  if (search && search.trim()) {
+    const s = `%${search.trim()}%`;
+    conditions.push(
+      or(
+        ilike(demoRequests.name, s),
+        ilike(demoRequests.email, s),
+        ilike(demoRequests.phone, s),
+        ilike(demoRequests.restaurantName, s),
+        ilike(demoRequests.address, s)
+      )
+    );
+  }
+
+  if (conditions.length === 1) {
+    query = query.where(conditions[0]) as any;
+  } else if (conditions.length > 1) {
+    query = query.where(and(...conditions)) as any;
+  }
+
+  const results = await query.orderBy(desc(demoRequests.createdAt));
+  return results;
+}
+
+export async function updateDemoRequestStatus(id: string, status: string, notes?: string) {
+  const [updated] = await db
+    .update(demoRequests)
+    .set({
+      status,
+      ...(notes !== undefined ? { notes } : {}),
+      updatedAt: new Date(),
+    })
+    .where(eq(demoRequests.id, id))
+    .returning();
+
+  return updated;
+}
+
+export async function deleteDemoRequest(id: string) {
+  const [deleted] = await db
+    .delete(demoRequests)
+    .where(eq(demoRequests.id, id))
+    .returning();
+
+  return deleted;
+}
+
+export async function getDemoMetrics() {
+  const todayStr = new Date().toISOString().split("T")[0];
+  const [counts] = await db
+    .select({
+      total: sql<number>`count(*)::int`,
+      pending: sql<number>`count(*) filter (where status = 'pending')::int`,
+      completed: sql<number>`count(*) filter (where status = 'completed')::int`,
+      today: sql<number>`count(*) filter (where demo_date = ${todayStr})::int`,
+    })
+    .from(demoRequests);
+
+  return {
+    total: counts?.total || 0,
+    pending: counts?.pending || 0,
+    completed: counts?.completed || 0,
+    today: counts?.today || 0,
+  };
+}
+

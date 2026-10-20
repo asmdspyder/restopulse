@@ -606,6 +606,30 @@ export const operatingExpensesConfig = pgTable(
   ]
 );
 
+// 23. DEMO REQUESTS (LEADS FROM LANDING PAGE)
+export const demoRequests = pgTable(
+  "demo_requests",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: varchar("name", { length: 255 }).notNull(),
+    email: varchar("email", { length: 255 }).notNull(),
+    phone: varchar("phone", { length: 50 }).notNull(),
+    restaurantName: varchar("restaurant_name", { length: 255 }).notNull(),
+    address: text("address").notNull(),
+    demoDate: varchar("demo_date", { length: 50 }).notNull(), // 'YYYY-MM-DD'
+    demoSlot: varchar("demo_slot", { length: 100 }).notNull(), // '10:00 AM - 11:00 AM'
+    status: varchar("status", { length: 50 }).default("pending").notNull(), // 'pending' | 'completed' | 'cancelled'
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("idx_demo_requests_status").on(table.status),
+    index("idx_demo_requests_created_at").on(table.createdAt),
+    index("idx_demo_requests_demo_date").on(table.demoDate),
+  ]
+);
+
 // RELATIONS
 export const restaurantsRelations = relations(restaurants, ({ one, many }) => ({
   operatingExpensesConfig: one(operatingExpensesConfig),

@@ -444,6 +444,26 @@ export async function initializeDatabaseSchema() {
         CREATE INDEX IF NOT EXISTS idx_menu_item_ing_ing ON menu_item_ingredients(ingredient_id);
         CREATE INDEX IF NOT EXISTS idx_menu_item_steps_item ON menu_item_steps(menu_item_id);
         CREATE INDEX IF NOT EXISTS idx_menu_item_steps_order ON menu_item_steps(menu_item_id, step_number);
+
+        -- Demo Requests Table
+        CREATE TABLE IF NOT EXISTS demo_requests (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) NOT NULL,
+          phone VARCHAR(50) NOT NULL,
+          restaurant_name VARCHAR(255) NOT NULL,
+          address TEXT NOT NULL,
+          demo_date VARCHAR(50) NOT NULL,
+          demo_slot VARCHAR(100) NOT NULL,
+          status VARCHAR(50) DEFAULT 'pending' NOT NULL,
+          notes TEXT,
+          created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+          updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_demo_requests_status ON demo_requests(status);
+        CREATE INDEX IF NOT EXISTS idx_demo_requests_created_at ON demo_requests(created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_demo_requests_demo_date ON demo_requests(demo_date);
       `);
       console.log("Database tables verified/initialized successfully.");
     } finally {

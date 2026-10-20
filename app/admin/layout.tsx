@@ -11,6 +11,7 @@ import {
   LogOut,
   LayoutDashboard,
   Loader2,
+  CalendarCheck,
 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -62,6 +63,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navItems = [
     { name: "Overview", href: "/admin", icon: LayoutDashboard },
     { name: "Restaurant Accounts", href: "/admin/accounts", icon: Building },
+    { name: "Demo Requests", href: "/admin/demos", icon: CalendarCheck },
   ];
 
   return (
