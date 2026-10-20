@@ -456,10 +456,13 @@ export async function initializeDatabaseSchema() {
           demo_date VARCHAR(50) NOT NULL,
           demo_slot VARCHAR(100) NOT NULL,
           status VARCHAR(50) DEFAULT 'pending' NOT NULL,
+          referral_source VARCHAR(255),
           notes TEXT,
           created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
           updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
         );
+
+        ALTER TABLE demo_requests ADD COLUMN IF NOT EXISTS referral_source VARCHAR(255);
 
         CREATE INDEX IF NOT EXISTS idx_demo_requests_status ON demo_requests(status);
         CREATE INDEX IF NOT EXISTS idx_demo_requests_created_at ON demo_requests(created_at DESC);

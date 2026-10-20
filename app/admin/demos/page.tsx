@@ -31,6 +31,7 @@ interface DemoRequest {
   address: string;
   demoDate: string;
   demoSlot: string;
+  referralSource?: string | null;
   status: "pending" | "completed" | "cancelled";
   notes?: string | null;
   createdAt: string;
@@ -303,6 +304,14 @@ export default function AdminDemosPage() {
                           <Building className="w-4 h-4 text-emerald-400 shrink-0" />
                           <span className="text-sm text-white font-extrabold">{d.restaurantName}</span>
                         </div>
+                        {d.referralSource && (
+                          <div className="mt-1.5">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-950/80 border border-emerald-800/80 text-emerald-300 text-[10px] font-bold">
+                              <span className="text-emerald-400">Via:</span>
+                              <span className="text-white">{d.referralSource}</span>
+                            </span>
+                          </div>
+                        )}
                         {d.notes && (
                           <div className="text-[11px] text-slate-400 font-normal mt-1 bg-slate-950 p-1.5 rounded-lg border border-slate-800 max-w-xs">
                             💬 {d.notes}

@@ -251,7 +251,14 @@ export default function AdminOverviewPage() {
               <tbody className="divide-y divide-slate-800">
                 {demos.slice(0, 5).map((d) => (
                   <tr key={d.id} className="hover:bg-slate-800/40 transition">
-                    <td className="py-3.5 px-4 font-bold text-white">{d.restaurantName}</td>
+                    <td className="py-3.5 px-4 font-bold text-white">
+                      <div>{d.restaurantName}</div>
+                      {d.referralSource && (
+                        <span className="inline-block mt-1 text-[10px] font-semibold text-emerald-400 bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-800/80">
+                          Via: {d.referralSource}
+                        </span>
+                      )}
+                    </td>
                     <td className="py-3.5 px-4">
                       <div className="font-semibold text-slate-200">{d.name}</div>
                       <div className="text-[11px] text-slate-500">{d.phone} • {d.email}</div>

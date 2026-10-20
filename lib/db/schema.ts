@@ -619,6 +619,7 @@ export const demoRequests = pgTable(
     demoDate: varchar("demo_date", { length: 50 }).notNull(), // 'YYYY-MM-DD'
     demoSlot: varchar("demo_slot", { length: 100 }).notNull(), // '10:00 AM - 11:00 AM'
     status: varchar("status", { length: 50 }).default("pending").notNull(), // 'pending' | 'completed' | 'cancelled'
+    referralSource: varchar("referral_source", { length: 255 }),
     notes: text("notes"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

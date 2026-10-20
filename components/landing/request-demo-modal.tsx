@@ -37,6 +37,14 @@ const TIME_SLOTS = [
   { id: "21-22", label: "09:00 PM - 10:00 PM", startHour: 21 },
 ];
 
+const REFERRAL_OPTIONS = [
+  { id: "whatsapp", label: "WhatsApp" },
+  { id: "instagram", label: "Instagram" },
+  { id: "google", label: "Google" },
+  { id: "linkedin", label: "LinkedIn" },
+  { id: "other", label: "Other" },
+];
+
 export default function RequestDemoModal({ isOpen, onClose }: RequestDemoModalProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -45,6 +53,8 @@ export default function RequestDemoModal({ isOpen, onClose }: RequestDemoModalPr
   const [address, setAddress] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedSlot, setSelectedSlot] = useState("");
+  const [referralSource, setReferralSource] = useState("");
+  const [otherSourceDetail, setOtherSourceDetail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
@@ -56,6 +66,8 @@ export default function RequestDemoModal({ isOpen, onClose }: RequestDemoModalPr
       const localDate = now.toISOString().split("T")[0];
       setSelectedDate(localDate);
       setSelectedSlot("");
+      setReferralSource("");
+      setOtherSourceDetail("");
       setErrorMessage("");
       setIsSuccess(false);
     }
@@ -110,6 +122,11 @@ export default function RequestDemoModal({ isOpen, onClose }: RequestDemoModalPr
       return;
     }
 
+    const finalReferralSource =
+      referralSource === "Other"
+        ? (otherSourceDetail.trim() ? `Other: ${otherSourceDetail.trim()}` : "Other")
+        : referralSource;
+
     setSubmitting(true);
     try {
       const res = await fetch("/api/demo-request", {
@@ -123,6 +140,7 @@ export default function RequestDemoModal({ isOpen, onClose }: RequestDemoModalPr
           address: address.trim(),
           demoDate: selectedDate,
           demoSlot: selectedSlot,
+          referralSource: finalReferralSource,
         }),
       });
 
@@ -147,6 +165,8 @@ export default function RequestDemoModal({ isOpen, onClose }: RequestDemoModalPr
     setRestaurantName("");
     setAddress("");
     setSelectedSlot("");
+    setReferralSource("");
+    setOtherSourceDetail("");
     setErrorMessage("");
     onClose();
   };
@@ -212,6 +232,16 @@ export default function RequestDemoModal({ isOpen, onClose }: RequestDemoModalPr
                 <span className="text-slate-500 font-semibold">Email:</span>
                 <span className="font-bold text-slate-800">{email}</span>
               </div>
+              {referralSource && (
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 font-semibold">Found Us Via:</span>
+                  <span className="font-bold text-emerald-800">
+                    {referralSource === "Other" && otherSourceDetail.trim()
+                      ? otherSourceDetail.trim()
+                      : referralSource}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-900 font-medium">
@@ -330,6 +360,52 @@ export default function RequestDemoModal({ isOpen, onClose }: RequestDemoModalPr
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Where did you find us? */}
+            <div className="space-y-2.5 pt-2 border-t border-slate-100">
+              <label className="block text-xs font-bold text-slate-700">
+                Where did you find us? <span className="text-slate-400 font-normal">(Optional)</span>
+              </label>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {REFERRAL_OPTIONS.map((opt) => {
+                  const isSelected = referralSource === opt.label;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => {
+                        setReferralSource(opt.label);
+                        if (opt.label !== "Other") {
+                          setOtherSourceDetail("");
+                        }
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer flex items-center gap-1.5 ${
+                        isSelected
+                          ? "bg-emerald-700 text-white border-emerald-700 shadow-xs ring-2 ring-emerald-600/30"
+                          : "bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100 hover:border-slate-400"
+                      }`}
+                    >
+                      <span>{opt.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {referralSource === "Other" && (
+                <div className="pt-1 animate-in fade-in duration-150">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Please specify where you found us (e.g. YouTube, Expo, Friend recommendation)..."
+                    value={otherSourceDetail}
+                    onChange={(e) => setOtherSourceDetail(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 transition font-medium"
+                    autoFocus
+                  />
+                </div>
+              )}
             </div>
 
             {/* Step 2: Date & 1-Hour Time Slot Selection */}

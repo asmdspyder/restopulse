@@ -351,6 +351,7 @@ export async function createDemoRequest(data: {
   address: string;
   demoDate: string;
   demoSlot: string;
+  referralSource?: string;
   notes?: string;
 }) {
   const [created] = await db
@@ -363,6 +364,7 @@ export async function createDemoRequest(data: {
       address: data.address.trim(),
       demoDate: data.demoDate.trim(),
       demoSlot: data.demoSlot.trim(),
+      referralSource: data.referralSource?.trim() || null,
       notes: data.notes?.trim() || null,
       status: "pending",
     })
@@ -387,7 +389,8 @@ export async function getDemoRequests(search?: string, statusFilter?: string) {
         ilike(demoRequests.email, s),
         ilike(demoRequests.phone, s),
         ilike(demoRequests.restaurantName, s),
-        ilike(demoRequests.address, s)
+        ilike(demoRequests.address, s),
+        ilike(demoRequests.referralSource, s)
       )
     );
   }

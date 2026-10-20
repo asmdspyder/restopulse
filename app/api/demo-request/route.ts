@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
       address,
       demoDate,
       demoSlot,
+      referralSource,
       notes,
     } = body;
 
@@ -46,6 +47,7 @@ export async function POST(req: NextRequest) {
       address,
       demoDate,
       demoSlot,
+      referralSource: typeof referralSource === "string" ? referralSource.trim() : undefined,
       notes,
     });
 
