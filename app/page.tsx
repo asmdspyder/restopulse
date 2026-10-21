@@ -27,6 +27,7 @@ import {
   Calendar,
   Menu,
   X,
+  LogIn,
 } from "lucide-react";
 import RequestDemoModal from "@/components/landing/request-demo-modal";
 
@@ -79,29 +80,33 @@ export default function LandingPage() {
           </nav>
 
           {/* Right Action Buttons */}
-          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            {/* Request Demo Button - visible on sm+ screens */}
             <button
               type="button"
               onClick={() => setDemoModalOpen(true)}
-              className="whitespace-nowrap text-[11px] sm:text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-2.5 sm:px-3.5 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl transition flex items-center gap-1 sm:gap-1.5 cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
+              className="hidden sm:inline-flex whitespace-nowrap text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-3 py-2 rounded-xl transition items-center gap-1.5 cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
             >
-              <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-700 shrink-0" />
-              <span>
-                <span className="hidden min-[420px]:inline">Request </span>Demo
-              </span>
+              <Calendar className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+              <span>Request Demo</span>
             </button>
+
+            {/* Sign In - ALWAYS VISIBLE ON MOBILE, TABLET & DESKTOP */}
             <Link
               href="/login"
-              className="whitespace-nowrap text-xs font-bold text-slate-700 hover:text-slate-900 px-3 py-2.5 rounded-xl hover:bg-slate-100 transition hidden md:inline-block"
+              className="whitespace-nowrap text-xs font-bold text-slate-700 hover:text-emerald-800 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl hover:bg-slate-100 border border-slate-200/80 sm:border-transparent transition flex items-center gap-1 cursor-pointer"
             >
-              Sign In
+              <LogIn className="w-3.5 h-3.5 text-slate-500 sm:hidden" />
+              <span>Sign In</span>
             </Link>
+
+            {/* Get Started - Primary CTA */}
             <Link
               href="/signup"
-              className="whitespace-nowrap text-[11px] sm:text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl shadow-md shadow-emerald-700/20 transition flex items-center gap-1 sm:gap-1.5 hover:scale-105 active:scale-95"
+              className="whitespace-nowrap text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl shadow-md shadow-emerald-700/20 transition flex items-center gap-1 sm:gap-1.5 hover:scale-105 active:scale-95"
             >
               <span>Get Started</span>
-              <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+              <ArrowRight className="w-3.5 h-3.5 shrink-0" />
             </Link>
 
             {/* Mobile Hamburger Button */}
@@ -121,6 +126,14 @@ export default function LandingPage() {
           <div className="lg:hidden border-t border-slate-200 bg-white px-4 py-4 space-y-4 shadow-xl animate-in slide-in-from-top-2 duration-150">
             {/* Quick Actions in Mobile Menu */}
             <div className="flex flex-col gap-2 pb-3 border-b border-slate-100">
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs flex items-center justify-center gap-2 transition border border-slate-200"
+              >
+                <LogIn className="w-4 h-4 text-emerald-700" />
+                <span>Sign In to Account</span>
+              </Link>
               <button
                 type="button"
                 onClick={() => {
@@ -188,16 +201,6 @@ export default function LandingPage() {
               </a>
             </div>
 
-            {/* Sign In in Mobile Menu */}
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-              <Link
-                href="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center text-xs font-bold text-slate-700 hover:text-slate-900 py-2.5 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition"
-              >
-                Sign In to Existing Account
-              </Link>
-            </div>
           </div>
         )}
       </header>
