@@ -113,17 +113,17 @@ export default function DailyChecklistPage() {
   // Lock body scrolling and listen to Escape when camera modal or audit drawer is open
   useEffect(() => {
     if (cameraModalItem || isAuditDrawerOpen) {
-      const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Escape") {
           setCameraModalItem(null);
           setIsAuditDrawerOpen(false);
+          document.body.style.overflow = "";
         }
       };
       window.addEventListener("keydown", handleKeyDown);
       return () => {
-        document.body.style.overflow = originalOverflow;
+        document.body.style.overflow = "";
         window.removeEventListener("keydown", handleKeyDown);
       };
     }
@@ -1508,7 +1508,10 @@ export default function DailyChecklistPage() {
       {cameraModalItem && checklistData?.dailyRecord?.id && (
         <ChecklistCameraModal
           isOpen={!!cameraModalItem}
-          onClose={() => setCameraModalItem(null)}
+          onClose={() => {
+            setCameraModalItem(null);
+            document.body.style.overflow = "";
+          }}
           dailyRecordId={checklistData.dailyRecord.id}
           itemKey={cameraModalItem.itemKey}
           itemLabel={cameraModalItem.itemLabel}

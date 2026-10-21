@@ -41,26 +41,29 @@ export function WastageCameraModal({
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Safely stop and release camera hardware
   const stopCameraStream = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => {
         try {
           track.stop();
+          track.enabled = false;
         } catch (e) {}
       });
       streamRef.current = null;
     }
     if (videoRef.current) {
-      videoRef.current.srcObject = null;
       try {
-        videoRef.current.load();
+        videoRef.current.pause();
       } catch (e) {}
+      videoRef.current.srcObject = null;
     }
     setIsStartingCamera(false);
   }, []);
 
-  // Start Camera with back/environment camera
+  // Start Camera with back/environment camera (stable 720p constraints)
   const startCamera = useCallback(async () => {
     setError(null);
     setViewMode("camera");
@@ -72,19 +75,19 @@ export function WastageCameraModal({
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setIsStartingCamera(false);
-      setError("Live camera is not supported or permission is blocked in this browser.");
+      setError("Live camera stream is not supported in this browser. Please use 'Open Phone Camera' below.");
       return;
     }
 
     let stream: MediaStream | null = null;
 
-    // Tier 1: Try back/environment camera
+    // Tier 1: Try back/environment camera with 720p constraints
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: "environment" },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
+          width: { ideal: 1280, max: 1920 },
+          height: { ideal: 720, max: 1080 },
         },
         audio: false,
       });
@@ -104,7 +107,7 @@ export function WastageCameraModal({
         setIsStartingCamera(false);
         setError(
           err.name === "NotAllowedError" || err.name === "PermissionDeniedError"
-            ? "Camera permission was denied. Please allow camera access in your browser settings."
+            ? "Camera permission was denied. You can allow camera in browser settings or use 'Open Phone Camera' below."
             : err.message || "Failed to access device camera."
         );
         return;
@@ -126,13 +129,12 @@ export function WastageCameraModal({
     setIsStartingCamera(false);
   }, [stopCameraStream]);
 
-  // Lock body scrolling when modal is active
+  // Lock body scrolling when modal is active, unlock on close
   useEffect(() => {
     if (isOpen) {
-      const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
       return () => {
-        document.body.style.overflow = originalOverflow;
+        document.body.style.overflow = "";
       };
     }
   }, [isOpen]);
@@ -150,6 +152,32 @@ export function WastageCameraModal({
       stopCameraStream();
     };
   }, [isOpen, startCamera, stopCameraStream]);
+
+  // Handle native phone camera file input
+  const handleNativeCameraFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      stopCameraStream();
+      setError(null);
+      setIsProcessing(false);
+      const compressed = await compressChecklistImage(file, 1600, 1600, 0.8);
+      setPreviewBlob(compressed.blob);
+      setPreviewUrl(compressed.previewUrl);
+      setPreviewMeta({
+        width: compressed.width,
+        height: compressed.height,
+        sizeBytes: compressed.blob.size,
+      });
+      setViewMode("preview");
+    } catch (err: any) {
+      console.error("Native photo processing error:", err);
+      setError("Failed to process photo from device camera");
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -362,9 +390,22 @@ export function WastageCameraModal({
                 </div>
               </div>
 
-              <p className="text-center text-xs text-slate-500">
-                Position the wasted item in the frame and press the circular shutter button.
-              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+                <p className="text-center sm:text-left text-xs text-slate-500">
+                  Position item and press shutter, or open phone camera directly:
+                </p>
+                <label className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer transition active:scale-95 shrink-0 border border-slate-200 shadow-2xs">
+                  <Camera className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Open Phone Camera</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handleNativeCameraFile}
+                  />
+                </label>
+              </div>
             </div>
           ) : (
             /* VIEW 2: CAPTURE PREVIEW WITH RETAKE & CONFIRM */

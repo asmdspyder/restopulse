@@ -77,10 +77,17 @@ export function ChecklistCameraModal({
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imagesRef = useRef(images);
 
   useEffect(() => {
     setImages(initialImages);
+    imagesRef.current = initialImages;
   }, [initialImages]);
+
+  useEffect(() => {
+    imagesRef.current = images;
+  }, [images]);
 
   // Clean up stream helper
   const stopCameraStream = useCallback(() => {
@@ -88,29 +95,31 @@ export function ChecklistCameraModal({
       streamRef.current.getTracks().forEach((track) => {
         try {
           track.stop();
+          track.enabled = false;
         } catch (e) {}
       });
       streamRef.current = null;
     }
     if (videoRef.current) {
-      videoRef.current.srcObject = null;
       try {
-        videoRef.current.load();
+        videoRef.current.pause();
       } catch (e) {}
+      videoRef.current.srcObject = null;
     }
     setIsStartingCamera(false);
   }, []);
 
-  // Start Camera Stream with back/environment camera
+  // Start Camera Stream with back/environment camera (stable 720p constraint)
   const startCamera = useCallback(
     async (slotNumber?: number) => {
       setError(null);
 
-      // Determine target slot
+      // Determine target slot using ref to avoid re-triggering startCamera
+      const currentImages = imagesRef.current;
       if (slotNumber) {
         setCapturingSlot(slotNumber);
       } else {
-        const usedSlots = new Set(images.map((img) => img.slot));
+        const usedSlots = new Set(currentImages.map((img) => img.slot));
         let freeSlot = 1;
         for (let s = 1; s <= 5; s++) {
           if (!usedSlots.has(s)) {
@@ -124,25 +133,25 @@ export function ChecklistCameraModal({
       setViewMode("camera");
       setIsStartingCamera(true);
 
-      // 1. Release previous stream and wait a brief tick for OS hardware unlock
+      // Release previous stream and wait for hardware tick
       stopCameraStream();
       await new Promise((r) => setTimeout(r, 60));
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         setIsStartingCamera(false);
-        setError("Live camera is not supported or permission denied in this browser.");
+        setError("Live camera stream is not supported in this browser. Please use the 'Open Phone Camera' button below.");
         return;
       }
 
       let stream: MediaStream | null = null;
 
-      // Tier 1: Try back/environment camera
+      // Tier 1: Try back/environment camera with stable 720p resolution
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: { ideal: "environment" },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
+            width: { ideal: 1280, max: 1920 },
+            height: { ideal: 720, max: 1080 },
           },
           audio: false,
         });
@@ -162,7 +171,7 @@ export function ChecklistCameraModal({
           setIsStartingCamera(false);
           setError(
             err.name === "NotAllowedError" || err.name === "PermissionDeniedError"
-              ? "Camera permission was denied. Please allow camera access in your browser settings."
+              ? "Camera permission was denied. You can allow camera in browser settings or use 'Open Phone Camera' button below."
               : err.message || "Failed to access live device camera"
           );
           return;
@@ -183,16 +192,15 @@ export function ChecklistCameraModal({
 
       setIsStartingCamera(false);
     },
-    [images, stopCameraStream]
+    [stopCameraStream]
   );
 
-  // Lock body scrolling when modal is active
+  // Lock body scrolling when modal is active, ALWAYS unlock on unmount
   useEffect(() => {
     if (isOpen) {
-      const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
       return () => {
-        document.body.style.overflow = originalOverflow;
+        document.body.style.overflow = "";
       };
     }
   }, [isOpen]);
@@ -207,6 +215,32 @@ export function ChecklistCameraModal({
       stopCameraStream();
     };
   }, [isOpen, readOnly, viewMode, startCamera, stopCameraStream]);
+
+  // Native phone camera handler
+  const handleNativeCameraFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      stopCameraStream();
+      setError(null);
+      setIsUploading(false);
+      const compressed = await compressChecklistImage(file, 1600, 1600, 0.8);
+      setPreviewBlob(compressed.blob);
+      setPreviewUrl(compressed.previewUrl);
+      setPreviewMeta({
+        width: compressed.width,
+        height: compressed.height,
+        sizeBytes: compressed.blob.size,
+      });
+      setViewMode("preview");
+    } catch (err: any) {
+      console.error("Native photo processing error:", err);
+      setError("Failed to process photo from device camera");
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -496,8 +530,21 @@ export function ChecklistCameraModal({
                 </div>
               </div>
 
-              <div className="text-center text-xs text-slate-500">
-                Align the item in the viewfinder and click the circular button to snap photo.
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+                <div className="text-center sm:text-left text-xs text-slate-500">
+                  Align item in viewfinder and click shutter to snap, or use device camera directly:
+                </div>
+                <label className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer transition active:scale-95 shrink-0 border border-slate-200 shadow-2xs">
+                  <Camera className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Open Phone Camera</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handleNativeCameraFile}
+                  />
+                </label>
               </div>
             </div>
           ) : viewMode === "preview" && previewUrl ? (
@@ -561,14 +608,38 @@ export function ChecklistCameraModal({
                     Captured Photos ({images.length}/5)
                   </span>
                   {!readOnly && images.length < 5 && (
-                    <button
-                      type="button"
-                      onClick={() => startCamera()}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition shadow-md shadow-emerald-700/20 active:scale-95 cursor-pointer"
-                    >
-                      <Camera className="w-3.5 h-3.5" />
-                      Open Camera
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer border border-slate-200 shadow-2xs">
+                        <Camera className="w-3.5 h-3.5 text-emerald-600" />
+                        <span className="hidden sm:inline">Phone Camera</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          className="hidden"
+                          onChange={(e) => {
+                            const usedSlots = new Set(imagesRef.current.map((img) => img.slot));
+                            let freeSlot = 1;
+                            for (let s = 1; s <= 5; s++) {
+                              if (!usedSlots.has(s)) {
+                                freeSlot = s;
+                                break;
+                              }
+                            }
+                            setCapturingSlot(freeSlot);
+                            handleNativeCameraFile(e);
+                          }}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => startCamera()}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition shadow-md shadow-emerald-700/20 active:scale-95 cursor-pointer"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                        <span>Live Camera</span>
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -584,14 +655,30 @@ export function ChecklistCameraModal({
                       Open device camera directly to snap high-resolution proof for this checklist task.
                     </p>
                     {!readOnly && (
-                      <button
-                        type="button"
-                        onClick={() => startCamera(1)}
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-2xl shadow-md shadow-emerald-700/20 active:scale-95 transition cursor-pointer"
-                      >
-                        <Camera className="w-4 h-4" />
-                        Open Live Camera
-                      </button>
+                      <div className="flex flex-wrap items-center justify-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => startCamera(1)}
+                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-2xl shadow-md shadow-emerald-700/20 active:scale-95 transition cursor-pointer"
+                        >
+                          <Camera className="w-4 h-4" />
+                          Open Live Camera
+                        </button>
+                        <label className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl border border-slate-200 active:scale-95 transition cursor-pointer shadow-2xs">
+                          <Camera className="w-4 h-4 text-emerald-600" />
+                          Open Phone Camera
+                          <input
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            className="hidden"
+                            onChange={(e) => {
+                              setCapturingSlot(1);
+                              handleNativeCameraFile(e);
+                            }}
+                          />
+                        </label>
+                      </div>
                     )}
                   </div>
                 ) : (
@@ -679,17 +766,38 @@ export function ChecklistCameraModal({
                       // Empty Slot Card
                       if (!readOnly) {
                         return (
-                          <button
+                          <div
                             key={slotNumber}
-                            type="button"
-                            onClick={() => startCamera(slotNumber)}
-                            className="rounded-2xl border-2 border-dashed border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 aspect-video flex flex-col items-center justify-center p-2 text-slate-400 hover:text-emerald-800 transition group cursor-pointer"
+                            className="rounded-2xl border-2 border-dashed border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 aspect-video flex flex-col items-center justify-between p-2.5 text-slate-400 hover:text-emerald-800 transition group relative"
                           >
-                            <div className="w-7 h-7 rounded-xl bg-slate-100 group-hover:bg-emerald-100 flex items-center justify-center mb-1 text-slate-500 group-hover:text-emerald-700 transition-colors">
-                              <Plus className="w-4 h-4" />
-                            </div>
-                            <span className="text-[11px] font-bold">Slot {slotNumber}</span>
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() => startCamera(slotNumber)}
+                              className="w-full flex-1 flex flex-col items-center justify-center cursor-pointer"
+                              title={`Take photo for Slot ${slotNumber} using live camera`}
+                            >
+                              <div className="w-7 h-7 rounded-xl bg-slate-100 group-hover:bg-emerald-100 flex items-center justify-center mb-1 text-slate-500 group-hover:text-emerald-700 transition-colors">
+                                <Plus className="w-4 h-4" />
+                              </div>
+                              <span className="text-[11px] font-bold">Slot {slotNumber}</span>
+                            </button>
+                            <label
+                              className="text-[10px] text-slate-400 hover:text-emerald-700 font-semibold underline cursor-pointer mt-0.5"
+                              onClick={() => setCapturingSlot(slotNumber)}
+                            >
+                              Phone App
+                              <input
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                className="hidden"
+                                onChange={(e) => {
+                                  setCapturingSlot(slotNumber);
+                                  handleNativeCameraFile(e);
+                                }}
+                              />
+                            </label>
+                          </div>
                         );
                       }
 

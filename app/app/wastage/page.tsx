@@ -69,13 +69,15 @@ export default function RecordWastagePage() {
   useEffect(() => {
     if (viewingPhotoUrl) {
       const originalOverflow = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
       const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Escape") setViewingPhotoUrl(null);
+        if (e.key === "Escape") {
+          setViewingPhotoUrl(null);
+          document.body.style.overflow = "";
+        }
       };
       window.addEventListener("keydown", handleKeyDown);
       return () => {
-        document.body.style.overflow = originalOverflow;
+        document.body.style.overflow = "";
         window.removeEventListener("keydown", handleKeyDown);
       };
     }

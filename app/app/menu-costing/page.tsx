@@ -1060,11 +1060,11 @@ export default function MenuCostingPage() {
       </div>
 
       {/* 3. CLEAN SUB-NAVIGATION TABS */}
-      <div className="flex items-center justify-between gap-4 border-b border-slate-200">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-4 border-b border-slate-200 overflow-x-auto scrollbar-none">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-max pb-0.5">
           <button
             onClick={() => handleTabChange("items")}
-            className={`pb-2.5 px-3 text-xs font-bold flex items-center gap-2 border-b-2 transition cursor-pointer ${
+            className={`pb-2 px-3 text-xs font-bold flex items-center gap-1.5 sm:gap-2 border-b-2 transition cursor-pointer whitespace-nowrap ${
               activeTab === "items"
                 ? "border-emerald-700 text-emerald-800 font-extrabold"
                 : "border-transparent text-slate-500 hover:text-slate-900"
@@ -1076,7 +1076,7 @@ export default function MenuCostingPage() {
 
           <button
             onClick={() => handleTabChange("ingredients")}
-            className={`pb-2.5 px-3 text-xs font-bold flex items-center gap-2 border-b-2 transition cursor-pointer ${
+            className={`pb-2 px-3 text-xs font-bold flex items-center gap-1.5 sm:gap-2 border-b-2 transition cursor-pointer whitespace-nowrap ${
               activeTab === "ingredients"
                 ? "border-emerald-700 text-emerald-800 font-extrabold"
                 : "border-transparent text-slate-500 hover:text-slate-900"
@@ -1088,7 +1088,7 @@ export default function MenuCostingPage() {
 
           <button
             onClick={() => handleTabChange("expenses")}
-            className={`pb-2.5 px-3 text-xs font-bold flex items-center gap-1.5 border-b-2 transition cursor-pointer ${
+            className={`pb-2 px-3 text-xs font-bold flex items-center gap-1.5 border-b-2 transition cursor-pointer whitespace-nowrap ${
               activeTab === "expenses"
                 ? "border-emerald-700 text-emerald-800 font-extrabold"
                 : "border-transparent text-slate-500 hover:text-slate-900"
@@ -1108,7 +1108,7 @@ export default function MenuCostingPage() {
           </button>
         </div>
 
-        <div className="hidden sm:flex items-center gap-1 text-[11px] text-slate-400 mb-1.5 font-medium">
+        <div className="hidden lg:flex items-center gap-1 text-[11px] text-slate-400 mb-1.5 font-medium shrink-0">
           <Info className="w-3.5 h-3.5" />
           <span>
             {activeTab === "expenses"
@@ -1524,76 +1524,143 @@ export default function MenuCostingPage() {
             )}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase font-black tracking-wider text-slate-500">
-                  <tr>
-                    <th className="py-2.5 px-3.5">Ingredient Name</th>
-                    <th className="py-2.5 px-3.5">Bought Package</th>
-                    <th className="py-2.5 px-3.5">Purchase Cost</th>
-                    <th className="py-2.5 px-3.5">Unit Rate</th>
-                    <th className="py-2.5 px-3.5">Dish Usage</th>
-                    <th className="py-2.5 px-3.5 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredIngredients.map((ing) => (
-                    <tr key={ing.id} className="hover:bg-slate-50/70 transition">
-                      <td className="py-3 px-3.5">
-                        <span className="font-extrabold text-slate-900 block text-xs">
-                          {ing.name}
+          <div className="space-y-2.5">
+            {/* Mobile Card View (sm:hidden) */}
+            <div className="grid grid-cols-1 gap-2.5 sm:hidden">
+              {filteredIngredients.map((ing) => (
+                <div
+                  key={ing.id}
+                  className="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-2xs space-y-2"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-extrabold text-slate-900 text-sm truncate">
+                        {ing.name}
+                      </h4>
+                      {ing.notes && (
+                        <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
+                          {ing.notes}
+                        </p>
+                      )}
+                    </div>
+                    <span className="font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60 shrink-0 text-xs">
+                      {ing.standardCostDisplay}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-slate-600 pt-1 border-t border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <span>Package: <strong className="text-slate-900 font-bold">{ing.purchaseQuantity} {ing.purchaseUnit}</strong></span>
+                      <span>•</span>
+                      <span>Cost: <strong className="text-slate-900 font-bold">{formatCurrency(ing.purchasePrice)}</strong></span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                    <div>
+                      {ing.usedInCount > 0 ? (
+                        <span className="text-[10px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
+                          Used in {ing.usedInCount} {ing.usedInCount === 1 ? "dish" : "dishes"}
                         </span>
-                        {ing.notes && (
-                          <span className="text-[10px] text-slate-400 block line-clamp-1">
-                            {ing.notes}
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-3.5 font-semibold text-slate-700">
-                        {ing.purchaseQuantity} {ing.purchaseUnit}
-                      </td>
-                      <td className="py-3 px-3.5 font-extrabold text-slate-900">
-                        {formatCurrency(ing.purchasePrice)}
-                      </td>
-                      <td className="py-3 px-3.5">
-                        <span className="font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60 inline-block text-[11px]">
-                          {ing.standardCostDisplay}
+                      ) : (
+                        <span className="text-[10px] font-medium text-slate-400">
+                          Unused in recipes
                         </span>
-                      </td>
-                      <td className="py-3 px-3.5">
-                        {ing.usedInCount > 0 ? (
-                          <span className="text-[10px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
-                            {ing.usedInCount} {ing.usedInCount === 1 ? "dish" : "dishes"}
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-medium text-slate-400">
-                            Unused
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-3.5 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => openEditIngredientModal(ing)}
-                            className="p-1.5 rounded-lg text-slate-600 hover:text-emerald-800 hover:bg-emerald-50 transition cursor-pointer"
-                            title="Edit Ingredient"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteIngredient(ing)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                            title="Delete Ingredient"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => openEditIngredientModal(ing)}
+                        className="px-2.5 py-1 rounded-lg text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-xs font-bold transition cursor-pointer flex items-center gap-1"
+                      >
+                        <Edit2 className="w-3 h-3" />
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteIngredient(ing)}
+                        className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                        title="Delete Ingredient"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Tablet & Desktop Table View (hidden sm:block) */}
+            <div className="hidden sm:block bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase font-black tracking-wider text-slate-500">
+                    <tr>
+                      <th className="py-2.5 px-3.5">Ingredient Name</th>
+                      <th className="py-2.5 px-3.5">Bought Package</th>
+                      <th className="py-2.5 px-3.5">Purchase Cost</th>
+                      <th className="py-2.5 px-3.5">Unit Rate</th>
+                      <th className="py-2.5 px-3.5">Dish Usage</th>
+                      <th className="py-2.5 px-3.5 text-right">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredIngredients.map((ing) => (
+                      <tr key={ing.id} className="hover:bg-slate-50/70 transition">
+                        <td className="py-3 px-3.5">
+                          <span className="font-extrabold text-slate-900 block text-xs">
+                            {ing.name}
+                          </span>
+                          {ing.notes && (
+                            <span className="text-[10px] text-slate-400 block line-clamp-1">
+                              {ing.notes}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3.5 font-semibold text-slate-700">
+                          {ing.purchaseQuantity} {ing.purchaseUnit}
+                        </td>
+                        <td className="py-3 px-3.5 font-extrabold text-slate-900">
+                          {formatCurrency(ing.purchasePrice)}
+                        </td>
+                        <td className="py-3 px-3.5">
+                          <span className="font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60 inline-block text-[11px]">
+                            {ing.standardCostDisplay}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3.5">
+                          {ing.usedInCount > 0 ? (
+                            <span className="text-[10px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
+                              {ing.usedInCount} {ing.usedInCount === 1 ? "dish" : "dishes"}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-medium text-slate-400">
+                              Unused
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3.5 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => openEditIngredientModal(ing)}
+                              className="p-1.5 rounded-lg text-slate-600 hover:text-emerald-800 hover:bg-emerald-50 transition cursor-pointer"
+                              title="Edit Ingredient"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteIngredient(ing)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                              title="Delete Ingredient"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )
@@ -2519,8 +2586,8 @@ export default function MenuCostingPage() {
                   </div>
                 ) : (
                   <div className="rounded-xl border border-slate-200/90 overflow-hidden bg-slate-50/40">
-                    {/* Table Column Headers */}
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100/90 border-b border-slate-200 text-[10px] uppercase font-black tracking-wider text-slate-500">
+                    {/* Table Column Headers (hidden on mobile, visible sm+) */}
+                    <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-100/90 border-b border-slate-200 text-[10px] uppercase font-black tracking-wider text-slate-500">
                       <div className="flex-1">Raw Ingredient</div>
                       <div className="w-20 text-center">Portion Qty</div>
                       <div className="w-16 text-center">Unit</div>
@@ -2529,7 +2596,7 @@ export default function MenuCostingPage() {
                     </div>
 
                     {/* Table Rows */}
-                    <div className="divide-y divide-slate-100 p-1 space-y-0.5">
+                    <div className="divide-y divide-slate-100 p-1 space-y-1 sm:space-y-0.5">
                       {itemForm.ingredients.map((row, idx) => {
                         const selectedIng = ingredients.find((i) => i.id === row.ingredientId);
                         const compatibleUnits = selectedIng
@@ -2553,16 +2620,16 @@ export default function MenuCostingPage() {
                         return (
                           <div
                             key={idx}
-                            className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white transition"
+                            className="p-2 sm:p-1.5 rounded-xl sm:rounded-lg bg-white sm:bg-transparent border border-slate-200/60 sm:border-0 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-2 hover:bg-white transition"
                           >
-                            {/* Ingredient select */}
-                            <div className="flex-1 min-w-0">
+                            {/* Mobile Line 1 / Desktop Column 1: Ingredient Select + Mobile Trash */}
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
                               <select
                                 value={row.ingredientId}
                                 onChange={(e) =>
                                   handleIngredientRowChange(idx, "ingredientId", e.target.value)
                                 }
-                                className="w-full px-2 py-1 text-xs rounded-lg bg-white border border-slate-200 font-semibold text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-600 truncate"
+                                className="w-full px-2 py-1.5 sm:py-1 text-xs rounded-lg bg-slate-50 sm:bg-white border border-slate-200 font-semibold text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-600 truncate"
                               >
                                 {ingredients.map((ing) => (
                                   <option key={ing.id} value={ing.id}>
@@ -2570,55 +2637,64 @@ export default function MenuCostingPage() {
                                   </option>
                                 ))}
                               </select>
-                            </div>
 
-                            {/* Quantity */}
-                            <div className="w-20 shrink-0">
-                              <input
-                                type="number"
-                                step="any"
-                                min="0"
-                                placeholder="0"
-                                value={row.quantity}
-                                onChange={(e) =>
-                                  handleIngredientRowChange(idx, "quantity", e.target.value)
-                                }
-                                className="w-full px-2 py-1 text-xs rounded-lg bg-white border border-slate-200 text-center font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-600"
-                              />
-                            </div>
-
-                            {/* Unit */}
-                            <div className="w-16 shrink-0">
-                              <select
-                                value={row.unit}
-                                onChange={(e) =>
-                                  handleIngredientRowChange(idx, "unit", e.target.value)
-                                }
-                                className="w-full px-1.5 py-1 text-xs rounded-lg bg-white border border-slate-200 text-center font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-600"
-                              >
-                                {compatibleUnits.map((u) => (
-                                  <option key={u} value={u}>
-                                    {u}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-
-                            {/* Portion Cost */}
-                            <div className="w-20 shrink-0 text-right font-black text-xs text-slate-900 pr-1">
-                              {formatCurrency(portionCost)}
-                            </div>
-
-                            {/* Remove */}
-                            <div className="w-7 shrink-0 text-center">
+                              {/* Mobile Only Trash Button */}
                               <button
                                 type="button"
                                 onClick={() => handleRemoveIngredientRow(idx)}
-                                className="p-1 text-slate-400 hover:text-rose-600 rounded cursor-pointer transition"
+                                className="sm:hidden p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer transition shrink-0"
                                 title="Remove"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Trash2 className="w-4 h-4" />
                               </button>
+                            </div>
+
+                            {/* Mobile Line 2 / Desktop Columns 2-5: Qty, Unit, Portion Cost & Desktop Trash */}
+                            <div className="flex items-center gap-2 justify-between sm:justify-start">
+                              <div className="flex items-center gap-1.5 flex-1 sm:flex-initial">
+                                <input
+                                  type="number"
+                                  step="any"
+                                  min="0"
+                                  placeholder="0"
+                                  value={row.quantity}
+                                  onChange={(e) =>
+                                    handleIngredientRowChange(idx, "quantity", e.target.value)
+                                  }
+                                  className="w-24 sm:w-20 px-2 py-1 text-xs rounded-lg bg-slate-50 sm:bg-white border border-slate-200 text-center font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                                />
+
+                                <select
+                                  value={row.unit}
+                                  onChange={(e) =>
+                                    handleIngredientRowChange(idx, "unit", e.target.value)
+                                  }
+                                  className="w-20 sm:w-16 px-1.5 py-1 text-xs rounded-lg bg-slate-50 sm:bg-white border border-slate-200 text-center font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                                >
+                                  {compatibleUnits.map((u) => (
+                                    <option key={u} value={u}>
+                                      {u}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              {/* Portion Cost */}
+                              <div className="w-24 sm:w-20 shrink-0 text-right font-black text-xs text-slate-900 pr-1">
+                                {formatCurrency(portionCost)}
+                              </div>
+
+                              {/* Desktop Only Trash */}
+                              <div className="hidden sm:block w-7 shrink-0 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveIngredientRow(idx)}
+                                  className="p-1 text-slate-400 hover:text-rose-600 rounded cursor-pointer transition"
+                                  title="Remove"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </div>
                           </div>
                         );
