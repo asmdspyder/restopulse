@@ -89,7 +89,7 @@ export function ChecklistCameraModal({
     imagesRef.current = images;
   }, [images]);
 
-  // Clean up stream helper
+  // Clean up and release camera stream
   const stopCameraStream = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => {
@@ -109,12 +109,12 @@ export function ChecklistCameraModal({
     setIsStartingCamera(false);
   }, []);
 
-  // Start Camera Stream with back/environment camera (stable 720p constraint)
+  // Start Camera Stream with back/environment camera (reusing stream if active to prevent permission re-prompts)
   const startCamera = useCallback(
     async (slotNumber?: number) => {
       setError(null);
 
-      // Determine target slot using ref to avoid re-triggering startCamera
+      // Determine target slot
       const currentImages = imagesRef.current;
       if (slotNumber) {
         setCapturingSlot(slotNumber);
@@ -131,27 +131,35 @@ export function ChecklistCameraModal({
       }
 
       setViewMode("camera");
-      setIsStartingCamera(true);
 
-      // Release previous stream and wait for hardware tick
-      stopCameraStream();
-      await new Promise((r) => setTimeout(r, 60));
+      // 1. If we ALREADY have a live, active stream, simply re-attach and play without asking browser for permission again!
+      if (
+        streamRef.current &&
+        streamRef.current.getVideoTracks().some((t) => t.readyState === "live" && t.enabled)
+      ) {
+        if (videoRef.current) {
+          videoRef.current.srcObject = streamRef.current;
+          videoRef.current.play().catch(() => {});
+        }
+        setIsStartingCamera(false);
+        return;
+      }
+
+      setIsStartingCamera(true);
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         setIsStartingCamera(false);
-        setError("Live camera stream is not supported in this browser. Please use the 'Open Phone Camera' button below.");
+        setError("Live camera stream is not supported in this browser. Please use 'Open Phone Camera' below.");
         return;
       }
 
       let stream: MediaStream | null = null;
 
-      // Tier 1: Try back/environment camera with stable 720p resolution
+      // Safe, orientation-agnostic constraint (works in portrait on all mobile phones without OverconstrainedError)
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: { ideal: "environment" },
-            width: { ideal: 1280, max: 1920 },
-            height: { ideal: 720, max: 1080 },
           },
           audio: false,
         });
@@ -159,7 +167,7 @@ export function ChecklistCameraModal({
         console.warn("Back camera facingMode failed, attempting standard video constraint:", e);
       }
 
-      // Tier 2: Fallback to basic generic video constraint
+      // Fallback to basic generic video constraint
       if (!stream) {
         try {
           stream = await navigator.mediaDevices.getUserMedia({
@@ -171,7 +179,7 @@ export function ChecklistCameraModal({
           setIsStartingCamera(false);
           setError(
             err.name === "NotAllowedError" || err.name === "PermissionDeniedError"
-              ? "Camera permission was denied. You can allow camera in browser settings or use 'Open Phone Camera' button below."
+              ? "Camera permission was denied. You can allow camera in browser settings or use 'Open Phone Camera' below."
               : err.message || "Failed to access live device camera"
           );
           return;
@@ -192,7 +200,7 @@ export function ChecklistCameraModal({
 
       setIsStartingCamera(false);
     },
-    [stopCameraStream]
+    []
   );
 
   // Lock body scrolling when modal is active, ALWAYS unlock on unmount
@@ -210,7 +218,6 @@ export function ChecklistCameraModal({
     if (isOpen && !readOnly && viewMode === "camera") {
       startCamera();
     }
-    // Cleanup on unmount or close
     return () => {
       stopCameraStream();
     };
@@ -222,7 +229,11 @@ export function ChecklistCameraModal({
     if (!file) return;
 
     try {
-      stopCameraStream();
+      if (videoRef.current) {
+        try {
+          videoRef.current.pause();
+        } catch (e) {}
+      }
       setError(null);
       setIsUploading(false);
       const compressed = await compressChecklistImage(file, 1600, 1600, 0.8);
@@ -271,8 +282,11 @@ export function ChecklistCameraModal({
       // Draw current video frame to canvas
       ctx.drawImage(video, 0, 0, width, height);
 
-      // Stop camera stream immediately
-      stopCameraStream();
+      // Pause video playback instead of killing stream tracks.
+      // Keeping tracks active prevents browser permission re-prompts on retake or next slot!
+      try {
+        video.pause();
+      } catch (e) {}
 
       // Convert canvas to Data URL for instant, zero-lag preview!
       const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
@@ -310,13 +324,26 @@ export function ChecklistCameraModal({
     }
   };
 
-  // 2. Retake Photo -> Re-open Live Camera
+  // 2. Retake Photo -> Re-open Live Camera WITHOUT requesting browser permission again
   const handleRetake = () => {
     setPreviewBlob(null);
     setPreviewUrl(null);
     setPreviewMeta(null);
     setError(null);
-    startCamera(capturingSlot);
+    setViewMode("camera");
+
+    // Reuse existing live stream if available
+    if (
+      streamRef.current &&
+      streamRef.current.getVideoTracks().some((t) => t.readyState === "live" && t.enabled)
+    ) {
+      if (videoRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+        videoRef.current.play().catch(() => {});
+      }
+    } else {
+      startCamera(capturingSlot);
+    }
   };
 
   // 3. Confirm & Save to Cloudflare R2
@@ -373,6 +400,13 @@ export function ChecklistCameraModal({
       setPreviewBlob(null);
       setPreviewMeta(null);
       setViewMode("gallery");
+
+      // Pause live video while viewing gallery so it doesn't run in background
+      if (videoRef.current) {
+        try {
+          videoRef.current.pause();
+        } catch (e) {}
+      }
     } catch (err: any) {
       console.error("Upload error:", err);
       setError(err.message || "Failed to save photo to Cloudflare R2");
@@ -428,180 +462,240 @@ export function ChecklistCameraModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-slate-900/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div
+        className={`w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-2xl sm:rounded-3xl overflow-hidden flex flex-col shadow-2xl transition-colors ${
+          viewMode === "camera" || viewMode === "preview"
+            ? "bg-slate-950 text-white"
+            : "bg-white text-slate-900 border border-slate-200"
+        }`}
+      >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-xs">
-              <Camera className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider">
-                {sectionTitle}
+        {viewMode === "camera" || viewMode === "preview" ? (
+          <div className="px-4 sm:px-6 py-3 border-b border-white/10 flex items-center justify-between bg-slate-900/90 shrink-0">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                <Camera className="w-4 h-4" />
               </div>
-              <h3 className="text-base font-extrabold text-slate-900 line-clamp-1">
-                {itemLabel}
-              </h3>
+              <div className="min-w-0">
+                <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider truncate">
+                  {sectionTitle} • Slot #{capturingSlot}
+                </div>
+                <h3 className="text-xs sm:text-sm font-bold text-white truncate max-w-[200px] sm:max-w-sm">
+                  {itemLabel}
+                </h3>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {images.length > 0 && viewMode === "camera" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (videoRef.current) {
+                      try {
+                        videoRef.current.pause();
+                      } catch (e) {}
+                    }
+                    setViewMode("gallery");
+                  }}
+                  className="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition"
+                >
+                  Gallery ({images.length})
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  stopCameraStream();
+                  onClose();
+                }}
+                className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl transition cursor-pointer"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
           </div>
-          <button
-            onClick={() => {
-              stopCameraStream();
-              onClose();
-            }}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Content Body */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1">
-          {error && (
-            <div className="p-3.5 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
-              <span>{error}</span>
+        ) : (
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-xs shrink-0">
+                <Camera className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider truncate">
+                  {sectionTitle}
+                </div>
+                <h3 className="text-base font-extrabold text-slate-900 truncate">
+                  {itemLabel}
+                </h3>
+              </div>
             </div>
-          )}
+            <button
+              onClick={() => {
+                stopCameraStream();
+                onClose();
+              }}
+              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        )}
 
-          {/* VIEW 1: LIVE IN-BROWSER CAMERA STREAM & VIEWFINDER */}
-          {viewMode === "camera" ? (
-            <div className="space-y-4 animate-in zoom-in-95 duration-200">
-              <div className="relative rounded-3xl overflow-hidden bg-black aspect-4/3 sm:aspect-16/10 shadow-2xl flex items-center justify-center border border-slate-800">
-                {/* Live Video Feed */}
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover"
+        {/* VIEW 1: LIVE IN-BROWSER CAMERA STREAM & VIEWFINDER (NO VERTICAL SCROLLING ON MOBILE) */}
+        {viewMode === "camera" ? (
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
+            {/* Viewfinder Frame: touch-none & overflow-hidden prevents all touch dragging */}
+            <div className="flex-1 relative w-full overflow-hidden bg-black flex items-center justify-center touch-none select-none">
+              {/* Live Video Feed */}
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover pointer-events-none"
+              />
+
+              {isStartingCamera && (
+                <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-white gap-2 pointer-events-none z-10">
+                  <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
+                  <span className="text-xs font-semibold">Opening device camera...</span>
+                </div>
+              )}
+
+              {/* Viewfinder Target Reticle */}
+              <div className="absolute inset-6 sm:inset-12 border border-white/20 rounded-2xl pointer-events-none flex items-center justify-center">
+                <div className="w-12 h-12 border-2 border-emerald-400/70 rounded-full" />
+              </div>
+
+              {/* Top overlay badge */}
+              <div className="absolute top-3 left-3 pointer-events-none">
+                <div className="bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold border border-white/10 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  <span>Live • Slot #{capturingSlot} of 5</span>
+                </div>
+              </div>
+
+              {error && (
+                <div className="absolute bottom-4 inset-x-4 p-3 bg-red-950/90 border border-red-500/50 rounded-2xl text-red-200 text-xs flex items-center gap-2 z-20">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+                  <span>{error}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Pinned Bottom Control Bar: Shutter + Native Fallback */}
+            <div className="shrink-0 z-10 w-full bg-slate-950/95 sm:bg-slate-900/90 border-t border-white/10 px-5 sm:px-6 py-3.5 pb-[max(1rem,env(safe-area-inset-bottom))] flex items-center justify-between gap-4">
+              <label className="inline-flex items-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-2xl cursor-pointer transition active:scale-95 border border-white/10 shrink-0">
+                <Camera className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="hidden sm:inline">Open Phone Camera</span>
+                <span className="sm:hidden">Native</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleNativeCameraFile}
                 />
+              </label>
 
-                {isStartingCamera && (
-                  <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-white gap-2">
-                    <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
-                    <span className="text-xs font-semibold">Opening device camera...</span>
-                  </div>
-                )}
-
-                {/* Top overlay badges & controls */}
-                <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-                  <div className="bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold border border-white/10 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                    <span>Live Camera • Slot #{capturingSlot}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2 pointer-events-auto">
-                    {images.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          stopCameraStream();
-                          setViewMode("gallery");
-                        }}
-                        className="p-2 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white rounded-full border border-white/10 transition shadow-sm cursor-pointer"
-                        title="Back to Gallery"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
+              {/* Shutter Capture Button */}
+              <button
+                type="button"
+                onClick={handleCaptureFrame}
+                disabled={isStartingCamera}
+                className="w-16 h-16 rounded-full border-4 border-white flex items-center justify-center bg-white/20 active:scale-95 transition shadow-2xl hover:scale-105 cursor-pointer disabled:opacity-50"
+                title="Capture Photo"
+              >
+                <div className="w-12 h-12 rounded-full bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-white shadow-inner">
+                  <Camera className="w-6 h-6" />
                 </div>
+              </button>
 
-                {/* Viewfinder Target Grid */}
-                <div className="absolute inset-8 border border-white/20 rounded-2xl pointer-events-none flex items-center justify-center">
-                  <div className="w-10 h-10 border-2 border-emerald-400/60 rounded-full" />
-                </div>
-
-                {/* Bottom Shutter Capture Button */}
-                <div className="absolute bottom-4 inset-x-0 flex items-center justify-center gap-4">
-                  <button
-                    type="button"
-                    onClick={handleCaptureFrame}
-                    disabled={isStartingCamera}
-                    className="w-16 h-16 rounded-full bg-white border-4 border-emerald-500 shadow-2xl flex items-center justify-center text-emerald-700 hover:scale-105 active:scale-95 transition cursor-pointer disabled:opacity-50 group"
-                    title="Capture Photo"
-                  >
-                    <div className="w-11 h-11 rounded-full bg-emerald-600 group-hover:bg-emerald-700 flex items-center justify-center text-white shadow-inner">
-                      <Camera className="w-6 h-6" />
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
-                <div className="text-center sm:text-left text-xs text-slate-500">
-                  Align item in viewfinder and click shutter to snap, or use device camera directly:
-                </div>
-                <label className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer transition active:scale-95 shrink-0 border border-slate-200 shadow-2xs">
-                  <Camera className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Open Phone Camera</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="hidden"
-                    onChange={handleNativeCameraFile}
-                  />
-                </label>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (images.length > 0) {
+                    if (videoRef.current) {
+                      try {
+                        videoRef.current.pause();
+                      } catch (e) {}
+                    }
+                    setViewMode("gallery");
+                  } else {
+                    stopCameraStream();
+                    onClose();
+                  }
+                }}
+                className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-2xl transition cursor-pointer"
+              >
+                {images.length > 0 ? "Gallery" : "Cancel"}
+              </button>
             </div>
-          ) : viewMode === "preview" && previewUrl ? (
-            /* VIEW 2: CAPTURED PHOTO PREVIEW WITH RETAKE & CONFIRM */
-            <div className="space-y-4 animate-in zoom-in-95 duration-200">
-              <div className="relative rounded-3xl overflow-hidden bg-slate-950 border border-slate-800 shadow-2xl flex items-center justify-center min-h-[280px] max-h-[380px]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={previewUrl}
-                  alt="Captured photo preview"
-                  className="w-full h-full object-contain max-h-[380px]"
-                />
-                <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold border border-white/10 flex items-center gap-1.5">
-                  <Camera className="w-3.5 h-3.5 text-emerald-400" />
-                  Photo Slot #{capturingSlot} Preview
+          </div>
+        ) : viewMode === "preview" && previewUrl ? (
+          /* VIEW 2: CAPTURED PHOTO PREVIEW WITH RETAKE & CONFIRM (ZERO SCROLL) */
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
+            <div className="flex-1 relative w-full overflow-hidden bg-black flex items-center justify-center p-2 sm:p-4 touch-none select-none">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previewUrl}
+                alt="Captured photo preview"
+                className="w-full h-full object-contain rounded-2xl max-h-[75vh]"
+              />
+              <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold border border-white/10 flex items-center gap-1.5">
+                <Camera className="w-3.5 h-3.5 text-emerald-400" />
+                Photo Slot #{capturingSlot} Preview
+              </div>
+              {previewMeta && (
+                <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white px-2.5 py-1 rounded-lg text-xs font-mono border border-white/10">
+                  {(previewMeta.sizeBytes / 1024).toFixed(0)} KB • {previewMeta.width}×{previewMeta.height}
                 </div>
-                {previewMeta && (
-                  <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white px-2.5 py-1 rounded-lg text-xs font-mono border border-white/10">
-                    {(previewMeta.sizeBytes / 1024).toFixed(0)} KB • {previewMeta.width}×{previewMeta.height}
-                  </div>
-                )}
-              </div>
-
-              {/* Action Buttons: Retake and Confirm */}
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={handleRetake}
-                  disabled={isUploading}
-                  className="flex items-center justify-center gap-2 px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-2xl text-xs sm:text-sm transition shadow-xs active:scale-95 disabled:opacity-50 cursor-pointer"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  Retake Photo
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmUpload}
-                  disabled={isUploading}
-                  className="flex items-center justify-center gap-2 px-4 py-3.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-2xl text-xs sm:text-sm transition shadow-lg shadow-emerald-700/20 active:scale-95 disabled:opacity-50 cursor-pointer"
-                >
-                  {isUploading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Saving Photo...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-4 h-4" />
-                      Confirm & Save (✓)
-                    </>
-                  )}
-                </button>
-              </div>
+              )}
             </div>
-          ) : (
-            /* VIEW 3: PHOTO GALLERY & SLOT MANAGEMENT */
-            <div className="space-y-6">
+
+            {/* Action Buttons: Retake and Confirm */}
+            <div className="shrink-0 z-10 w-full bg-slate-950/95 sm:bg-slate-900/90 border-t border-white/10 px-4 sm:px-6 py-3.5 pb-[max(1rem,env(safe-area-inset-bottom))] grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={handleRetake}
+                disabled={isUploading}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-white/15 hover:bg-white/25 text-white font-bold rounded-2xl text-xs sm:text-sm transition shadow-xs active:scale-95 disabled:opacity-50 cursor-pointer"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Retake Photo
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmUpload}
+                disabled={isUploading}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-xs sm:text-sm transition shadow-lg shadow-emerald-700/20 active:scale-95 disabled:opacity-50 cursor-pointer"
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Saving Photo...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Confirm & Save (✓)
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* VIEW 3: PHOTO GALLERY & SLOT MANAGEMENT */
+          <>
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1">
+              {error && (
+                <div className="p-3.5 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+                  <span>{error}</span>
+                </div>
+              )}
+
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm font-extrabold text-slate-900">
@@ -815,25 +909,25 @@ export function ChecklistCameraModal({
                 </div>
               </div>
             </div>
-          )}
-        </div>
 
-        {/* Modal Footer */}
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between">
-          <div className="text-xs text-slate-500 font-medium">
-            {images.length > 0 ? `${images.length} of 5 photos saved` : "Camera ready"}
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              stopCameraStream();
-              onClose();
-            }}
-            className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-2xl shadow-xs transition cursor-pointer"
-          >
-            Done
-          </button>
-        </div>
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between shrink-0">
+              <div className="text-xs text-slate-500 font-medium">
+                {images.length > 0 ? `${images.length} of 5 photos saved` : "Camera ready"}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  stopCameraStream();
+                  onClose();
+                }}
+                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-2xl shadow-xs transition cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Full Image Preview Lightbox Modal */}
