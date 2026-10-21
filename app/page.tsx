@@ -41,18 +41,18 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-emerald-600 selection:text-white font-sans">
+    <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-emerald-600 selection:text-white font-sans w-full max-w-full overflow-x-hidden">
       {/* 1. TOP NAVBAR */}
-      <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-40 w-full max-w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between gap-2 sm:gap-4 w-full">
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-700 flex items-center justify-center text-white shadow-md shadow-emerald-700/20 font-black text-xl tracking-tight transition group-hover:bg-emerald-800">
+          <Link href="/" className="flex items-center gap-2 sm:gap-2.5 shrink-0 group">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-emerald-700 flex items-center justify-center text-white shadow-md shadow-emerald-700/20 font-black text-lg sm:text-xl tracking-tight transition group-hover:bg-emerald-800">
               R
             </div>
             <div className="flex flex-col">
-              <span className="font-black text-xl tracking-tight text-slate-900 leading-none">RestoPulse</span>
-              <span className="text-[10px] font-bold text-emerald-700 tracking-wider uppercase mt-1">Kitchen Operations</span>
+              <span className="font-black text-lg sm:text-xl tracking-tight text-slate-900 leading-none">RestoPulse</span>
+              <span className="hidden sm:inline-block text-[9px] sm:text-[10px] font-bold text-emerald-700 tracking-wider uppercase mt-0.5">Kitchen Operations</span>
             </div>
           </Link>
 
@@ -79,34 +79,36 @@ export default function LandingPage() {
           </nav>
 
           {/* Right Action Buttons */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <button
               type="button"
               onClick={() => setDemoModalOpen(true)}
-              className="whitespace-nowrap text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
+              className="whitespace-nowrap text-[11px] sm:text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-2.5 sm:px-3.5 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl transition flex items-center gap-1 sm:gap-1.5 cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
             >
-              <Calendar className="w-3.5 h-3.5 text-emerald-700" />
-              <span>Request Demo</span>
+              <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-700 shrink-0" />
+              <span>
+                <span className="hidden min-[420px]:inline">Request </span>Demo
+              </span>
             </button>
             <Link
               href="/login"
-              className="whitespace-nowrap text-xs font-bold text-slate-700 hover:text-slate-900 px-3 py-2.5 rounded-xl hover:bg-slate-100 transition hidden sm:inline-block"
+              className="whitespace-nowrap text-xs font-bold text-slate-700 hover:text-slate-900 px-3 py-2.5 rounded-xl hover:bg-slate-100 transition hidden md:inline-block"
             >
               Sign In
             </Link>
             <Link
               href="/signup"
-              className="whitespace-nowrap text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 px-4 py-2.5 rounded-xl shadow-md shadow-emerald-700/20 transition flex items-center gap-1.5 hover:scale-105 active:scale-95"
+              className="whitespace-nowrap text-[11px] sm:text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl shadow-md shadow-emerald-700/20 transition flex items-center gap-1 sm:gap-1.5 hover:scale-105 active:scale-95"
             >
               <span>Get Started</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
             </Link>
 
             {/* Mobile Hamburger Button */}
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              className="lg:hidden p-1.5 sm:p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg sm:rounded-xl transition cursor-pointer"
               title="Toggle Menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -116,7 +118,31 @@ export default function LandingPage() {
 
         {/* Mobile Slide-down Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-slate-200 bg-white px-4 py-4 space-y-3 shadow-lg animate-in slide-in-from-top-2 duration-150">
+          <div className="lg:hidden border-t border-slate-200 bg-white px-4 py-4 space-y-4 shadow-xl animate-in slide-in-from-top-2 duration-150">
+            {/* Quick Actions in Mobile Menu */}
+            <div className="flex flex-col gap-2 pb-3 border-b border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setDemoModalOpen(true);
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 font-extrabold text-xs flex items-center justify-center gap-2 transition"
+              >
+                <Calendar className="w-4 h-4 text-emerald-700" />
+                <span>Request a Live Demo</span>
+              </button>
+              <Link
+                href="/signup"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full py-2.5 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-sm transition"
+              >
+                <span>Start Free 7-Day Trial</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            {/* Nav Links Grid */}
             <div className="grid grid-cols-2 gap-2 text-xs font-bold">
               <a
                 href="#story"
@@ -161,12 +187,15 @@ export default function LandingPage() {
                 FAQ
               </a>
             </div>
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between sm:hidden">
+
+            {/* Sign In in Mobile Menu */}
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
               <Link
                 href="/login"
-                className="text-xs font-bold text-slate-700 hover:text-slate-900 py-2 px-3 rounded-lg hover:bg-slate-50"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full text-center text-xs font-bold text-slate-700 hover:text-slate-900 py-2.5 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition"
               >
-                Sign In
+                Sign In to Existing Account
               </Link>
             </div>
           </div>
@@ -176,9 +205,9 @@ export default function LandingPage() {
       {/* 2. HERO SECTION */}
       <section className="relative pt-12 pb-16 md:pt-20 md:pb-24 overflow-hidden bg-gradient-to-b from-white via-slate-50 to-slate-100/60 border-b border-slate-200">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-bold mb-6 shadow-xs">
-            <Sparkles className="w-4 h-4 text-emerald-700" />
-            <span>The Complete Restaurant Operations Management Platform</span>
+          <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-bold mb-6 shadow-xs max-w-full text-center leading-snug">
+            <Sparkles className="w-4 h-4 text-emerald-700 shrink-0" />
+            <span>The Complete Restaurant Operations Platform</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight text-slate-900 max-w-4xl mx-auto leading-tight sm:leading-tight">
@@ -232,16 +261,16 @@ export default function LandingPage() {
           </div>
 
           {/* 3. HERO LIVE DASHBOARD PREVIEW CARD */}
-          <div className="mt-12 max-w-4xl mx-auto rounded-3xl border-2 border-slate-300 bg-white p-5 sm:p-7 shadow-xl shadow-slate-200 text-left">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-5">
-              <div className="flex items-center gap-2">
+          <div className="mt-12 max-w-4xl mx-auto rounded-2xl sm:rounded-3xl border-2 border-slate-300 bg-white p-4 sm:p-7 shadow-xl shadow-slate-200 text-left">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-5 gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <span className="w-3 h-3 rounded-full bg-rose-400" />
                 <span className="w-3 h-3 rounded-full bg-amber-400" />
                 <span className="w-3 h-3 rounded-full bg-emerald-500" />
-                <span className="text-xs font-bold text-slate-700 ml-1.5">Live Shift Activity</span>
+                <span className="text-xs font-bold text-slate-700 ml-1">Live Shift Activity</span>
               </div>
-              <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 font-extrabold text-[11px] border border-emerald-300">
-                Today&apos;s Operations Status
+              <span className="px-2.5 sm:px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 font-extrabold text-[10px] sm:text-[11px] border border-emerald-300 text-right shrink-0">
+                Today&apos;s <span className="hidden sm:inline">Operations </span>Status
               </span>
             </div>
 
@@ -726,12 +755,12 @@ export default function LandingPage() {
                 </div>
 
                 {/* Price Hike Impact Badge */}
-                <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900 flex items-center justify-between">
+                <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                   <span className="flex items-center gap-1.5 font-semibold">
                     <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
                     Oil wholesale price +₹15/L
                   </span>
-                  <span className="font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded text-[10px]">
+                  <span className="font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded text-[10px] w-fit">
                     Cost +₹1.50 • Margin 71.0% → 70.5%
                   </span>
                 </div>
@@ -1214,15 +1243,15 @@ export default function LandingPage() {
 
       {/* 13. FOOTER */}
       <footer className="py-8 bg-white border-t border-slate-200 text-center text-xs text-slate-500 font-medium">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-emerald-700 text-white font-bold flex items-center justify-center text-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+          <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-start">
+            <div className="w-6 h-6 rounded-lg bg-emerald-700 text-white font-bold flex items-center justify-center text-xs shrink-0">
               R
             </div>
             <span className="font-extrabold text-slate-800">RestoPulse</span>
-            <span>• Restaurant Operations Management Platform</span>
+            <span className="hidden sm:inline">• Restaurant Operations Management Platform</span>
           </div>
-          <div className="flex items-center gap-4 text-slate-600">
+          <div className="flex items-center gap-4 text-slate-600 flex-wrap justify-center">
             <button
               type="button"
               onClick={() => setDemoModalOpen(true)}
